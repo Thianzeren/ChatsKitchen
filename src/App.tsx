@@ -113,7 +113,6 @@ export default function App() {
           money={state.money}
           served={state.served}
           lost={state.lost}
-          shift={state.shift}
           timeLeft={state.timeLeft}
         />
         <div className={styles.headerButtons}>

@@ -49,7 +49,7 @@ export function useGameLoop(
 
       // Spawn orders
       orderTimerRef.current += delta
-      const orderInterval = Math.max(5000, 14000 - s.shift * 1000)
+      const orderInterval = 13000
 
       if (!firstOrderSpawned.current && gameTimeRef.current > 2000) {
         dispatch({ type: 'SPAWN_ORDER', now })

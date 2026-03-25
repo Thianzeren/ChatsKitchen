@@ -58,7 +58,6 @@ export interface GameState {
   money: number
   served: number
   lost: number
-  shift: number
   timeLeft: number
   durationMultiplier: number
   stationCapacity: StationCapacity

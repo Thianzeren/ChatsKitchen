@@ -4,11 +4,10 @@ interface Props {
   money: number
   served: number
   lost: number
-  shift: number
   timeLeft: number
 }
 
-export default function StatsBar({ money, served, lost, shift, timeLeft }: Props) {
+export default function StatsBar({ money, served, lost, timeLeft }: Props) {
   const totalSec = Math.max(0, Math.ceil(timeLeft / 1000))
   const min = Math.floor(totalSec / 60)
   const sec = totalSec % 60
@@ -24,7 +23,6 @@ export default function StatsBar({ money, served, lost, shift, timeLeft }: Props
       <div className={styles.stat}><span className={styles.label}>MONEY</span><span className={styles.value}>${money}</span></div>
       <div className={styles.stat}><span className={styles.label}>SERVED</span><span className={styles.value}>{served}</span></div>
       <div className={styles.stat}><span className={styles.label}>LOST</span><span className={styles.value}>{lost}</span></div>
-      <div className={styles.stat}><span className={styles.label}>SHIFT</span><span className={styles.value}>{shift}</span></div>
     </div>
   )
 }

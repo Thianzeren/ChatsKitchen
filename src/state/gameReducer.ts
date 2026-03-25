@@ -26,7 +26,6 @@ export function createInitialState(
     money: 0,
     served: 0,
     lost: 0,
-    shift: 1,
     timeLeft: shiftDuration,
     durationMultiplier,
     stationCapacity,
@@ -380,18 +379,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // Clean up old served orders
       orders = orders.filter(o => !o.served || (now - o.spawnTime < 2000))
 
-      // Shift progression
-      let shift = state.shift
-      const served = state.served
-      if (served > 0 && served % 8 === 0 && shift < Math.ceil(served / 8) + 1) {
-        shift = Math.ceil(served / 8) + 1
-        messages.push({ id: nextMsgId++, username: 'KITCHEN', text: `SHIFT ${shift} — Things are heating up!`, type: 'system' })
-      }
-
       // Timer countdown
       const timeLeft = Math.max(0, state.timeLeft - delta)
 
-      return { ...state, stations: newStations, activeUsers: newActiveUsers, orders, lost, shift, timeLeft, platedDishes, chatMessages: messages.slice(-200), nextMessageId: nextMsgId }
+      return { ...state, stations: newStations, activeUsers: newActiveUsers, orders, lost, timeLeft, platedDishes, chatMessages: messages.slice(-200), nextMessageId: nextMsgId }
     }
 
     default:
