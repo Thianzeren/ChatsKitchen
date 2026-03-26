@@ -149,6 +149,27 @@
   50% { opacity: 0.4; }
 }
 
+.youtubeIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff4444;
+  padding: 4px 10px;
+  border: 1px solid #ff444444;
+  border-radius: 6px;
+}
+
+.youtubeDot {
+  width: 6px;
+  height: 6px;
+  background: #ff0000;
+  border-radius: 50%;
+  animation: twitchPulse 1.5s infinite;
+}
+
 @media (max-width: 480px) {
   .header {
     flex-wrap: wrap;
@@ -171,7 +192,8 @@
     font-size: 11px;
   }
 
-  .twitchIndicator {
+  .twitchIndicator,
+  .youtubeIndicator {
     font-size: 10px;
     padding: 3px 8px;
   }

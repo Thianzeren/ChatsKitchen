@@ -1,0 +1,148 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: #1c1917;
+  gap: 20px;
+}
+
+.title {
+  font-family: 'Lilita One', cursive;
+  font-size: 36px;
+  color: #ff0000;
+  margin: 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 340px;
+}
+
+.label {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f5efe6;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid #3d3632;
+  border-radius: 8px;
+  background: #2e2926;
+  color: #f5efe6;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  border-color: #ff0000;
+}
+
+.connectBtn {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  background: #cc0000;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+}
+
+.connectBtn:hover:not(:disabled) {
+  transform: scale(1.03);
+  filter: brightness(1.1);
+}
+
+.connectBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.disconnectBtn {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  background: #d94f4f;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+}
+
+.disconnectBtn:hover {
+  transform: scale(1.03);
+  filter: brightness(1.1);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  color: #9a8e82;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.note {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 13px;
+  color: #736860;
+  text-align: center;
+  max-width: 340px;
+  margin: 0;
+}
+
+.noteSmall {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: #4a4440;
+  text-align: center;
+  max-width: 340px;
+  margin: 0;
+}
+
+.noteSmall code {
+  color: #6a6460;
+}
+
+.backBtn {
+  border: none;
+  border-radius: 8px;
+  padding: 12px 40px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  background: #3d3632;
+  color: #f5efe6;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+  margin-top: 12px;
+}
+
+.backBtn:hover {
+  transform: scale(1.03);
+  filter: brightness(1.2);
+}

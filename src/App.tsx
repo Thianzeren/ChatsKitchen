@@ -5,9 +5,11 @@ import { GameOptions, PlayerStats } from './state/types'
 import { useGameLoop } from './hooks/useGameLoop'
 import { useBotSimulation } from './hooks/useBotSimulation'
 import { useTwitchChat } from './hooks/useTwitchChat'
+import { useYouTubeChat } from './hooks/useYouTubeChat'
 import MainMenu from './components/MainMenu'
 import OptionsScreen from './components/OptionsScreen'
 import TwitchConnect from './components/TwitchConnect'
+import YouTubeConnect from './components/YouTubeConnect'
 import Countdown from './components/Countdown'
 import GameOver from './components/GameOver'
 import StatsBar from './components/StatsBar'
@@ -17,7 +19,7 @@ import ChatPanel from './components/ChatPanel'
 import InfoBar from './components/InfoBar'
 import styles from './App.module.css'
 
-type Screen = 'menu' | 'options' | 'twitch' | 'countdown' | 'playing' | 'gameover'
+type Screen = 'menu' | 'options' | 'twitch' | 'youtube' | 'countdown' | 'playing' | 'gameover'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('menu')
@@ -28,6 +30,7 @@ export default function App() {
   const [botsEnabled, setBotsEnabled] = useState(false)
   const [chatOpen, setChatOpen] = useState(true)
   const [twitchChannel, setTwitchChannel] = useState<string | null>(null)
+  const [youtubeVideoInput, setYoutubeVideoInput] = useState<string | null>(null)
   const [finalStats, setFinalStats] = useState<{ money: number; served: number; lost: number; playerStats: Record<string, PlayerStats> }>({ money: 0, served: 0, lost: 0, playerStats: {} })
 
   const handleCommand = useCallback((user: string, text: string) => {
@@ -41,6 +44,7 @@ export default function App() {
   }, [handleCommand])
 
   const twitchChat = useTwitchChat(twitchChannel, handleTwitchMessage)
+  const youtubeChat = useYouTubeChat(youtubeVideoInput, handleTwitchMessage)
 
   const handleChatSend = useCallback((text: string) => {
     dispatch({ type: 'ADD_CHAT', username: 'You', text, msgType: 'normal' })
@@ -67,6 +71,7 @@ export default function App() {
         onPlay={resetGame}
         onOptions={() => setScreen('options')}
         onTwitch={() => setScreen('twitch')}
+        onYouTube={() => setScreen('youtube')}
       />
     )
   }
@@ -83,6 +88,19 @@ export default function App() {
         error={twitchChat.error}
         onConnect={(ch) => setTwitchChannel(ch)}
         onDisconnect={() => setTwitchChannel(null)}
+        onBack={() => setScreen('menu')}
+      />
+    )
+  }
+
+  if (screen === 'youtube') {
+    return (
+      <YouTubeConnect
+        videoInput={youtubeVideoInput}
+        status={youtubeChat.status}
+        error={youtubeChat.error}
+        onConnect={(v) => setYoutubeVideoInput(v)}
+        onDisconnect={() => setYoutubeVideoInput(null)}
         onBack={() => setScreen('menu')}
       />
     )
@@ -120,6 +138,12 @@ export default function App() {
             <span className={styles.twitchIndicator}>
               <span className={styles.twitchDot} />
               {twitchChannel}
+            </span>
+          )}
+          {youtubeVideoInput && youtubeChat.status === 'connected' && (
+            <span className={styles.youtubeIndicator}>
+              <span className={styles.youtubeDot} />
+              YT Live
             </span>
           )}
           <button
