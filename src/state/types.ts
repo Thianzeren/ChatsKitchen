@@ -64,7 +64,6 @@ export interface GameState {
   stations: Record<string, Station>
   orders: Order[]
   preparedItems: string[]
-  platedDishes: string[]
   nextOrderId: number
   userCooldowns: Record<string, number>
   activeUsers: Record<string, string>

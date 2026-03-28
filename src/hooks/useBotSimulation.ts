@@ -24,10 +24,11 @@ function pickBotAction(state: GameState): { name: string; command: string } | nu
     if (doneSlot) return { name, command: `!take ${id}` }
   }
 
-  // Serve
+  // Serve — check plating station for done slots
+  const plating = state.stations['plating']
   for (const order of state.orders) {
     if (order.served) continue
-    if (state.platedDishes.includes(order.dish)) return { name, command: `!serve ${order.id}` }
+    if (plating.slots.some(s => s.state === 'done' && s.produces === order.dish)) return { name, command: `!serve ${order.id}` }
   }
 
   // Plate — check plating station capacity

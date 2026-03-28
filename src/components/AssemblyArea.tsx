@@ -1,4 +1,4 @@
-import { GameState, Station, StationSlot } from '../state/types'
+import { Station, StationSlot } from '../state/types'
 import { RECIPES, NAME_COLORS } from '../data/recipes'
 import styles from './AssemblyArea.module.css'
 
@@ -37,6 +37,20 @@ function PlatingSlot({ slot }: { slot: StationSlot }) {
   )
 }
 
+function DonePlate({ slot }: { slot: StationSlot }) {
+  const recipe = RECIPES[slot.produces]
+
+  return (
+    <div className={`${styles.platingSlot} ${styles.platingDone}`}>
+      <div className={styles.plateIcon}>{recipe?.emoji || '🍽️'}</div>
+      <div className={styles.platingInfo}>
+        <span className={styles.doneDish}>{recipe?.name ?? slot.produces}</span>
+        <div className={styles.doneStatus}>ready to serve</div>
+      </div>
+    </div>
+  )
+}
+
 function EmptyPlate() {
   return (
     <div className={`${styles.platingSlot} ${styles.platingEmpty}`}>
@@ -49,44 +63,22 @@ function EmptyPlate() {
 }
 
 interface Props {
-  state: GameState
   platingStation: Station
   platingCapacity: number
 }
 
-export default function AssemblyArea({ state, platingStation, platingCapacity }: Props) {
-  // Match each plated dish to a pending order for serve hints
-  const usedOrderIds = new Set<number>()
-  const matchedPlates = state.platedDishes.map(dish => {
-    const order = state.orders.find(o => !o.served && o.dish === dish && !usedOrderIds.has(o.id))
-    if (order) usedOrderIds.add(order.id)
-    return { dish, orderId: order?.id ?? 0 }
-  })
-
+export default function AssemblyArea({ platingStation, platingCapacity }: Props) {
   const activeSlots = platingStation.slots
   const emptyCount = Math.max(0, platingCapacity - activeSlots.length)
 
   return (
     <div className={styles.assembly}>
-      <div className={styles.divider}>🍽️ READY TO SERVE</div>
-      <div className={styles.plates}>
-        {matchedPlates.map((plate, i) => {
-          const recipe = RECIPES[plate.dish]
-          return (
-            <div key={i} className={styles.plate}>
-              <span className={styles.emoji}>{recipe.emoji}</span>
-              <span className={styles.name}>{recipe.name}</span>
-              {plate.orderId > 0 && (
-                <span className={styles.serveHint}>!serve {plate.orderId}</span>
-              )}
-            </div>
-          )
-        })}
-      </div>
       <div className={styles.platingDivider}>🍽️ PLATING</div>
       <div className={styles.platingSlots}>
         {activeSlots.map(slot => (
-          <PlatingSlot key={slot.id} slot={slot} />
+          slot.state === 'done'
+            ? <DonePlate key={slot.id} slot={slot} />
+            : <PlatingSlot key={slot.id} slot={slot} />
         ))}
         {Array.from({ length: emptyCount }, (_, i) => (
           <EmptyPlate key={`empty-${i}`} />

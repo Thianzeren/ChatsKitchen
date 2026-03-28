@@ -32,7 +32,6 @@ export function createInitialState(
     stations,
     orders: [],
     preparedItems: [],
-    platedDishes: [],
     nextOrderId: 1,
     userCooldowns: {},
     activeUsers: {},
@@ -192,11 +191,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (orderIdx === -1) return addMsg(state, 'KITCHEN', `No pending order #${orderId}!`, 'error')
 
       const order = state.orders[orderIdx]
-      const dishIdx = state.platedDishes.indexOf(order.dish)
-      if (dishIdx === -1) return addMsg(state, 'KITCHEN', `No plated ${RECIPES[order.dish].name} ready!`, 'error')
+      const platingStation = state.stations['plating']
+      const slotIdx = platingStation.slots.findIndex(s => s.state === 'done' && s.produces === order.dish)
+      if (slotIdx === -1) return addMsg(state, 'KITCHEN', `No plated ${RECIPES[order.dish].name} ready!`, 'error')
 
-      const newPlated = [...state.platedDishes]
-      newPlated.splice(dishIdx, 1)
+      const newPlatingSlots = platingStation.slots.filter((_, i) => i !== slotIdx)
+      const newStations = { ...state.stations, plating: { ...platingStation, slots: newPlatingSlots } }
       const newOrders = state.orders.map((o, i) => i === orderIdx ? { ...o, served: true } : o)
       const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * 30))
       const reward = RECIPES[order.dish].reward + timeBonus
@@ -204,7 +204,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       let withStats = addStat(state, user, 'served', 1)
       withStats = addStat(withStats, user, 'moneyEarned', reward)
       return addMsg(
-        { ...withStats, platedDishes: newPlated, orders: newOrders, money: withStats.money + reward, served: withStats.served + 1 },
+        { ...withStats, stations: newStations, orders: newOrders, money: withStats.money + reward, served: withStats.served + 1 },
         'KITCHEN', `${user} served ${RECIPES[order.dish].emoji} ${RECIPES[order.dish].name}! +$${reward}`, 'success'
       )
     }
@@ -325,8 +325,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newActiveUsers = { ...state.activeUsers }
       let messages = [...state.chatMessages]
       let nextMsgId = state.nextMessageId
-      let platedDishes = [...state.platedDishes]
-
       // Update all station slots
       for (const [id, station] of Object.entries(newStations)) {
         if (station.slots.length === 0) continue
@@ -340,11 +338,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
           if (slot.state === 'cooking' && elapsed >= slot.cookDuration) {
             if (id === 'plating') {
-              // Auto-complete: plating doesn't need !take
+              // Plating complete: keep slot on station as 'done' until served
+              updatedSlots.push({ ...slot, state: 'done' })
               delete newActiveUsers[slot.user]
               slotsChanged = true
               const recipe = RECIPES[slot.produces]
-              platedDishes.push(slot.produces)
               messages.push({ id: nextMsgId++, username: 'KITCHEN', text: `${slot.user} finished plating ${recipe?.emoji || ''} ${recipe?.name || slot.produces}!`, type: 'success' })
             } else {
               updatedSlots.push({ ...slot, state: 'done' })
@@ -394,7 +392,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // Timer countdown
       const timeLeft = Math.max(0, state.timeLeft - delta)
 
-      return { ...state, stations: newStations, activeUsers: newActiveUsers, orders, lost, timeLeft, platedDishes, chatMessages: messages.slice(-200), nextMessageId: nextMsgId }
+      return { ...state, stations: newStations, activeUsers: newActiveUsers, orders, lost, timeLeft, chatMessages: messages.slice(-200), nextMessageId: nextMsgId }
     }
 
     default:

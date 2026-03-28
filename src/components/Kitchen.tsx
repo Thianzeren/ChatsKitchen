@@ -21,7 +21,6 @@ export default function Kitchen({ state }: Props) {
   return (
     <div className={styles.kitchen}>
       <AssemblyArea
-        state={state}
         platingStation={state.stations['plating']}
         platingCapacity={getStationCapacity('plating', state.stationCapacity)}
       />
