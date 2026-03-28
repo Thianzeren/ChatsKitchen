@@ -17,11 +17,12 @@ interface Props {
 
 export default function ChatPanel({ messages, onSend, onClose }: Props) {
   const [input, setInput] = useState('')
+  const [historyOpen, setHistoryOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages.length])
+  }, [messages.length, historyOpen])
 
   const handleSend = () => {
     if (!input.trim()) return
@@ -30,7 +31,7 @@ export default function ChatPanel({ messages, onSend, onClose }: Props) {
   }
 
   return (
-    <aside className={styles.panel}>
+    <aside className={`${styles.panel} ${historyOpen ? styles.panelExpanded : ''}`}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <span className={styles.dot} /> CHAT
@@ -58,6 +59,13 @@ export default function ChatPanel({ messages, onSend, onClose }: Props) {
         <div ref={messagesEndRef} />
       </div>
       <div className={styles.inputArea}>
+        <button
+          className={styles.historyToggle}
+          onClick={() => setHistoryOpen(o => !o)}
+          aria-label={historyOpen ? 'Collapse chat history' : 'Expand chat history'}
+        >
+          {historyOpen ? '▼' : '▲'}
+        </button>
         <input
           className={styles.input}
           value={input}

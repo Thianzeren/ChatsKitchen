@@ -119,15 +119,44 @@
 
 .sendBtn:hover { background: #e09830; }
 
+.historyToggle {
+  display: none;
+}
+
 @media (max-width: 480px) {
+  /* Collapsed: only the input bar visible, anchored to bottom */
   .panel {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    left: 0; right: 0; bottom: 0;
+    height: auto;
     width: 100%;
     z-index: 200;
     border-left: none;
+    border-top: 2px solid #c8841a;
+    overflow: hidden;
   }
+
+  .panel .header  { display: none; }
+  .panel .messages { display: none; }
+
+  .historyToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: #c8841a;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0 8px;
+    flex-shrink: 0;
+  }
+
+  /* Expanded: 50vh drawer with header + messages restored */
+  .panelExpanded {
+    height: 50vh;
+  }
+
+  .panelExpanded .header   { display: flex; }
+  .panelExpanded .messages { display: flex; flex: 1; overflow-y: auto; }
 }
