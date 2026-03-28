@@ -59,6 +59,14 @@ export const RECIPES: Record<string, Recipe> = {
     ],
     plate: ['chopped_lettuce', 'chopped_tomato']
   },
+  mushroom_soup: {
+    name: 'Mushroom Soup', emoji: '\u{1F372}', reward: 35, patience: 50000,
+    steps: [
+      { action: 'chop', target: 'mushroom', station: 'cutting_board', duration: 7000, produces: 'chopped_mushroom' },
+      { action: 'boil', target: 'mushroom', station: 'stove', duration: 10000, burnAt: 20000, produces: 'mushroom_soup', requires: 'chopped_mushroom' },
+    ],
+    plate: ['mushroom_soup']
+  },
   fish_burger: {
     name: 'Fish Burger', emoji: '\u{1F354}', reward: 70, patience: 80000,
     steps: [
@@ -89,6 +97,8 @@ export const INGREDIENT_EMOJI: Record<string, string> = {
   chopped_tomato: '\u{1F345}',
   melted_cheese: '\u{1F9C0}',
   fried_fish: '\u{1F41F}',
+  chopped_mushroom: '\u{1F344}',
+  mushroom_soup: '\u{1F372}',
 }
 
 export const BOT_NAMES = [
