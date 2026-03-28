@@ -50,7 +50,7 @@
 }
 
 .chatToggle {
-  border: 2px solid #9146ff;
+  border: 2px solid #c8841a;
   border-radius: 6px;
   padding: 6px 14px;
   font-family: 'Space Mono', monospace;
@@ -59,20 +59,20 @@
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
   background: transparent;
-  color: #9146ff;
+  color: #c8841a;
 }
 
 .chatToggle:hover {
-  background: #9146ff22;
+  background: #c8841a22;
 }
 
 .chatToggleOn {
-  background: #9146ff;
+  background: #c8841a;
   color: #fff;
 }
 
 .chatToggleOn:hover {
-  background: #a66bff;
+  background: #e09830;
 }
 
 .botToggle {

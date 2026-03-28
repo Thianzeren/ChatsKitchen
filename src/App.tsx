@@ -28,7 +28,7 @@ export default function App() {
     createInitialState(gameOptions.shiftDuration, gameOptions.durationMultiplier, gameOptions.stationCapacity)
   )
   const [botsEnabled, setBotsEnabled] = useState(false)
-  const [chatOpen, setChatOpen] = useState(true)
+  const [chatOpen, setChatOpen] = useState(false)
   const [twitchChannel, setTwitchChannel] = useState<string | null>(null)
   const [youtubeVideoInput, setYoutubeVideoInput] = useState<string | null>(null)
   const [finalStats, setFinalStats] = useState<{ money: number; served: number; lost: number; playerStats: Record<string, PlayerStats> }>({ money: 0, served: 0, lost: 0, playerStats: {} })

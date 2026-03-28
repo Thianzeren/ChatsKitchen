@@ -1,14 +1,14 @@
 .panel {
   width: 320px;
   background: linear-gradient(180deg, #252220 0%, #1f1c1a 100%);
-  border-left: 3px solid #9146ff;
+  border-left: 3px solid #c8841a;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
 }
 
 .header {
-  background: #9146ff;
+  background: #c8841a;
   padding: 8px 12px;
   font-family: 'Lilita One', cursive;
   font-size: 14px;
@@ -62,7 +62,7 @@
   gap: 4px;
   font-size: 13px;
   scrollbar-width: thin;
-  scrollbar-color: #9146ff33 transparent;
+  scrollbar-color: #c8841a33 transparent;
 }
 
 .msg {
@@ -92,7 +92,7 @@
 .input {
   flex: 1;
   background: #171412;
-  border: 2px solid #9146ff44;
+  border: 2px solid #c8841a44;
   border-radius: 6px;
   padding: 8px 12px;
   color: #f5efe6;
@@ -102,10 +102,10 @@
   transition: border-color 0.2s;
 }
 
-.input:focus { border-color: #9146ff; }
+.input:focus { border-color: #c8841a; }
 
 .sendBtn {
-  background: #9146ff;
+  background: #c8841a;
   border: none;
   border-radius: 6px;
   color: #fff;
@@ -117,7 +117,7 @@
   transition: background 0.2s;
 }
 
-.sendBtn:hover { background: #a66bff; }
+.sendBtn:hover { background: #e09830; }
 
 @media (max-width: 480px) {
   .panel {

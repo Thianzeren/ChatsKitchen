@@ -33,7 +33,7 @@ export default function ChatPanel({ messages, onSend, onClose }: Props) {
     <aside className={styles.panel}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <span className={styles.dot} /> TWITCH CHAT
+          <span className={styles.dot} /> CHAT
         </div>
         <button className={styles.closeBtn} onClick={onClose}>{'\u{2715}'}</button>
       </div>
