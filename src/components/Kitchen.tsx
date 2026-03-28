@@ -16,11 +16,15 @@ function getStationCapacity(stationId: string, cap: GameState['stationCapacity']
 }
 
 export default function Kitchen({ state }: Props) {
-  const stationIds = Object.keys(STATION_DEFS)
+  const stationIds = Object.keys(STATION_DEFS).filter(id => id !== 'plating')
 
   return (
     <div className={styles.kitchen}>
-      <AssemblyArea state={state} />
+      <AssemblyArea
+        state={state}
+        platingStation={state.stations['plating']}
+        platingCapacity={getStationCapacity('plating', state.stationCapacity)}
+      />
       <PreparedItems items={state.preparedItems} />
       <div className={styles.divider}>🔥 STATIONS</div>
       <div className={styles.stations}>
