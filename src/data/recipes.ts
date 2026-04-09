@@ -81,10 +81,10 @@ export const RECIPES: Record<string, Recipe> = {
     steps: [
       { action: 'chop', target: 'tomato', station: 'cutting_board', duration: 7000, produces: 'chopped_tomato' },
       { action: 'chop', target: 'pepper', station: 'cutting_board', duration: 7000, produces: 'chopped_pepper' },
-      { action: 'roast', target: 'tomato', station: 'oven', duration: 10000, burnAt: 28000, produces: 'roasted_tomato' },
-      { action: 'roast', target: 'pepper', station: 'oven', duration: 10000, burnAt: 28000, produces: 'roasted_pepper' },
+      { action: 'roast', target: 'tomato', station: 'oven', duration: 10000, burnAt: 28000, produces: 'roasted_tomato', requires: 'chopped_tomato' },
+      { action: 'roast', target: 'pepper', station: 'oven', duration: 10000, burnAt: 28000, produces: 'roasted_pepper', requires: 'chopped_pepper' },
     ],
-    plate: ['chopped_tomato', 'chopped_pepper', 'roasted_tomato', 'roasted_pepper']
+    plate: ['roasted_tomato', 'roasted_pepper']
   }
 }
 
