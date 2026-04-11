@@ -104,6 +104,7 @@ export default function App() {
   stateRef.current = state
   const [toast, setToast] = useState<string | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [autoRestartSignal, setAutoRestartSignal] = useState(0)
   const screenRef = useRef<Screen>('menu')
   const gameOptionsRef = useRef(gameOptions)
   const currentLevelRef = useRef<number | null>(null)
@@ -256,6 +257,7 @@ export default function App() {
     }
     if (cmd === '!onautorestart' && (s === 'gameover' || s === 'playing')) {
       handleGameOptionsChange({ ...gameOptionsRef.current, autoRestart: true })
+      setAutoRestartSignal(n => n + 1)
       showToast(`🔄 Auto-restart ON (${user})`)
       return
     }
@@ -396,6 +398,7 @@ export default function App() {
         roundHistory={currentLevel == null ? freePlayHistory : undefined}
         autoRestart={currentLevel == null && gameOptions.autoRestart}
         autoRestartDelay={gameOptions.autoRestartDelay}
+        autoRestartSignal={autoRestartSignal}
         onPlayAgain={currentLevel != null ? () => startLevel(currentLevel) : startFreePlay}
         onNextLevel={currentLevel != null && currentLevel < 10 ? () => startLevel(currentLevel + 1) : undefined}
         onMenu={() => setScreen('menu')}

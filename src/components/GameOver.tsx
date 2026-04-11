@@ -27,26 +27,27 @@ interface Props {
   roundHistory?: RoundRecord[]
   autoRestart?: boolean
   autoRestartDelay?: number
+  autoRestartSignal?: number
   onPlayAgain: () => void
   onNextLevel?: () => void
   onMenu: () => void
 }
 
-export default function GameOver({ money, served, lost, playerStats, level, highScore, isNewHighScore, roundHistory, autoRestart, autoRestartDelay, onPlayAgain, onNextLevel, onMenu }: Props) {
+export default function GameOver({ money, served, lost, playerStats, level, highScore, isNewHighScore, roundHistory, autoRestart, autoRestartDelay, autoRestartSignal, onPlayAgain, onNextLevel, onMenu }: Props) {
   const totalActions = (s: PlayerStats) => s.cooked + s.taken + s.served + s.extinguished - s.firesCaused
   const leaderboard = Object.entries(playerStats)
     .sort(([, a], [, b]) => totalActions(b) - totalActions(a))
 
   const [countdown, setCountdown] = useState<number | null>(null)
 
-  // Sync countdown when the autoRestart prop changes (e.g. via mod commands)
+  // Sync countdown when autoRestart changes or !onAutoRestart re-fires (signal increments)
   useEffect(() => {
     if (autoRestart) {
       setCountdown(autoRestartDelay ?? 60)
     } else {
       setCountdown(null)
     }
-  }, [autoRestart, autoRestartDelay])
+  }, [autoRestart, autoRestartDelay, autoRestartSignal])
 
   // Tick the countdown down and fire onPlayAgain at zero
   useEffect(() => {
