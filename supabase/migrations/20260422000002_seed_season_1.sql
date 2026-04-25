@@ -1,0 +1,3 @@
+-- Migration: seed Season 1
+-- Seed data has been moved to supabase/seed.sql.
+-- Run via: supabase db seed (or supabase db reset which runs seed.sql after migrations)

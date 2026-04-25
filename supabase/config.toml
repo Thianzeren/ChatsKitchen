@@ -1,0 +1,10 @@
+# Supabase project configuration
+# Run: supabase link --project-ref <your-project-ref>
+# Then: supabase db push
+project_id = "chatskitchen"
+
+[api]
+port = 54321
+
+[db]
+port = 54322

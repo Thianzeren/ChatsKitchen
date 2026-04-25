@@ -29,6 +29,7 @@ import EventCardOverlay from './components/EventCardOverlay'
 import SmokeOverlay from './components/SmokeOverlay'
 import CreditsScreen from './components/CreditsScreen'
 import Toast from './components/Toast'
+import { submitGameStats } from './utils/submitStats'
 import {
   ADVENTURE_SHIFT_DURATION, getAdventureGoal, pickAdventureRecipes, mergePlayerStats,
 } from './data/adventureMode'
@@ -134,6 +135,8 @@ export default function App() {
   const [autoRestartSignal, setAutoRestartSignal] = useState(0)
   const screenRef = useRef<Screen>('menu')
   const gameOptionsRef = useRef(gameOptions)
+  const twitchConnectedRef = useRef(false)
+  const twitchChannelRef = useRef<string | null>(null)
   const [adventureRun, setAdventureRun]   = useState<AdventureRun | null>(null)
   const adventureRunRef                   = useRef<AdventureRun | null>(null)
   const [pvpLobby, setPvpLobby] = useState<{ red: string[], blue: string[] } | null>(null)
@@ -442,9 +445,18 @@ export default function App() {
         try { localStorage.setItem('chatsKitchen_freePlayHistory', JSON.stringify(updated)) } catch { /* ignore */ }
         return updated
       })
+      // Submit to global stats if connected to Twitch
+      if (twitchConnectedRef.current && twitchChannelRef.current) {
+        submitGameStats(
+          twitchChannelRef.current,
+          { money: s.money, served: s.served, lost: s.lost },
+          s.playerStats,
+          () => showToast('⏱ Stats cooldown — try again in 3 min')
+        )
+      }
     }
     setScreen('shiftend')
-  }, [])
+  }, [showToast])
 
   const handleLobbyMetaCommand = useCallback((_user: string, text: string, isMod: boolean) => {
     if (!isMod) return
@@ -552,6 +564,9 @@ export default function App() {
   }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand])
 
   const twitchChat = useTwitchChat(twitchChannel, handleTwitchMessage)
+  twitchConnectedRef.current = twitchChat.status === 'connected'
+  twitchChannelRef.current = twitchChannel
+
   const handleChatSend = useCallback((text: string) => {
     dispatch({ type: 'ADD_CHAT', username: 'You', text, msgType: 'normal' })
     if (screenRef.current === 'pvplobby') {
