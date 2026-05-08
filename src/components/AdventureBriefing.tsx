@@ -45,7 +45,7 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitc
           <div className={styles.prevResult}>
             Previous: ${lastResult.moneyEarned} / ${lastResult.goalMoney}
             {' · '}
-            <span style={{ color: '#5cb85c' }}>PASSED</span>
+            <span style={{ color: '#42a05e' }}>PASSED</span>
           </div>
         )}
 

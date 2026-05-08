@@ -244,7 +244,7 @@ export default function FreePlaySetup({ options, onChange, onStart, onBack, twit
                   />
                 </div>
                 {options.kitchenEventSpawnMin >= options.kitchenEventSpawnMax && (
-                  <div className={styles.hint} style={{ color: '#e8943a' }}>
+                  <div className={styles.hint} style={{ color: '#e07030' }}>
                     ⚠ Min ≥ Max — fixed interval of {options.kitchenEventSpawnMin}s will be used
                   </div>
                 )}

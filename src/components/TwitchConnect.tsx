@@ -21,7 +21,7 @@ export default function TwitchConnect({ channel, status, error, onConnect, onDis
     onConnect(input.trim())
   }
 
-  const statusColor = isConnected ? '#5cb85c' : isConnecting ? '#e8943a' : status === 'error' ? '#d94f4f' : '#d94f4f'
+  const statusColor = isConnected ? '#42a05e' : isConnecting ? '#e07030' : status === 'error' ? '#d94f4f' : '#d94f4f'
   const statusText = isConnected
     ? `Connected to ${channel}`
     : isConnecting

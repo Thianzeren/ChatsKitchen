@@ -62,7 +62,7 @@
   font-family: 'Space Mono', monospace;
   font-size: var(--base-fs);
   font-weight: 700;
-  color: #e8943a;
+  color: #e07030;
   flex-shrink: 0;
 }
 
@@ -84,7 +84,7 @@
   font-family: 'Fredoka', sans-serif;
   font-size: 36px;
   font-weight: 700;
-  color: #64d8ff;
+  color: #60c8f0;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 14px rgba(100, 216, 255, 0.7);
   white-space: nowrap;
   pointer-events: none;
@@ -254,7 +254,7 @@
 .offlineTitle {
   font-family: 'Lilita One', cursive;
   font-size: 28px;
-  color: #6090ff;
+  color: #7858cc;
   text-shadow: 0 1px 8px rgba(60, 100, 255, 0.6);
 }
 
@@ -279,14 +279,14 @@
 .overheatTitle {
   font-family: 'Lilita One', cursive;
   font-size: 28px;
-  color: #ff6060;
+  color: #c03830;
   text-shadow: 0 1px 8px rgba(255, 60, 60, 0.6);
 }
 
 .voteProgress {
   font-size: 20px;
   font-weight: 700;
-  color: #ffd84d;
+  color: #c4a020;
   text-shadow: 0 1px 6px rgba(255, 180, 0, 0.7);
 }
 

@@ -57,7 +57,7 @@
   font-family: 'Fredoka', sans-serif;
   font-size: 20px;
   font-weight: 700;
-  color: #f0c850;
+  color: #c4a020;
   margin-bottom: 4px;
 }
 
@@ -121,7 +121,7 @@
   border-radius: 8px;
   border: 1px solid rgba(240, 200, 80, 0.4);
   background: rgba(240, 200, 80, 0.18);
-  color: #f0c850;
+  color: #c4a020;
   cursor: pointer;
   transition: background 0.1s;
 }

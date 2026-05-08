@@ -17,7 +17,7 @@
 .card {
   pointer-events: all;
   background: #252836;
-  border: 2px solid #f0c850;
+  border: 2px solid #c4a020;
   border-radius: 14px;
   padding: 24px 28px;
   max-width: 680px;
@@ -41,7 +41,7 @@
 .title {
   font-family: 'Lilita One', cursive;
   font-size: 22px;
-  color: #f0c850;
+  color: #c4a020;
   margin-bottom: 10px;
 }
 
@@ -74,7 +74,7 @@
 .commandHint code {
   font-family: 'Space Mono', monospace;
   font-size: 22px;
-  color: #f0c850;
+  color: #c4a020;
   font-weight: 700;
 }
 
@@ -88,7 +88,7 @@
 .nextBtn {
   font-family: 'Lilita One', cursive;
   font-size: 18px;
-  background: #f0c850;
+  background: #c4a020;
   color: #1c1917;
   border: none;
   border-radius: 8px;

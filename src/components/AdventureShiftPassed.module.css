@@ -71,7 +71,7 @@
 .statValue {
   font-family: 'Lilita One', cursive;
   font-size: 36px;
-  color: #f0c850;
+  color: #c4a020;
 }
 
 .statLabel {
@@ -96,7 +96,7 @@
   font-family: 'Fredoka', sans-serif;
   font-size: 18px;
   font-weight: 700;
-  background: #b87333;
+  background: #d87428;
   color: #fff;
   cursor: pointer;
   transition: transform 0.1s, filter 0.1s;
@@ -229,7 +229,7 @@
   font-family: 'Space Mono', monospace;
   font-size: 18px;
   font-weight: 700;
-  color: #f0c850;
+  color: #c4a020;
   width: 52px;
   text-align: right;
   flex-shrink: 0;

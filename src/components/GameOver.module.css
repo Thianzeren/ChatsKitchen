@@ -90,7 +90,7 @@
 .statValue {
   font-family: 'Lilita One', cursive;
   font-size: 54px;
-  color: #f0c850;
+  color: #c4a020;
 }
 
 .statLabel {
@@ -103,7 +103,7 @@
 .statValueSmall {
   font-family: 'Lilita One', cursive;
   font-size: 24px;
-  color: #f0c850;
+  color: #c4a020;
 }
 
 .statLabelSmall {
@@ -116,7 +116,7 @@
 .highScoreNew {
   font-family: 'Lilita One', cursive;
   font-size: 28px;
-  color: #f0c850;
+  color: #c4a020;
   text-align: center;
   text-shadow: 0 0 20px rgba(240, 200, 80, 0.5);
   animation: highScorePulse 0.8s ease-in-out infinite alternate;
@@ -160,7 +160,7 @@
 .historyBest {
   font-family: 'Space Mono', monospace;
   font-size: var(--base-fs);
-  color: #f0c850;
+  color: #c4a020;
   font-weight: 700;
 }
 
@@ -221,7 +221,7 @@
 .historyMoney {
   font-family: 'Space Mono', monospace;
   font-size: var(--base-fs);
-  color: #f0c850;
+  color: #c4a020;
   font-weight: 700;
   flex: 1;
 }
@@ -354,7 +354,7 @@
 .lbMoney {
   font-family: 'Space Mono', monospace;
   font-size: var(--base-fs);
-  color: #f0c850;
+  color: #c4a020;
   font-weight: 700;
   width: 64px;
   text-align: right;
@@ -374,7 +374,7 @@
   font-family: 'Space Mono', monospace;
   font-size: var(--base-fs);
   font-weight: 700;
-  color: #f0c850;
+  color: #c4a020;
   width: 52px;
   text-align: right;
   flex-shrink: 0;
@@ -404,7 +404,7 @@
   font-family: 'Fredoka', sans-serif;
   font-size: var(--base-fs);
   font-weight: 700;
-  background: #b87333;
+  background: #d87428;
   color: #fff;
   cursor: pointer;
   transition: transform 0.1s, filter 0.1s;
@@ -523,7 +523,7 @@
 
 .pvpWinnerLabelRed  { color: #ef5b4a; text-shadow: 0 0 24px rgba(231,76,60,0.45); }
 .pvpWinnerLabelBlue { color: #4daadf; text-shadow: 0 0 24px rgba(52,152,219,0.45); }
-.pvpWinnerLabelTie  { color: #f0c850; text-shadow: 0 0 24px rgba(240,200,80,0.4); }
+.pvpWinnerLabelTie  { color: #c4a020; text-shadow: 0 0 24px rgba(240,200,80,0.4); }
 
 .pvpTeams {
   display: flex;
@@ -607,7 +607,7 @@
 .mvpCardScore {
   font-family: 'Space Mono', monospace;
   font-size: 12px;
-  color: #f0c850;
+  color: #c4a020;
   margin-bottom: 4px;
 }
 

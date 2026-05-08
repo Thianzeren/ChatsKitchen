@@ -52,9 +52,9 @@ interface Props {
 
 function heatBorderColor(heat: number, overheated: boolean): string {
   if (overheated) return '#cc2200'
-  if (heat > 70)  return '#e8943a'
+  if (heat > 70)  return '#e07030'
   if (heat > 40)  return '#d4c43a'
-  return '#5aad5e'
+  return '#42a05e'
 }
 
 export default function Station({ station, capacity, playerCount, isHighlighted, pvpLargerTeamSize, isDisabled }: Props) {

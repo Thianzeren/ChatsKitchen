@@ -14,7 +14,7 @@
   max-height: calc(100% - 48px);
   overflow: hidden;
   background: linear-gradient(180deg, var(--surface-2) 0%, var(--bg) 100%);
-  border: 2px solid #b87333;
+  border: 2px solid #d87428;
   border-radius: 20px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
   display: flex;
@@ -76,7 +76,7 @@
   margin: 0 0 10px;
   font-family: 'Fredoka', sans-serif;
   font-size: 20px;
-  color: #b87333;
+  color: #d87428;
 }
 
 .section p {
@@ -116,7 +116,7 @@
   padding: 10px 12px;
   font-family: 'Space Mono', monospace;
   font-size: 18px;
-  color: #f0c850;
+  color: #c4a020;
 }
 
 .cmdAlias {
@@ -187,7 +187,7 @@
 
 .quickStep code {
   font-size: 15px;
-  color: #f0c850;
+  color: #c4a020;
   background: rgba(240, 200, 80, 0.1);
   border-radius: 4px;
   padding: 1px 5px;
@@ -197,7 +197,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #b87333;
+  background: #d87428;
   color: #fff;
   font-family: 'Lilita One', cursive;
   font-size: 18px;
@@ -215,7 +215,7 @@
 }
 
 .quickStepArrow {
-  color: #b87333;
+  color: #d87428;
   font-size: 20px;
   flex-shrink: 0;
   align-self: center;
@@ -264,7 +264,7 @@
   font-family: 'Space Mono', monospace;
   font-size: 18px;
   font-weight: 700;
-  color: #f0c850;
+  color: #c4a020;
 }
 
 .recipeCardSteps {
@@ -282,7 +282,7 @@
 
 .recipeStep code {
   font-size: 18px;
-  color: #f0c850;
+  color: #c4a020;
   background: rgba(240, 200, 80, 0.1);
   border-radius: 4px;
   padding: 1px 5px;
@@ -317,7 +317,7 @@
   border: none;
   border-radius: 12px;
   padding: 12px 22px;
-  background: #b87333;
+  background: #d87428;
   color: #fff;
   font-family: 'Fredoka', sans-serif;
   font-size: 18px;

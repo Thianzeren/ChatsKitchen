@@ -14,7 +14,7 @@
 .sectionTitle {
   font-family: 'Lilita One', cursive;
   font-size: var(--base-fs);
-  color: #f0c850;
+  color: #c4a020;
 }
 
 .toggle {
@@ -31,8 +31,8 @@
 }
 
 .toggle:hover {
-  color: #f0c850;
-  border-color: #f0c850;
+  color: #c4a020;
+  border-color: #c4a020;
 }
 
 /* ── Items grid ─────────────────────────────── */
@@ -94,7 +94,7 @@
 .count {
   font-family: 'Lilita One', cursive;
   font-size: 20px;
-  color: #f0c850;
+  color: #c4a020;
   line-height: 1;
   text-shadow: 0 0 6px rgba(240, 200, 80, 0.3);
   flex-shrink: 0;
@@ -147,7 +147,7 @@
 
 .pvpLabelRed  { font-family: 'Lilita One', cursive; font-size: 16px; color: #e74c3c; }
 .pvpLabelBlue { font-family: 'Lilita One', cursive; font-size: 16px; color: #3498db; }
-.pvpScore     { font-family: 'Lilita One', cursive; font-size: 16px; color: #f0c850; }
+.pvpScore     { font-family: 'Lilita One', cursive; font-size: 16px; color: #c4a020; }
 
 .trayFilledRed {
   background: rgba(231, 76, 60, 0.12);
