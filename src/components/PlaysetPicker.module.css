@@ -135,18 +135,39 @@
 
 .cardHovered {
   border-color: var(--card-color);
-  box-shadow: 0 0 14px -6px var(--card-color);
+}
+
+.cardHovered .cardHeader {
+  background: color-mix(in srgb, var(--card-color) 15%, var(--surface-2));
+  border-bottom-color: color-mix(in srgb, var(--card-color) 30%, var(--border));
 }
 
 .cardSelected {
   border-color: var(--card-color);
-  box-shadow: 0 0 24px -4px var(--card-color);
+}
+
+.cardSelected .cardHeader {
+  background: var(--card-color);
+  border-bottom-color: transparent;
+}
+
+.cardSelected .cardName {
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.cardSelected .cardTag {
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .cardHeader {
   padding: 13px 16px 10px;
   border-bottom: 2px solid var(--border);
   flex-shrink: 0;
+  background: var(--surface-2);
+  transition: background 0.18s, border-bottom-color 0.18s;
 }
 
 .cardTitleRow {
