@@ -1,6 +1,6 @@
 .prep {
   padding: 8px 48px 8px 12px;
-  border-bottom: 2px solid rgba(200, 132, 26, 0.2);
+  border-bottom: 2px solid rgba(216, 116, 40, 0.2);
   flex-shrink: 0;
 }
 
@@ -55,14 +55,14 @@
   align-items: center;
   gap: 7px;
   border-radius: 10px;
-  padding: 6px 10px 6px 8px;
+  padding: 8px 12px 8px 10px;
   transition: background 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 .trayFilled {
-  background: rgba(240, 200, 80, 0.14);
-  border: 2px solid rgba(240, 200, 80, 0.6);
-  box-shadow: 0 0 8px rgba(240, 200, 80, 0.1);
+  background: rgba(196, 160, 32, 0.14);
+  border: 2px solid rgba(196, 160, 32, 0.6);
+  box-shadow: 0 0 8px rgba(196, 160, 32, 0.1);
 }
 
 .trayEmpty {
@@ -71,9 +71,17 @@
   opacity: 0.35;
 }
 
+.emptyHint {
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  color: #4e4038;
+  font-style: italic;
+  padding: 4px 2px;
+}
+
 /* ── Pill content ───────────────────────────── */
 .emoji {
-  font-size: 26px;
+  font-size: 28px;
   line-height: 1;
   flex-shrink: 0;
 }
@@ -132,7 +140,7 @@
 
 .pvpDivider {
   width: 1px;
-  background: rgba(200, 132, 26, 0.15);
+  background: rgba(216, 116, 40, 0.15);
   margin: 0 12px;
   flex-shrink: 0;
 }
