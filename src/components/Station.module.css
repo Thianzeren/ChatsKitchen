@@ -157,11 +157,24 @@
 }
 
 .idleStatus {
-  font-family: 'Space Mono', monospace;
-  font-size: var(--base-fs);
-  color: var(--text-secondary);
   text-align: center;
-  padding: 4px 0;
+  padding: 8px 4px;
+}
+
+.idleCmd {
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  color: #3a3028;
+  letter-spacing: 0.3px;
+}
+
+.idleHint {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: #2e2820;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-top: 3px;
 }
 
 .slots {

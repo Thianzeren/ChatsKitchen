@@ -18,10 +18,10 @@ function SlotRow({ slot }: { slot: StationSlot }) {
   const progress = slot.cookDuration > 0 ? Math.min(1, elapsed / slot.cookDuration) : 0
 
   const barColor = progress > 0.85
-    ? 'rgba(217,79,79,0.55)'
+    ? 'rgba(192, 56, 48, 0.6)'
     : progress > 0.65
-      ? 'rgba(232,148,58,0.55)'
-      : 'rgba(92,184,92,0.42)'
+      ? 'rgba(224, 112, 48, 0.6)'
+      : 'rgba(66, 160, 94, 0.55)'
 
   const nameColor = NAME_COLORS[Math.abs(hashStr(slot.user)) % NAME_COLORS.length]
 
@@ -51,9 +51,9 @@ interface Props {
 
 
 function heatBorderColor(heat: number, overheated: boolean): string {
-  if (overheated) return '#cc2200'
+  if (overheated) return '#c03830'
   if (heat > 70)  return '#e07030'
-  if (heat > 40)  return '#d4c43a'
+  if (heat > 40)  return '#c4a020'
   return '#42a05e'
 }
 
@@ -146,7 +146,10 @@ export default function Station({ station, capacity, playerCount, isHighlighted,
           </span>
         </div>
       ) : station.slots.length === 0 ? (
-        <div className={styles.idleStatus}>idle</div>
+        <div className={styles.idleStatus}>
+          <div className={styles.idleCmd}>!{def.actions[0]} &lt;ingredient&gt;</div>
+          <div className={styles.idleHint}>available</div>
+        </div>
       ) : (
         <div className={styles.slots}>
           {station.slots.map(slot => (
