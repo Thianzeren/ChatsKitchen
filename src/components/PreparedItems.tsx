@@ -37,6 +37,8 @@ export default function PreparedItems({ items, enabledRecipes, isHighlighted, pv
     counts[item] = (counts[item] || 0) + 1
   }
 
+  const stockedIngredients = visibleIngredients.filter(item => (counts[item] || 0) > 0)
+
   function renderTray(item: string, pool: string[], team: 'red' | 'blue') {
     const count = pool.filter(i => i === item).length
     const filled = count > 0
@@ -91,21 +93,23 @@ export default function PreparedItems({ items, enabledRecipes, isHighlighted, pv
           {showNames ? 'Hide names' : 'Show names'}
         </button>
       </div>
-      <div className={`${styles.items} ${showNames ? styles.itemsWithNames : styles.itemsCompact}`}>
-        {visibleIngredients.map((item) => {
-          const count = counts[item] || 0
-          const filled = count > 0
-          return (
-            <div key={item} className={`${styles.tray} ${filled ? styles.trayFilled : styles.trayEmpty}`}>
-              <FoodIcon icon={INGREDIENT_EMOJI[item] || '?'} size={22} className={styles.emoji} />
-              {showNames && (
-                <span className={styles.name}>{item.replace(/_/g, ' ')}</span>
-              )}
-              <span className={styles.count}>×{count}</span>
-            </div>
-          )
-        })}
-      </div>
+      {stockedIngredients.length === 0 ? (
+        <div className={styles.emptyHint}>Nothing prepped yet — start cooking!</div>
+      ) : (
+        <div className={`${styles.items} ${showNames ? styles.itemsWithNames : styles.itemsCompact}`}>
+          {stockedIngredients.map(item => {
+            const count = counts[item] || 0
+            const filled = count > 0
+            return (
+              <div key={item} className={`${styles.tray} ${filled ? styles.trayFilled : styles.trayEmpty}`}>
+                <FoodIcon icon={INGREDIENT_EMOJI[item] || '?'} size={22} className={styles.emoji} />
+                {showNames && <span className={styles.name}>{item.replace(/_/g, ' ')}</span>}
+                <span className={styles.count}>×{count}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

@@ -104,7 +104,6 @@ export default function PlaysetPicker({ onStart, onCustomise, onBack }: Props) {
                     <span className={styles.cardName}>{ps.name}</span>
                     {ps.tag && <span className={styles.cardTag}>{ps.tag}</span>}
                   </div>
-                  <div className={styles.cardStations}>{ps.stationsLabel}</div>
                 </div>
 
                 <div className={styles.cardBody}>
@@ -118,7 +117,6 @@ export default function PlaysetPicker({ onStart, onCustomise, onBack }: Props) {
                         <div key={key} className={styles.itemRow}>
                           <span className={styles.itemEmoji}>{recipe.emoji}</span>
                           <span className={styles.itemName}>{recipe.name}</span>
-                          <span className={styles.itemMeta}>${recipe.reward}</span>
                         </div>
                       )
                     })}

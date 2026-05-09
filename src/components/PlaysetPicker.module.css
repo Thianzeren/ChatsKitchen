@@ -1,5 +1,5 @@
 .screen {
-  --ps-accent: #b87333;
+  --ps-accent: #d87428;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -26,7 +26,7 @@
   font-size: var(--base-fs);
   font-weight: 700;
   background: var(--ps-accent);
-  color: #fff;
+  color: #f5ead8;
   cursor: pointer;
   transition: transform 0.1s, filter 0.1s;
 }
@@ -64,12 +64,12 @@
 
 .diffBtnNormal.active {
   background: var(--surface);
-  color: #5cb85c;
+  color: #42a05e;
 }
 
 .diffBtnHard.active {
   background: var(--surface);
-  color: #e05050;
+  color: #c03830;
 }
 
 /* ── Carousel ── */
@@ -93,7 +93,7 @@
   justify-content: center;
   cursor: pointer;
   font-size: 32px;
-  color: #fff;
+  color: #f5ead8;
   transition: filter 0.15s, transform 0.1s;
 }
 
@@ -130,23 +130,44 @@
   cursor: pointer;
   overflow: hidden;
   min-height: 0;
-  transition: border-color 0.18s, box-shadow 0.18s;
+  transition: border-color 0.18s;
 }
 
 .cardHovered {
   border-color: var(--card-color);
-  box-shadow: 0 0 14px -6px var(--card-color);
+}
+
+.cardHovered .cardHeader {
+  background: color-mix(in srgb, var(--card-color) 15%, var(--surface-2));
+  border-bottom-color: color-mix(in srgb, var(--card-color) 30%, var(--border));
 }
 
 .cardSelected {
   border-color: var(--card-color);
-  box-shadow: 0 0 24px -4px var(--card-color);
+}
+
+.cardSelected .cardHeader {
+  background: var(--card-color);
+  border-bottom-color: transparent;
+}
+
+.cardSelected .cardName {
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.cardSelected .cardTag {
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .cardHeader {
   padding: 13px 16px 10px;
   border-bottom: 2px solid var(--border);
   flex-shrink: 0;
+  background: var(--surface-2);
+  transition: background 0.18s, border-bottom-color 0.18s;
 }
 
 .cardTitleRow {
@@ -179,12 +200,6 @@
   border: 1px solid color-mix(in srgb, var(--ps-accent) 30%, transparent);
 }
 
-.cardStations {
-  font-family: 'Space Mono', monospace;
-  font-size: 12px;
-  color: var(--text-faint);
-  margin-top: 2px;
-}
 
 .cardBody {
   flex: 1;
@@ -208,20 +223,20 @@
   border-bottom: 1px solid var(--border);
 }
 
-.sectionLabelRecipes { color: #5a9ab0; }
-.sectionLabelEvents  { color: #c49820; }
+.sectionLabelRecipes { color: #7858cc; }
+.sectionLabelEvents  { color: #c4a020; }
 
 .itemRow {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 7px;
+  padding: 6px 8px;
   border-radius: 8px;
 }
 
 .itemEmoji {
-  font-size: var(--base-fs);
-  width: 22px;
+  font-size: 22px;
+  width: 26px;
   text-align: center;
   flex-shrink: 0;
 }
@@ -233,12 +248,6 @@
   flex: 1;
 }
 
-.itemMeta {
-  font-family: 'Space Mono', monospace;
-  font-size: 13px;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
 
 .evtBadge {
   font-family: 'Space Mono', monospace;
@@ -251,15 +260,15 @@
 }
 
 .evtBadgeHazard {
-  background: rgba(208, 64, 64, 0.15);
-  color: #d06060;
-  border: 1px solid rgba(208, 64, 64, 0.25);
+  background: rgba(192, 56, 48, 0.15);
+  color: #c03830;
+  border: 1px solid rgba(192, 56, 48, 0.3);
 }
 
 .evtBadgeOpportunity {
-  background: rgba(92, 184, 92, 0.12);
-  color: #5cb85c;
-  border: 1px solid rgba(92, 184, 92, 0.25);
+  background: rgba(66, 160, 94, 0.12);
+  color: #42a05e;
+  border: 1px solid rgba(66, 160, 94, 0.25);
 }
 
 /* ── Bottom panel ── */
@@ -353,9 +362,9 @@
   font-family: 'Space Mono', monospace;
   font-size: 14px;
   font-weight: 700;
-  color: #f0c850;
-  background: rgba(240, 200, 80, 0.1);
-  border: 1px solid rgba(240, 200, 80, 0.25);
+  color: #c4a020;
+  background: rgba(196, 160, 32, 0.1);
+  border: 1px solid rgba(196, 160, 32, 0.25);
   border-radius: 5px;
   padding: 2px 8px;
   white-space: nowrap;
@@ -385,15 +394,15 @@
 }
 
 .bdBadgeHazard {
-  background: rgba(208, 64, 64, 0.15);
-  color: #d06060;
-  border: 1px solid rgba(208, 64, 64, 0.25);
+  background: rgba(192, 56, 48, 0.15);
+  color: #c03830;
+  border: 1px solid rgba(192, 56, 48, 0.3);
 }
 
 .bdBadgeOpportunity {
-  background: rgba(92, 184, 92, 0.12);
-  color: #5cb85c;
-  border: 1px solid rgba(92, 184, 92, 0.25);
+  background: rgba(66, 160, 94, 0.12);
+  color: #42a05e;
+  border: 1px solid rgba(66, 160, 94, 0.25);
 }
 
 /* ── Action area ── */
@@ -409,7 +418,7 @@
 
 .cookBtn {
   background: var(--ps-accent);
-  color: #fff;
+  color: #f5ead8;
   border: none;
   border-radius: 14px;
   padding: 14px 0;
@@ -417,18 +426,20 @@
   font-size: 22px;
   font-weight: 700;
   cursor: pointer;
-  transition: filter 0.1s, transform 0.1s;
+  transition: filter 0.1s, transform 0.1s, box-shadow 0.1s;
   width: 100%;
   letter-spacing: 0.5px;
+  box-shadow: 0 4px 0 #8e4e18;
 }
 
 .cookBtn:hover:not(:disabled) {
-  filter: brightness(1.15);
-  transform: scale(1.02);
+  filter: brightness(1.1);
+  transform: translateY(-1px);
 }
 
 .cookBtn:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #8e4e18;
 }
 
 .cookBtn:disabled {

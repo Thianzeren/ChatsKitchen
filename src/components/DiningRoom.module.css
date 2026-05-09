@@ -9,14 +9,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #131313;
-  border-right: 3px solid rgba(200, 132, 26, 0.33);
+  background: var(--surface-4);
+  border-right: 3px solid var(--border);
 }
 
 /* ── Time block ─────────────────────────────── */
 .timeBlock {
-  background: linear-gradient(180deg, #1d1209, #160e06);
-  border-bottom: 2px solid rgba(200, 132, 26, 0.33);
+  background: linear-gradient(180deg, #231e19 0%, #1a1512 100%);
+  border-bottom: 2px solid var(--border);
   padding: 10px 12px 8px;
   display: flex;
   flex-direction: column;
@@ -27,7 +27,7 @@
 .timeLabel {
   font-family: 'Space Mono', monospace;
   font-size: var(--base-fs);
-  color: #c8841a;
+  color: #d87428;
   text-transform: uppercase;
   letter-spacing: 2px;
 }
@@ -35,15 +35,15 @@
 .timeValue {
   font-family: 'Lilita One', cursive;
   font-size: 52px;
-  color: #f0c850;
-  text-shadow: 0 0 24px rgba(240, 200, 80, 0.35);
+  color: #c4a020;
+  text-shadow: 0 0 24px rgba(196, 160, 32, 0.35);
   line-height: 1;
 }
 
 .urgent {
-  color: #f05050 !important;
+  color: #c03830 !important;
   animation: tick-pulse 0.5s ease-in-out infinite alternate;
-  text-shadow: 0 0 24px rgba(240, 80, 80, 0.5) !important;
+  text-shadow: 0 0 24px rgba(192, 56, 48, 0.5) !important;
 }
 
 /* ── Orders header ──────────────────────────── */
@@ -52,26 +52,27 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: #1a1a1a;
-  border-bottom: 1px solid #2a2a2a;
+  background: var(--surface-3);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .ordersTitle {
   font-family: 'Lilita One', cursive;
   font-size: 20px;
-  color: #e0d0b0;
+  color: var(--text);
 }
 
 .ordersCount {
-  background: #c8841a;
-  color: #0d0d0d;
+  background: #d87428;
+  color: #f5ead8;
   font-family: 'Lilita One', cursive;
   font-size: var(--base-fs);
   border-radius: 12px;
   padding: 1px 11px;
   min-width: 28px;
   text-align: center;
+  box-shadow: 0 2px 0 #8e4e18;
 }
 
 .viewToggle {
@@ -90,9 +91,9 @@
 }
 
 .viewToggle:hover {
-  color: #c8841a;
-  background: rgba(200, 132, 26, 0.08);
-  border-color: rgba(200, 132, 26, 0.3);
+  color: #d87428;
+  background: rgba(216, 116, 40, 0.08);
+  border-color: rgba(216, 116, 40, 0.3);
 }
 
 /* ── Orders list ────────────────────────────── */
@@ -109,7 +110,7 @@
 .empty {
   font-family: 'Fredoka', sans-serif;
   font-size: var(--base-fs);
-  color: #5a5048;
+  color: var(--text-faint);
   font-style: italic;
   text-align: center;
   padding: 16px 0;

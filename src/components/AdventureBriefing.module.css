@@ -39,7 +39,7 @@
 .goalLine {
   font-family: 'Lilita One', cursive;
   font-size: 36px;
-  color: #f0c850;
+  color: #c4a020;
 }
 
 .prevResult {
@@ -77,7 +77,7 @@
   font-family: 'Fredoka', sans-serif;
   font-size: 18px;
   font-weight: 700;
-  background: #b87333;
+  background: #d87428;
   color: #fff;
   cursor: pointer;
   transition: transform 0.1s, filter 0.1s;
@@ -159,7 +159,7 @@
 .recipeReward {
   font-family: 'Space Mono', monospace;
   font-size: 18px;
-  color: #f0c850;
+  color: #c4a020;
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -223,6 +223,6 @@
 .paramValue {
   font-family: 'Space Mono', monospace;
   font-size: 18px;
-  color: #f0c850;
+  color: #c4a020;
   font-weight: 700;
 }

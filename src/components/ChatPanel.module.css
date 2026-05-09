@@ -79,7 +79,7 @@
 
 .username { font-weight: 700; margin-right: 4px; color: var(--text); }
 .text { color: var(--text-dim); }
-.system .text { color: #f0c850; font-style: italic; }
+.system .text { color: #c4a020; font-style: italic; }
 .error .text { color: #d94f4f; }
 .success .text { color: #5cb85c; }
 

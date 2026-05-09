@@ -29,17 +29,17 @@ export default function BottomBar({ money, served, lost, twitchStatus, twitchCha
   return (
     <div className={styles.bar}>
       <div className={styles.stat}>
-        <span className={styles.value} style={{ color: '#50d870' }}>${money}</span>
+        <span className={styles.value} style={{ color: '#c4a020' }}>${money}</span>
         <span className={styles.label}>EARNED</span>
       </div>
       <div className={styles.divider} />
       <div className={styles.stat}>
-        <span className={styles.value} style={{ color: '#78c8f0' }}>{served}</span>
+        <span className={styles.value} style={{ color: '#42a05e' }}>{served}</span>
         <span className={styles.label}>SERVED</span>
       </div>
       <div className={styles.divider} />
       <div className={styles.stat}>
-        <span className={styles.value} style={{ color: '#f07860' }}>{lost}</span>
+        <span className={styles.value} style={{ color: '#c03830' }}>{lost}</span>
         <span className={styles.label}>LOST</span>
       </div>
       {starDisplay !== null && (

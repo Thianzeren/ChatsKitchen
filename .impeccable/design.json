@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-09T01:00:00Z",
+  "title": "Design System: Let Chat Cook",
+  "extensions": {
+    "colorMeta": {
+      "torch-flame":    { "role": "primary",   "displayName": "Torch Flame",     "cssVar": "var(--accent)",                  "canonical": "oklch(68% 0.19 45)",  "tonalRamp": ["#1e0e05","#3a1c08","#582e10","#7a4018","#9e5420","#c06428","#d87428","#eeaa6e"] },
+      "torch-shadow":   { "role": "primary",   "displayName": "Torch Shadow",    "cssVar": "var(--accent-deep)",             "canonical": "oklch(42% 0.15 45)",  "tonalRamp": ["#1a0802","#300e06","#50200e","#6e3012","#8e4e18","#a86028","#c07038","#e49058"] },
+      "verdure":        { "role": "secondary", "displayName": "Monster Verdure", "cssVar": "var(--accent-secondary)",        "canonical": "oklch(58% 0.18 155)", "tonalRamp": ["#081c10","#122e1c","#1c4028","#285c38","#347848","#3e9055","#42a05e","#78c88a"] },
+      "verdure-deep":   { "role": "secondary", "displayName": "Verdure Deep",    "cssVar": "var(--accent-secondary-deep)",   "canonical": "oklch(40% 0.15 155)", "tonalRamp": ["#081408","#102010","#182c18","#203c20","#2a6e3e","#388050","#42a05e","#60c878"] },
+      "arcane":         { "role": "tertiary",  "displayName": "Arcane Glimmer",  "cssVar": "var(--accent-tertiary)",         "canonical": "oklch(52% 0.22 285)", "tonalRamp": ["#100820","#201038","#341c60","#4e3a8a","#6046b0","#7858cc","#9878e0","#c0a8f0"] },
+      "arcane-deep":    { "role": "tertiary",  "displayName": "Arcane Deep",     "cssVar": "var(--accent-tertiary-deep)",    "canonical": "oklch(38% 0.22 285)", "tonalRamp": ["#100820","#1c1038","#2a1a58","#4e3a8a","#6046b0","#7858cc","#9878e0","#bca8f0"] },
+      "cave-stone":     { "role": "neutral",   "displayName": "Cave Stone",      "cssVar": "var(--bg)",                      "canonical": "oklch(15% 0.01 55)",  "tonalRamp": ["#0e0c08","#141210","#1a1512","#231e19","#2b2520","#3c3228","#524538","#6b5a4e"] },
+      "cave-dark":      { "role": "neutral",   "displayName": "Cave Dark",       "cssVar": "var(--bg-dark)",                 "canonical": "oklch(12% 0.008 55)", "tonalRamp": ["#0a0806","#0e0c08","#141210","#1a1512","#231e19","#2b2520","#3c3228","#524538"] },
+      "hewn-surface":   { "role": "neutral",   "displayName": "Hewn Surface",    "cssVar": "var(--surface)",                 "canonical": "oklch(20% 0.014 55)", "tonalRamp": ["#0e0c08","#141210","#1a1512","#231e19","#2b2520","#38302a","#4e4038","#6b5a4e"] },
+      "parchment":      { "role": "neutral",   "displayName": "Parchment",       "cssVar": "var(--text)",                    "canonical": "oklch(93% 0.015 80)", "tonalRamp": ["#3a3028","#524538","#6b5a4e","#8a7868","#a08870","#c0a888","#d8c9b5","#f5ead8"] },
+      "dungeon-gold":   { "role": "tertiary",  "displayName": "Dungeon Gold",    "cssVar": "var(--accent-gold)",             "canonical": "oklch(68% 0.16 85)",  "tonalRamp": ["#1e1800","#382c08","#584810","#7a6420","#9e8228","#c0a020","#d4b840","#eed870"] },
+      "ticket-paper":   { "role": "neutral",   "displayName": "Ticket Paper",    "cssVar": null,                             "canonical": "oklch(91% 0.02 80)",  "tonalRamp": ["#2e2618","#3c3020","#524530","#6b5a40","#8a7858","#a09070","#c8b898","#f0e5c8"] },
+      "signal-green":   { "role": "secondary", "displayName": "Signal Green",    "cssVar": null,                             "canonical": "oklch(60% 0.18 150)", "tonalRamp": ["#0a2010","#142e1c","#1e4028","#2a5838","#347248","#3e9055","#4aa854","#78cc80"] },
+      "signal-red":     { "role": "primary",   "displayName": "Signal Red",      "cssVar": null,                             "canonical": "oklch(48% 0.22 25)",  "tonalRamp": ["#1e0808","#380e0e","#581818","#801e1e","#a02828","#c03830","#d85050","#f08080"] },
+      "signal-orange":  { "role": "primary",   "displayName": "Signal Orange",   "cssVar": null,                             "canonical": "oklch(60% 0.20 40)",  "tonalRamp": ["#1e0c04","#382008","#582e10","#784020","#985030","#be6028","#e07030","#f0a068"] },
+      "twitch-purple":  { "role": "tertiary",  "displayName": "Twitch Purple",   "cssVar": null,                             "canonical": "oklch(55% 0.26 295)", "tonalRamp": ["#1c0840","#2e1060","#481880","#6028a8","#7838d0","#9146ff","#a860ff","#c490ff"] }
+    },
+    "typographyMeta": {
+      "display":  { "displayName": "Display",  "purpose": "Game title (banner section) and shift-end score reveals. Max two instances per screen." },
+      "headline": { "displayName": "Headline", "purpose": "Station names, dish names on tickets, overheat labels, bottom bar stat numbers." },
+      "title":    { "displayName": "Title",    "purpose": "Mode button labels, section headers, countdown digits." },
+      "body":     { "displayName": "Body",     "purpose": "Commands, descriptions, chat messages. All gameplay instruction text." },
+      "label":    { "displayName": "Label",    "purpose": "Progress bar text, stat bar labels, ingredient names. Only below 18px when spatially constrained." }
+    },
+    "shadows": [
+      { "name": "tactile-press",    "value": "0 4px 0 var(--accent-deep)",                                               "purpose": "Primary button rest. Collapses to 0 2px 0 on :active." },
+      { "name": "arcane-press",     "value": "0 4px 0 var(--accent-tertiary-deep)",                                      "purpose": "Adventure/PvP button rest. Same mechanics." },
+      { "name": "orders-count-press","value": "0 2px 0 #8e4e18",                                                         "purpose": "Orders count badge in the DiningRoom header." },
+      { "name": "lift",             "value": "0 4px 14px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.06)",              "purpose": "Order tickets floating above the dungeon floor." },
+      { "name": "modal-depth",      "value": "0 20px 50px rgba(0,0,0,0.45)",                                              "purpose": "Overlay panels hovering above the game layer." },
+      { "name": "inset-vignette",   "value": "inset 10px 0 30px rgba(0,0,0,0.3)",                                         "purpose": "Side-shadow on wide split panels for spatial depth." }
+    ],
+    "motion": [
+      { "name": "ease-out-fast",  "value": "cubic-bezier(0.2, 0, 0, 1)",   "purpose": "Default for state transitions: hover, active, color changes." },
+      { "name": "ease-out-float", "value": "cubic-bezier(0.1, 0, 0.2, 1)", "purpose": "Floating text feedback (money, cook completion, cool effect)." },
+      { "name": "duration-snap",  "value": "100ms",                         "purpose": "Instant feedback: button press, bar fill, progress tick." },
+      { "name": "duration-fast",  "value": "150ms",                         "purpose": "Hover transitions, border color shifts." },
+      { "name": "duration-float", "value": "900-1000ms",                    "purpose": "Floating text animations. Ease out, no bounce." }
+    ],
+    "breakpoints": [
+      { "name": "stream-min", "value": "900px",  "purpose": "Minimum width for full gameplay layout." },
+      { "name": "mobile-obs", "value": "375px",  "purpose": "Reference viewport for stream-viewer readability checks. Not a responsive breakpoint." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action: Free Play, Start, Confirm. Tactile press physics.",
+      "html": "<button class=\"ds-btn-primary\">START COOKING</button>",
+      "css": ".ds-btn-primary { font-family: 'Fredoka', sans-serif; font-size: 22px; font-weight: 700; color: #f5ead8; background: #d87428; border: none; border-radius: 12px; padding: 14px 32px; cursor: pointer; box-shadow: 0 4px 0 #8e4e18; transition: filter 150ms cubic-bezier(0.2,0,0,1), transform 100ms cubic-bezier(0.2,0,0,1), box-shadow 100ms cubic-bezier(0.2,0,0,1); line-height: 1; } .ds-btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); } .ds-btn-primary:active { transform: translateY(2px); box-shadow: 0 2px 0 #8e4e18; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary action: Options, Cancel, How To Play. Stone-surface, no press shadow.",
+      "html": "<button class=\"ds-btn-ghost\">HOW TO PLAY</button>",
+      "css": ".ds-btn-ghost { font-family: 'Fredoka', sans-serif; font-size: 20px; font-weight: 700; color: #7a6555; background: transparent; border: 1.5px solid #3c3228; border-radius: 10px; padding: 10px 20px; cursor: pointer; transition: border-color 150ms, color 150ms; line-height: 1; } .ds-btn-ghost:hover { border-color: #524538; color: #a08870; }"
+    },
+    {
+      "name": "Order Ticket",
+      "kind": "card",
+      "refersTo": "order-ticket",
+      "description": "Physical parchment artifact. Urgency states: normal (green), warning (orange), critical (red).",
+      "html": "<div class=\"ds-ticket ds-ticket--normal\"><div class=\"ds-ticket__header\"><span class=\"ds-ticket__num\">#03</span><span class=\"ds-ticket__dish\">Korean Fried Chicken</span><span class=\"ds-ticket__reward\">$75</span></div><div class=\"ds-ticket__body\"><div class=\"ds-ticket__ingredients\"><div class=\"ds-ticket__tile\"><span class=\"ds-ticket__emoji\">🍗</span><span class=\"ds-ticket__iname\">CHICKEN</span></div></div><div class=\"ds-ticket__patience\"><div class=\"ds-ticket__patience-fill\" style=\"width:72%\"></div></div></div><div class=\"ds-ticket__tear\"></div></div>",
+      "css": ".ds-ticket { position: relative; width: 180px; border-radius: 8px 8px 0 0; box-shadow: 0 4px 14px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.06); font-family: 'Space Mono', monospace; } .ds-ticket::before { content: ''; position: absolute; top: -1px; left: 50%; transform: translateX(-50%); width: 13px; height: 13px; background: #141210; border-radius: 50%; z-index: 3; } .ds-ticket--normal .ds-ticket__header { background: linear-gradient(160deg, #4aa854, #2a6e3e); } .ds-ticket--warning .ds-ticket__header { background: linear-gradient(160deg, #e07030, #b85020); } .ds-ticket--critical .ds-ticket__header { background: linear-gradient(160deg, #c03830, #8e2020); } .ds-ticket__header { border-radius: 8px 8px 0 0; padding: 14px 10px 10px; display: flex; align-items: center; gap: 6px; } .ds-ticket__num { font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0; } .ds-ticket__dish { font-family: 'Lilita One', cursive; font-size: 16px; color: rgba(255,255,255,0.9); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-ticket__reward { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.85); margin-left: auto; flex-shrink: 0; } .ds-ticket__body { background: #f0e5c8; padding: 7px 9px 8px; } .ds-ticket__ingredients { display: flex; gap: 4px; } .ds-ticket__tile { display: flex; flex-direction: column; align-items: center; gap: 2px; background: rgba(0,0,0,0.06); border-radius: 6px; padding: 5px 6px; flex: 1; } .ds-ticket__emoji { font-size: 28px; line-height: 1; } .ds-ticket__iname { font-size: 10px; font-family: 'Space Mono', monospace; color: #5a5040; text-transform: uppercase; font-weight: 700; } .ds-ticket__patience { background: rgba(0,0,0,0.12); border-radius: 4px; height: 8px; overflow: hidden; margin-top: 5px; } .ds-ticket__patience-fill { height: 100%; background: #4aa854; border-radius: 4px; transition: width 0.1s linear; } .ds-ticket__tear { height: 11px; background-color: #f0e5c8; background-image: radial-gradient(circle, #141210 3.5px, transparent 3.5px); background-size: 16px 11px; background-position: 4px center; border-top: 1px dashed rgba(0,0,0,0.13); }"
+    },
+    {
+      "name": "Station Card",
+      "kind": "card",
+      "refersTo": "station-card",
+      "description": "Game station with heat-state border and idle command hint. Border IS the heat gauge.",
+      "html": "<div class=\"ds-station ds-station--cool\"><div class=\"ds-station__label\"><span class=\"ds-station__emoji\">🔥</span><span class=\"ds-station__name\">Grill</span><span class=\"ds-station__cap\">0/2</span></div><div class=\"ds-station__idle\"><div class=\"ds-station__idle-cmd\">!grill &lt;ingredient&gt;</div><div class=\"ds-station__idle-hint\">available</div></div></div>",
+      "css": ".ds-station { position: relative; background: rgba(35,30,25,0.85); border: 4px solid #42a05e; border-radius: 10px; padding: 10px; min-width: 200px; transition: border-color 0.4s ease; } .ds-station--cool { border-color: #42a05e; } .ds-station--warm { border-color: #c4a020; } .ds-station--hot { border-color: #e07030; } .ds-station--fire { border-color: #c03830; } .ds-station__label { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; } .ds-station__emoji { font-size: 20px; line-height: 1; } .ds-station__name { font-family: 'Lilita One', cursive; font-size: 18px; color: #f5ead8; flex: 1; } .ds-station__cap { font-family: 'Space Mono', monospace; font-size: 16px; color: #a08870; } .ds-station__idle { text-align: center; padding: 8px 4px; } .ds-station__idle-cmd { font-family: 'Space Mono', monospace; font-size: 14px; color: #3a3028; letter-spacing: 0.3px; } .ds-station__idle-hint { font-family: 'Space Mono', monospace; font-size: 10px; color: #2e2820; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 3px; }"
+    },
+    {
+      "name": "Bottom Stats Bar",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Fixed 56px bar at bottom of gameplay screen. Lilita One 28px values, Space Mono 12px labels.",
+      "html": "<div class=\"ds-bottom-bar\"><div class=\"ds-stat\"><span class=\"ds-stat-val ds-stat-money\">$1,240</span><span class=\"ds-stat-lbl\">EARNED</span></div><div class=\"ds-divider\"></div><div class=\"ds-stat\"><span class=\"ds-stat-val ds-stat-served\">8</span><span class=\"ds-stat-lbl\">SERVED</span></div><div class=\"ds-divider\"></div><div class=\"ds-stat\"><span class=\"ds-stat-val ds-stat-lost\">2</span><span class=\"ds-stat-lbl\">LOST</span></div></div>",
+      "css": ".ds-bottom-bar { height: 56px; background: #1a1512; border-top: 2px solid #3c3228; display: flex; align-items: center; padding: 0 16px; } .ds-stat { display: flex; align-items: baseline; gap: 6px; padding: 0 14px; } .ds-stat-val { font-family: 'Lilita One', cursive; font-size: 28px; line-height: 1; } .ds-stat-money { color: #c4a020; } .ds-stat-served { color: #42a05e; } .ds-stat-lost { color: #c03830; } .ds-stat-lbl { font-family: 'Space Mono', monospace; font-size: 12px; color: #7a6555; text-transform: uppercase; letter-spacing: 0.08em; } .ds-divider { width: 1px; height: 28px; background: #3c3228; flex-shrink: 0; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Channel name input, local chat input. A slot cut into stone.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\">TWITCH CHANNEL</label><input class=\"ds-input\" type=\"text\" placeholder=\"channelname\" /></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; } .ds-field-label { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; color: #9146ff; letter-spacing: 0.05em; text-transform: uppercase; } .ds-input { background: #1e1a14; border: 1.5px solid #3c3228; border-radius: 8px; padding: 10px 14px; color: #f5ead8; font-family: 'Fredoka', sans-serif; font-size: 18px; outline: none; transition: border-color 150ms; } .ds-input::placeholder { color: #4e4038; } .ds-input:focus { border-color: #d87428; } .ds-input:disabled { opacity: 0.6; cursor: not-allowed; }"
+    },
+    {
+      "name": "Chat Message Row",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "A single message in the chat panel feed.",
+      "html": "<div class=\"ds-chat-msg\"><span class=\"ds-chat-user\" style=\"color:#42a05e\">katya</span><span class=\"ds-chat-text\">!grill beef</span></div>",
+      "css": ".ds-chat-msg { display: flex; gap: 8px; padding: 3px 10px; font-family: 'Space Mono', monospace; font-size: 16px; line-height: 1.4; } .ds-chat-msg:hover { background: rgba(255,255,255,0.03); } .ds-chat-user { font-weight: 700; flex-shrink: 0; } .ds-chat-text { color: #d8c9b5; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Dungeon Tavern Board",
+    "overview": "This is a cooking game played in a dungeon — specifically, the kind of warm, earthy, survival-cooking dungeon that Dungeon Meshi depicts. The visual language lives at the intersection of a torch-lit adventurer's camp kitchen and a Jackbox party screen: dark cave stone behind everything, warm fire-orange commanding every action, parchment-colored text that reads from across a Twitch stream on a phone.\n\nThe palette draws from dungeon ecology: dark warm stone, amber torch fire, earthy monster herb greens, alchemical purple. These are not decorative choices — they map to game states. Torch-orange is action and heat. Verdure green is success. Signal red is danger. Dungeon gold is reward.\n\nThis system rejects four failure modes: SaaS dashboard, streaming overlay, cute kawaii, and fantasy RPG title screen.",
+    "keyCharacteristics": [
+      "Dark warm dungeon stone as the base layer; all surfaces warm-tinted, never cold grey",
+      "Broadcast-first scale: 18px minimum for all text, key game elements 22-56px",
+      "Full palette: torch-flame (primary action), verdure (success), arcane (magic/adventure), dungeon-gold (reward)",
+      "Tactile press physics on buttons: hard bottom shadow that collapses on active",
+      "Order tickets as physical parchment artifacts with perforated edges",
+      "CSS custom property family (--accent, --accent-secondary, --accent-tertiary, --accent-gold) for all accent colors"
+    ],
+    "rules": [
+      { "name": "The Dungeon Fire Rule",    "body": "Torch Flame (var(--accent)) is the sole primary action color. One fire color, one meaning.", "section": "colors" },
+      { "name": "The Warm Stone Rule",      "body": "Every neutral surface is tinted toward amber. Cold grey is prohibited.", "section": "colors" },
+      { "name": "The Gold Scarcity Rule",   "body": "Dungeon Gold (var(--accent-gold)) appears only on money values and reward feedback. Not decorative.", "section": "colors" },
+      { "name": "The Broadcast Scale Rule", "body": "Base font size is var(--base-fs) = 18px (24px on mobile). Non-negotiable.", "section": "typography" },
+      { "name": "The Flat Surface Rule",    "body": "No ambient box-shadow on static containers. Tonal contrast handles depth. Shadows for button press and overlays only.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use var(--accent) for every primary interactive action.",
+      "Do size all visible text at var(--base-fs) = 18px minimum.",
+      "Do apply tactile press shadow (0 4px 0 var(--accent-deep)) on primary buttons.",
+      "Do treat order tickets as physical parchment: perforated tears, punch holes, aged paper.",
+      "Do use tonal contrast for surface elevation — shadows for overlays and button press only.",
+      "Do use the CSS custom property family (var(--accent) etc.) rather than hardcoding hex.",
+      "Do keep broadcast scale in mind: readable on a 375px phone watching a stream."
+    ],
+    "donts": [
+      "Don't use #ffffff or #000000. Cave Dark is the floor; Parchment is the ceiling.",
+      "Don't make it look like a SaaS dashboard: no white cards, no muted blue CTAs.",
+      "Don't make it look like a streaming overlay: no neon on black, no OBS widgets.",
+      "Don't make it cute or pastel. The kitchen has weight.",
+      "Don't add fantasy RPG title screen aesthetics: no dark purple auras, no gothic darkness.",
+      "Don't use border-left stripes as status accents.",
+      "Don't use gradient text (background-clip: text).",
+      "Don't use Dungeon Gold decoratively — money and rewards only.",
+      "Don't use Twitch Purple outside Twitch integration surfaces."
+    ]
+  }
+}

@@ -23,7 +23,7 @@
 }
 
 /* connected */
-.connected .dot  { background: #4ade80; box-shadow: 0 0 5px #4ade80aa; }
+.connected .dot  { background: #42a05e; box-shadow: 0 0 5px #42a05eaa; }
 .connected .label { color: #a3f0bc; }
 
 /* connecting */
