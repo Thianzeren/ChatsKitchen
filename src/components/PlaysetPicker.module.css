@@ -26,7 +26,7 @@
   font-size: var(--base-fs);
   font-weight: 700;
   background: var(--ps-accent);
-  color: #fff;
+  color: #f5ead8;
   cursor: pointer;
   transition: transform 0.1s, filter 0.1s;
 }
@@ -93,7 +93,7 @@
   justify-content: center;
   cursor: pointer;
   font-size: 32px;
-  color: #fff;
+  color: #f5ead8;
   transition: filter 0.15s, transform 0.1s;
 }
 
