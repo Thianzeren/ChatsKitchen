@@ -17,13 +17,13 @@ interface Props {
 
 export default function PreparedItems({ items, enabledRecipes, isHighlighted, pvpMode, redItems, blueItems, redMoney, blueMoney }: Props) {
   const [showNames, setShowNames] = useState(() => {
-    const stored = localStorage.getItem('preparedItems.showNames')
+    const stored = localStorage.getItem('chatsKitchen_preparedItemsShowNames')
     return stored === null ? true : stored === 'true'
   })
 
   const toggleShowNames = () => setShowNames(s => {
     const next = !s
-    localStorage.setItem('preparedItems.showNames', String(next))
+    localStorage.setItem('chatsKitchen_preparedItemsShowNames', String(next))
     return next
   })
 

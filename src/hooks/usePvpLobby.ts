@@ -20,20 +20,24 @@ export function usePvpLobby(
     setScreen('freeplaysetup')
   }, [setScreen])
 
+  const balanceLobby = useCallback(() => {
+    setPvpLobby(prev => {
+      if (!prev) return prev
+      const all = [...prev.red, ...prev.blue].sort(() => Math.random() - 0.5)
+      return {
+        red: all.filter((_, i) => i % 2 === 0),
+        blue: all.filter((_, i) => i % 2 !== 0),
+      }
+    })
+    showToast(`⚖️ Teams balanced`)
+  }, [showToast])
+
   const handleLobbyMetaCommand = useCallback((_user: string, text: string, isMod: boolean) => {
     if (!isMod) return
     const cmd = text.trim().toLowerCase()
 
     if (cmd === '!balance') {
-      setPvpLobby(prev => {
-        if (!prev) return prev
-        const all = [...prev.red, ...prev.blue].sort(() => Math.random() - 0.5)
-        return {
-          red: all.filter((_, i) => i % 2 === 0),
-          blue: all.filter((_, i) => i % 2 !== 0),
-        }
-      })
-      showToast(`⚖️ Teams balanced`)
+      balanceLobby()
       return
     }
 
@@ -125,6 +129,7 @@ export function usePvpLobby(
     pvpLobbyRef,
     startPvp,
     startPvpGame,
+    balanceLobby,
     handleLobbyMetaCommand,
     handleLobbyJoin,
   }

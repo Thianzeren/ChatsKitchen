@@ -81,7 +81,7 @@ export default function App() {
   })
   const [audioSettings, setAudioSettings] = useState<AudioSettings>(() => {
     try {
-      const saved = localStorage.getItem('audioSettings')
+      const saved = localStorage.getItem('chatsKitchen_audioSettings')
       return saved ? { ...DEFAULT_AUDIO_SETTINGS, ...JSON.parse(saved) } : DEFAULT_AUDIO_SETTINGS
     } catch {
       return DEFAULT_AUDIO_SETTINGS
@@ -123,7 +123,7 @@ export default function App() {
     toastTimerRef.current = setTimeout(() => setToast(null), 2500)
   }, [])
 
-  const { pvpLobby, setPvpLobby, pvpLobbyRef, startPvp, startPvpGame, handleLobbyMetaCommand, handleLobbyJoin } = usePvpLobby(setScreen, showToast)
+  const { pvpLobby, setPvpLobby, pvpLobbyRef, startPvp, startPvpGame, balanceLobby, handleLobbyMetaCommand, handleLobbyJoin } = usePvpLobby(setScreen, showToast)
 
   const tutorial = useTutorialState(dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, setChatOpen)
   const {
@@ -409,7 +409,7 @@ export default function App() {
 
   const handleAudioChange = useCallback((settings: AudioSettings) => {
     setAudioSettings(settings)
-    localStorage.setItem('audioSettings', JSON.stringify(settings))
+    localStorage.setItem('chatsKitchen_audioSettings', JSON.stringify(settings))
   }, [])
 
   const handleTwitchChannelChange = useCallback((ch: string | null) => {
@@ -431,13 +431,13 @@ export default function App() {
     resetTutorial()
 
     try {
-      localStorage.setItem('audioSettings', JSON.stringify(DEFAULT_AUDIO_SETTINGS))
+      localStorage.setItem('chatsKitchen_audioSettings', JSON.stringify(DEFAULT_AUDIO_SETTINGS))
       localStorage.removeItem('chatsKitchen_adventureBestRun')
       localStorage.removeItem('chatsKitchen_gameOptions')
       localStorage.removeItem('chatsKitchen_hideTutorialPrompt')
-      localStorage.removeItem('preparedItems.showNames')
-      localStorage.removeItem('diningRoom.simpleTickets')
-      localStorage.removeItem('kitchen.showCommands')
+      localStorage.removeItem('chatsKitchen_preparedItemsShowNames')
+      localStorage.removeItem('chatsKitchen_diningRoomSimpleTickets')
+      localStorage.removeItem('chatsKitchen_kitchenShowCommands')
     } catch {
       // Ignore storage failures and keep the in-memory reset behavior.
     }
@@ -488,11 +488,7 @@ export default function App() {
             [other]: prev[other].filter(u => u !== username),
           }
         })}
-        onBalance={() => setPvpLobby(prev => {
-          if (!prev) return prev
-          const all = [...prev.red, ...prev.blue].sort(() => Math.random() - 0.5)
-          return { red: all.filter((_, i) => i % 2 === 0), blue: all.filter((_, i) => i % 2 !== 0) }
-        })}
+        onBalance={balanceLobby}
         onKick={username => setPvpLobby(prev => {
           if (!prev) return prev
           return {

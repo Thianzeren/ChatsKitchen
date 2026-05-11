@@ -65,7 +65,7 @@ export function useBotSimulation(
   enabled: boolean,
 ) {
   const stateRef = useRef(state)
-  useEffect(() => { stateRef.current = state }, [state])
+  stateRef.current = state
 
   useEffect(() => {
     if (!enabled) return

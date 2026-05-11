@@ -22,7 +22,7 @@ interface Props {
 
 export default function OrdersBar({ state, isHighlighted, isGlitched }: Props) {
   const [simpleTickets, setSimpleTickets] = useState(
-    () => localStorage.getItem('diningRoom.simpleTickets') === 'true'
+    () => localStorage.getItem('chatsKitchen_diningRoomSimpleTickets') === 'true'
   )
   const [shuffleSeed, setShuffleSeed] = useState(0)
 
@@ -34,7 +34,7 @@ export default function OrdersBar({ state, isHighlighted, isGlitched }: Props) {
 
   const toggleSimple = () => setSimpleTickets(v => {
     const next = !v
-    localStorage.setItem('diningRoom.simpleTickets', String(next))
+    localStorage.setItem('chatsKitchen_diningRoomSimpleTickets', String(next))
     return next
   })
 
