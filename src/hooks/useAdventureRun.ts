@@ -4,6 +4,19 @@ import { GameAction } from '../state/gameReducer'
 import { DEFAULT_GAME_OPTIONS } from '../state/defaultOptions'
 import { ADVENTURE_SHIFT_DURATION, getAdventureGoal, pickAdventureRecipes } from '../data/adventureMode'
 
+function dispatchAdventureReset(dispatch: Dispatch<GameAction>, recipes: string[]) {
+  dispatch({
+    type: 'RESET',
+    shiftDuration: ADVENTURE_SHIFT_DURATION,
+    cookingSpeed: 1,
+    orderSpeed: 1,
+    orderSpawnRate: 1,
+    stationCapacity: DEFAULT_GAME_OPTIONS.stationCapacity,
+    restrictSlots: false,
+    enabledRecipes: recipes,
+  })
+}
+
 export function useAdventureRun(
   dispatch: Dispatch<GameAction>,
   setScreen: (s: Screen) => void,
@@ -37,14 +50,7 @@ export function useAdventureRun(
       accumulatedPlayerStats: {},
     }
     setAdventureRun(run)
-    dispatch({
-      type: 'RESET',
-      shiftDuration: ADVENTURE_SHIFT_DURATION,
-      cookingSpeed: 1, orderSpeed: 1, orderSpawnRate: 1,
-      stationCapacity: DEFAULT_GAME_OPTIONS.stationCapacity,
-      restrictSlots: false,
-      enabledRecipes: recipes,
-    })
+    dispatchAdventureReset(dispatch, recipes)
     setScreen('adventurebriefing')
   }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef])
 
@@ -59,14 +65,7 @@ export function useAdventureRun(
       currentRecipes: nextRecipes,
       currentGoal: getAdventureGoal(nextShift),
     })
-    dispatch({
-      type: 'RESET',
-      shiftDuration: ADVENTURE_SHIFT_DURATION,
-      cookingSpeed: 1, orderSpeed: 1, orderSpawnRate: 1,
-      stationCapacity: DEFAULT_GAME_OPTIONS.stationCapacity,
-      restrictSlots: false,
-      enabledRecipes: nextRecipes,
-    })
+    dispatchAdventureReset(dispatch, nextRecipes)
     setScreen('adventurebriefing')
   }, [dispatch, setScreen])
 

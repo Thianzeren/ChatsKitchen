@@ -88,10 +88,16 @@ function addStat(state: GameState, user: string, stat: keyof PlayerStats, amount
   return { ...state, playerStats: { ...state.playerStats, [user]: { ...prev, [stat]: prev[stat] + amount } } }
 }
 
-function getStationCapacity(stationId: string, capacity: StationCapacity, restricted: boolean): number {
+export function getStationCapacity(stationId: string, capacity: StationCapacity, restricted: boolean): number {
   if (!restricted) return Infinity
   if (HEAT_EXEMPT_STATIONS.has(stationId)) return capacity.chopping
   return capacity.cooking
+}
+
+const PAST_TENSE: Record<string, string> = {
+  chop: 'chopped', grill: 'grilled', fry: 'fried', boil: 'boiled', toast: 'toasted',
+  roast: 'roasted', stirfry: 'stir-fried', steam: 'steamed', simmer: 'simmered',
+  cook: 'cooked', mix: 'mixed', grind: 'ground', knead: 'kneaded',
 }
 
 function isUserBusy(state: GameState, user: string): boolean {
@@ -301,8 +307,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         state: 'cooking',
       }
 
-      const PAST_TENSE: Record<string, string> = { chop: 'chopped', grill: 'grilled', fry: 'fried', boil: 'boiled', toast: 'toasted', roast: 'roasted', stirfry: 'stir-fried', steam: 'steamed', simmer: 'simmered', cook: 'cooked', mix: 'mixed', grind: 'ground', knead: 'kneaded' }
-
       if (matchedStep.duration === 0) {
         const withStat = addStat(afterRequire, user, 'cooked', 1)
         const instantItems = [...teamPrepItems(withStat, user), matchedStep.produces]
@@ -460,7 +464,22 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const moneyMultiplier = state.moneyMultiplier && now < state.moneyMultiplier.expiresAt
         ? state.moneyMultiplier : undefined
 
-      return { ...state, stations: newStations, activeUsers: newActiveUsers, preparedItems: newPreparedItems, redPreparedItems: state.teams ? newRedPreparedItems : state.redPreparedItems, bluePreparedItems: state.teams ? newBluePreparedItems : state.bluePreparedItems, playerStats: newPlayerStats, orders, lost, timeLeft, chatMessages: messages.slice(-200), nextMessageId: nextMsgId, cookingSpeedModifier, moneyMultiplier }
+      return {
+        ...state,
+        stations: newStations,
+        activeUsers: newActiveUsers,
+        preparedItems: newPreparedItems,
+        redPreparedItems: state.teams ? newRedPreparedItems : state.redPreparedItems,
+        bluePreparedItems: state.teams ? newBluePreparedItems : state.bluePreparedItems,
+        playerStats: newPlayerStats,
+        orders,
+        lost,
+        timeLeft,
+        chatMessages: messages.slice(-200),
+        nextMessageId: nextMsgId,
+        cookingSpeedModifier,
+        moneyMultiplier,
+      }
     }
 
     case 'ADJUST_COOK_TIMES': {

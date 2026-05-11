@@ -64,7 +64,7 @@ ChatsKitchen/
 
 `App.tsx` owns top-level screen state as a union type:
 ```
-'menu' | 'pvplobby' | 'adventurebriefing' | 'options' | 'freeplaysetup' | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'adventureshiftpassed' | 'adventurerunend'
+'menu' | 'pvplobby' | 'adventurebriefing' | 'options' | 'playsetpicker' | 'freeplaysetup' | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'adventureshiftpassed' | 'adventurerunend' | 'credits'
 ```
 No router library — screens are conditionally rendered components.
 
@@ -92,12 +92,15 @@ When the game starts, the roster is merged into the reducer's initial state via 
 | `!join blue` | Joins Blue Team directly (moves if already on Red) |
 | `!join` | Auto-joins the team with fewer players (Red wins tie); only works if not already on a team |
 
-**Lobby mod commands** (handled in `handleLobbyMetaCommand`, mods/broadcaster only):
+**Lobby mod commands** (handled in `handleLobbyMetaCommand` inside `usePvpLobby.ts`, mods/broadcaster only):
 
 | Command | Effect |
 |---------|--------|
 | `!balance` | Randomly shuffles all joined players evenly across both teams |
 | `!move red @name` / `!move blue @name` | Moves a joined player to the specified team; shows ❌ toast if player not found |
+| `!kick @name` | Removes a player from the lobby entirely |
+
+The balance shuffle logic lives in `balanceLobby` (a `useCallback` exported from `usePvpLobby`). Both the `!balance` chat command and the "Balance Teams" UI button call this same function — do not duplicate the shuffle logic inline.
 
 Drag-and-drop is also available in the `PvPLobby` component UI — players can be dragged between team cards.
 
@@ -209,7 +212,24 @@ interface GameState {
 
 State is **transient** — reset on each new game. Nothing is persisted.
 
-`GameOptions` is separate from `GameState` and lives in `App.tsx`. It is persisted to `localStorage` (`chatsKitchen_gameOptions`):
+`GameOptions` is separate from `GameState` and lives in `App.tsx`. It is persisted to `localStorage` (`chatsKitchen_gameOptions`).
+
+### localStorage Keys
+
+All keys use the `chatsKitchen_` prefix + camelCase. The UI preference keys (`ShowNames`, `SimpleTickets`, `ShowCommands`) are written by their respective components and removed by `handleResetAll` in `App.tsx`.
+
+| Key | Written by | Value |
+|-----|-----------|-------|
+| `chatsKitchen_gameOptions` | `App.tsx` | JSON — `GameOptions` |
+| `chatsKitchen_audioSettings` | `App.tsx` | JSON — `AudioSettings` |
+| `chatsKitchen_twitchChannel` | `App.tsx` | string |
+| `chatsKitchen_freePlayHighScore` | `useGameSession.ts` | number string |
+| `chatsKitchen_freePlayHistory` | `useGameSession.ts` | JSON — `RoundRecord[]` |
+| `chatsKitchen_adventureBestRun` | `useAdventureRun.ts` | JSON — `AdventureBestRun` |
+| `chatsKitchen_hideTutorialPrompt` | `useTutorialState.ts` | `'true'` |
+| `chatsKitchen_preparedItemsShowNames` | `PreparedItems.tsx` | `'true'` / `'false'` |
+| `chatsKitchen_diningRoomSimpleTickets` | `DiningRoom.tsx` | `'true'` / `'false'` |
+| `chatsKitchen_kitchenShowCommands` | `Kitchen.tsx` | `'true'` / `'false'` |
 
 ```typescript
 interface GameOptions {
@@ -366,19 +386,23 @@ Math.max(5000, 14000 - shift * 1000) ms
 | File | Responsibility |
 |------|---------------|
 | `src/App.tsx` | Screen routing, game state init, Twitch/bot wiring |
-| `src/state/gameReducer.ts` | **All game logic** — the single source of truth |
+| `src/state/gameReducer.ts` | **All game logic** — the single source of truth; also exports `getStationCapacity` |
 | `src/state/types.ts` | All TypeScript interfaces and types |
 | `src/state/commandProcessor.ts` | `parseCommand()` — maps chat text to `GameAction` |
-| `src/data/recipes.ts` | `RECIPES`, `STATION_DEFS`, `BOT_NAMES`, color palette |
+| `src/state/defaultOptions.ts` | `DEFAULT_GAME_OPTIONS` constant |
+| `src/data/recipes.ts` | `RECIPES`, `STATION_DEFS`, `HEAT_EXEMPT_STATIONS`, `BOT_NAMES`, color palette |
 | `src/data/kitchenEventDefs.ts` | Event definitions, tunable constants, generator functions (`makePowerTripEquation`, `makeTypingFrenzyPhrase`, `makeDanceSequence`, `makeAnagram`, `seededScramble`) |
 | `src/hooks/useGameLoop.ts` | 100ms TICK dispatching, order spawning, game-over detection |
 | `src/hooks/useTwitchChat.ts` | tmi.js client lifecycle, connect/disconnect; passes `isMod` (mod/broadcaster) to message handler |
 | `src/hooks/useKitchenEvents.ts` | Kitchen events lifecycle — spawn timer, command matching, resolve/fail dispatch, audio triggers |
+| `src/hooks/usePvpLobby.ts` | PvP lobby state, `balanceLobby`, `handleLobbyJoin`, `handleLobbyMetaCommand` |
+| `src/hooks/useAdventureRun.ts` | Adventure run state, shift progression, best-run persistence |
+| `src/hooks/useGameSession.ts` | Free Play result state — finalStats, high score, history, star thresholds |
+| `src/hooks/useBotSimulation.ts` | AI player logic, action priority, cooldown awareness |
 | `src/components/EventCardOverlay.tsx` | Receipt-ticket overlay for active kitchen events; dance memorise/type phases |
 | `src/components/Toast.tsx` | Brief fixed-position toast notification for mod command feedback |
 | `src/components/FoodIcon.tsx` | Renders food icons — `<img>` for `/`-prefixed paths, `<span>` for emoji strings |
 | `src/components/PvPLobby.tsx` | Pre-game team selection screen; drag-and-drop roster management; `!red`/`!blue`/`!join`/`!join red`/`!join blue` join flow |
-| `src/hooks/useBotSimulation.ts` | AI player logic, action priority, cooldown awareness |
 
 ---
 
@@ -445,10 +469,12 @@ When implementing a new feature of similar scope, create a spec + plan document 
 5. **Chat messages are capped at 200** — `ADD_CHAT` slices to `chatMessages.slice(-200)`.
 6. **`cookStart` is wall-clock time** — slot progress is `elapsed = now - slot.cookStart`. On unpause, dispatch `ADJUST_COOK_TIMES` to shift all `cookStart` values forward by the pause duration, otherwise paused time counts as elapsed cook time.
 7. **`heatApplied` and `heatPerCook` on slots** — each `StationSlot` has `heatApplied: number` (init 0, tracks heat already contributed) and `heatPerCook: number` (random 10–20, rolled at cook start). The TICK loop applies `progress × heatPerCook - heatApplied` each tick. When adding new slot-creating code paths, always initialise both to 0.
-8. **Heat-exempt stations** — `cutting_board`, `mixing_bowl`, `grinder`, and `knead_board` are all exempt from heat. Treat them identically in all heat-related checks (TICK heat loop, COOL guard, `getStationCapacity`, bot cool-skip). Both `Kitchen.tsx` and `gameReducer.ts` have local `getStationCapacity` — keep them in sync. All four use `capacity.chopping` for slot limits.
+8. **Heat-exempt stations** — `cutting_board`, `mixing_bowl`, `grinder`, and `knead_board` are all exempt from heat. The canonical set is `HEAT_EXEMPT_STATIONS` exported from `recipes.ts` — always import it, never redefine it locally. Treat all four identically in heat-related checks (TICK heat loop, COOL guard, `getStationCapacity`, bot cool-skip). `getStationCapacity` is exported from `gameReducer.ts` and imported by `Kitchen.tsx` — do not duplicate it. All four exempt stations use `capacity.chopping` for slot limits.
 9. **`!red`, `!blue`, `!join red`, `!join blue` are lobby-only** — These commands are intercepted exclusively in `handleTwitchMessage` when `screen === 'pvplobby'` and never reach `commandProcessor.ts`. Do not add `case 'red'` or `case 'blue'` to `commandProcessor.ts` — this would allow players to switch teams mid-game, silently rerouting cooked ingredients to the wrong team's prep pool.
 10. **PvP lobby state lives in App.tsx, not GameState** — `pvpLobby: { red: string[], blue: string[] } | null` is pre-game state. It is merged into the reducer's RESET action as `teams` when the game starts, then cleared. Do not store it in `GameState`.
 11. **`pvpLobbyRef` for stale closure safety** — Lobby mod commands (`!move`) check `pvpLobbyRef.current` synchronously before calling `setPvpLobby`. Reading `pvpLobby` state directly inside a `useCallback` would see a stale snapshot.
+12. **Stale-ref update pattern** — When mirroring React state into a ref for use inside intervals/callbacks, update it inline (`ref.current = value`) not inside a `useEffect`. The `useEffect` runs after render, leaving a one-tick-old snapshot available to any interval that fires between render and effect execution.
+13. **`handleChatSend` vs `handleTwitchMessage` asymmetry** — Local chat (`handleChatSend`) always calls `handleCommand` regardless of tutorial state; Twitch chat skips it during tutorial (`if (!isTutorialRef.current) handleCommand(...)`). This is intentional — local users can practice commands during the tutorial. Do not "fix" the asymmetry.
 
 ## Workflow
 

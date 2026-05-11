@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { GameState } from '../state/types'
-import { getEnabledStations, HEAT_EXEMPT_STATIONS } from '../data/recipes'
+import { getEnabledStations } from '../data/recipes'
+import { getStationCapacity } from '../state/gameReducer'
 import Station from './Station'
 import PreparedItems from './PreparedItems'
 import CommandsStrip from './CommandsStrip'
@@ -11,20 +12,15 @@ interface Props {
   tutorialHighlight?: string | null
 }
 
-function getStationCapacity(stationId: string, cap: GameState['stationCapacity'], restricted: boolean): number {
-  if (!restricted) return Infinity
-  return HEAT_EXEMPT_STATIONS.has(stationId) ? cap.chopping : cap.cooking
-}
-
 export default function Kitchen({ state, tutorialHighlight }: Props) {
   const stationIds = getEnabledStations(state.enabledRecipes)
   const [showCommands, setShowCommands] = useState(() =>
-    localStorage.getItem('kitchen.showCommands') !== 'false'
+    localStorage.getItem('chatsKitchen_kitchenShowCommands') !== 'false'
   )
 
   const toggleCommands = () => setShowCommands(v => {
     const next = !v
-    localStorage.setItem('kitchen.showCommands', String(next))
+    localStorage.setItem('chatsKitchen_kitchenShowCommands', String(next))
     return next
   })
 
