@@ -10,6 +10,8 @@ import { computeStarThresholds } from './data/starThresholds'
 import { useGameLoop } from './hooks/useGameLoop'
 import { useBotSimulation } from './hooks/useBotSimulation'
 import { useTwitchChat } from './hooks/useTwitchChat'
+import { useRoomHost } from './hooks/useRoomHost'
+import { gameStateToSnapshot } from './state/snapshot'
 import { useGameAudio } from './audio/useGameAudio'
 import { useViewportScale } from './hooks/useViewportScale'
 import MainMenu from './components/MainMenu'
@@ -97,6 +99,10 @@ export default function App() {
   const gameOptionsRef = useRef(gameOptions)
   const [showNoTwitchPrompt, setShowNoTwitchPrompt] = useState(false)
   const pendingActionRef = useRef<(() => void) | null>(null)
+  const [chatMode, setChatMode] = useState<'local' | 'twitch' | 'room'>('local')
+  const [roomPlayers, setRoomPlayers] = useState<Array<{ id: string; nickname: string }>>([])
+  const chatModeRef = useRef(chatMode)
+  chatModeRef.current = chatMode
 
   const {
     finalStats, setFinalStats, finalStatsRef,
@@ -157,6 +163,7 @@ export default function App() {
       teams,
     })
     setStarThresholds(null)
+    if (chatModeRef.current === 'room') roomRef.current.lockJoins()
     setScreen('countdown')
   }, [gameOptions, pvpLobbyRef, setAdventureRun, setStarThresholds])
 
@@ -192,6 +199,7 @@ export default function App() {
       teams: {},
     })
     setStarThresholds(null)
+    if (chatModeRef.current === 'room') roomRef.current.lockJoins()
     setScreen('countdown')
   }, [setAdventureRun, setStarThresholds])
 
@@ -336,6 +344,7 @@ export default function App() {
         return updated
       })
     }
+    if (chatModeRef.current === 'room') roomRef.current.unlockJoins()
     setScreen('shiftend')
   }, [adventureRunRef, setAdventureRun, setFinalStats, setStarThresholds, setFreePlayHighScore, setIsNewHighScore, setFreePlayHistory])
 
@@ -384,7 +393,18 @@ export default function App() {
     if (!isTutorialRef.current) handleCommand(user, text)
   }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin])
 
-  const twitchChat = useTwitchChat(twitchChannel, handleTwitchMessage)
+  const effectiveTwitchChannel = chatMode === 'twitch' ? twitchChannel : null
+  const twitchChat = useTwitchChat(effectiveTwitchChannel, handleTwitchMessage)
+
+  const room = useRoomHost({
+    enabled: chatMode === 'room',
+    onPlayerCommand: (nickname, command) => handleTwitchMessage(nickname, command, false),
+    onPlayerJoined: (id, nickname) => setRoomPlayers(prev => [...prev, { id, nickname }]),
+    onPlayerLeft: (id) => setRoomPlayers(prev => prev.filter(p => p.id !== id)),
+  })
+  const roomRef = useRef(room)
+  roomRef.current = room
+
   const handleChatSend = useCallback((text: string) => {
     dispatch({ type: 'ADD_CHAT', username: 'You', text, msgType: 'normal' })
     if (screenRef.current === 'pvplobby') {
@@ -443,6 +463,23 @@ export default function App() {
     }
   }, [handleTwitchChannelChange, resetTutorial, resetAdventureBestRun, resetSession])
 
+  useEffect(() => {
+    if (chatMode !== 'room') return
+    const interval = setInterval(() => {
+      const currentScreen = screenRef.current
+      const phase: 'lobby' | 'playing' | 'gameover' =
+        currentScreen === 'playing' ? 'playing'
+        : (currentScreen === 'shiftend' || currentScreen === 'gameover') ? 'gameover'
+        : 'lobby'
+      roomRef.current.sendSnapshot(gameStateToSnapshot(stateRef.current, phase))
+    }, 300)
+    return () => clearInterval(interval)
+  }, [chatMode])
+
+  useEffect(() => {
+    if (chatMode !== 'room') setRoomPlayers([])
+  }, [chatMode])
+
   const isPlaying = screen === 'playing'
   useGameLoop(state, dispatch, isPlaying ? (isTutorial ? tutorialGameOver : handleGameOver) : undefined, paused, tutorialResetKey)
   useBotSimulation(state, dispatch, handleCommand, isPlaying && botsEnabled)
@@ -472,6 +509,13 @@ export default function App() {
         twitchError={twitchChat.error}
         onTwitchConnect={(ch) => setTwitchChannel(ch)}
         onTwitchDisconnect={() => setTwitchChannel(null)}
+        {...{
+          roomCode: chatMode === 'room' ? room.code : null,
+          roomConnected: room.connected,
+          roomPlayers: chatMode === 'room' ? roomPlayers : [],
+          onHostRoom: () => { setChatMode('room'); setRoomPlayers([]) },
+          onLeaveRoom: () => setChatMode('local'),
+        } as Record<string, unknown>}
       />
     )
   } else if (screen === 'pvplobby') {
