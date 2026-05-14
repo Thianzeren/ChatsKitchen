@@ -107,6 +107,7 @@ io.on('connection', (socket: Socket) => {
   socket.on('host:snapshot', (msg: HostSnapshotMsg) => {
     const room = rooms.get(msg.code)
     if (!room || room.hostSocketId !== socket.id) return
+    if (room.hostDisconnectedAt) return
     if (msg.perPlayer) {
       for (const [pid, view] of Object.entries(msg.perPlayer)) {
         const p = room.players.get(pid)
@@ -135,6 +136,7 @@ io.on('connection', (socket: Socket) => {
       }, HOST_GRACE_MS + 500)
     } else if (role === 'player' && playerId) {
       room.players.delete(playerId)
+      buckets.delete(playerId)
       io.to(`host:${roomCode}`).emit('room:player_left', { playerId })
     }
   })
