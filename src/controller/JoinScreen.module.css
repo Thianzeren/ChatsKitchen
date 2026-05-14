@@ -1,0 +1,84 @@
+.screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #1a1a2e;
+  color: #fff;
+  padding: 24px;
+  gap: 20px;
+  font-family: system-ui, sans-serif;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.subtitle {
+  font-size: 1rem;
+  opacity: 0.7;
+  text-align: center;
+}
+
+.input {
+  width: 100%;
+  max-width: 320px;
+  padding: 16px;
+  font-size: 1.5rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  border: 2px solid #444;
+  border-radius: 12px;
+  background: #2a2a3e;
+  color: #fff;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #7c6af7;
+}
+
+.nicknameInput {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px 16px;
+  font-size: 1.1rem;
+  border: 2px solid #444;
+  border-radius: 12px;
+  background: #2a2a3e;
+  color: #fff;
+  outline: none;
+}
+
+.nicknameInput:focus {
+  border-color: #7c6af7;
+}
+
+.btn {
+  width: 100%;
+  max-width: 320px;
+  padding: 18px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  background: #7c6af7;
+  color: #fff;
+  cursor: pointer;
+  min-height: 56px;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #ff6b6b;
+  font-size: 0.95rem;
+  text-align: center;
+}
