@@ -16,7 +16,7 @@ export default function RoomHostCard({ code, connected, players, onHostRoom, onL
   useEffect(() => {
     if (!code || !canvasRef.current) return
     const url = `${window.location.origin}/play?room=${code}`
-    QRCode.toCanvas(canvasRef.current, url, { width: 120, margin: 1 })
+    QRCode.toCanvas(canvasRef.current, url, { width: 120, margin: 1 }).catch(console.error)
   }, [code])
 
   if (!code) {
