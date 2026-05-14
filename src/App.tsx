@@ -509,13 +509,11 @@ export default function App() {
         twitchError={twitchChat.error}
         onTwitchConnect={(ch) => setTwitchChannel(ch)}
         onTwitchDisconnect={() => setTwitchChannel(null)}
-        {...{
-          roomCode: chatMode === 'room' ? room.code : null,
-          roomConnected: room.connected,
-          roomPlayers: chatMode === 'room' ? roomPlayers : [],
-          onHostRoom: () => { setChatMode('room'); setRoomPlayers([]) },
-          onLeaveRoom: () => setChatMode('local'),
-        } as Record<string, unknown>}
+        roomCode={chatMode === 'room' ? room.code : null}
+        roomConnected={room.connected}
+        roomPlayers={chatMode === 'room' ? roomPlayers : []}
+        onHostRoom={() => { setChatMode('room'); setRoomPlayers([]) }}
+        onLeaveRoom={() => setChatMode('local')}
       />
     )
   } else if (screen === 'pvplobby') {

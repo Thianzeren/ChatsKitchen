@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { TwitchStatus } from '../hooks/useTwitchChat'
 import styles from './MainMenu.module.css'
+import RoomHostCard from './RoomHostCard'
 
 interface Props {
   onPlay: () => void
@@ -16,9 +17,14 @@ interface Props {
   twitchError: string | undefined
   onTwitchConnect: (channel: string) => void
   onTwitchDisconnect: () => void
+  roomCode: string | null
+  roomConnected: boolean
+  roomPlayers: Array<{ id: string; nickname: string }>
+  onHostRoom: () => void
+  onLeaveRoom: () => void
 }
 
-export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeedback, onCredits, onTutorial, onStartTutorial, twitchChannel, twitchStatus, twitchError, onTwitchConnect, onTwitchDisconnect }: Props) {
+export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeedback, onCredits, onTutorial, onStartTutorial, twitchChannel, twitchStatus, twitchError, onTwitchConnect, onTwitchDisconnect, roomCode, roomConnected, roomPlayers, onHostRoom, onLeaveRoom }: Props) {
   const [twitchInput, setTwitchInput] = useState(twitchChannel || '')
   const isConnected = twitchStatus === 'connected'
   const isConnecting = twitchStatus === 'connecting'
@@ -140,6 +146,15 @@ export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeed
               </div>
             )}
           </div>
+
+          {/* Room Host Card */}
+          <RoomHostCard
+            code={roomCode}
+            connected={roomConnected}
+            players={roomPlayers}
+            onHostRoom={onHostRoom}
+            onLeaveRoom={onLeaveRoom}
+          />
 
           {/* Game modes */}
           <div className={styles.modes}>

@@ -1,0 +1,79 @@
+.card {
+  background: #2a2a3e;
+  border: 2px solid #3a3a5e;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 200px;
+}
+
+.cardActive {
+  border-color: #7c6af7;
+}
+
+.label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+  color: #fff;
+}
+
+.code {
+  font-size: 2.4rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  color: #fff;
+  font-family: monospace;
+}
+
+.canvas {
+  border-radius: 8px;
+  align-self: flex-start;
+}
+
+.playerList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.player {
+  font-size: 0.85rem;
+  color: #ccc;
+  padding: 2px 0;
+}
+
+.emptyPlayers {
+  font-size: 0.82rem;
+  opacity: 0.5;
+  color: #fff;
+  font-style: italic;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #aaa;
+}
+
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #f44336; flex-shrink: 0; }
+.dotOn { background: #4caf50; }
+
+.btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.startBtn { background: #7c6af7; color: #fff; }
+.leaveBtn { background: #3a3a5e; color: #ccc; }
