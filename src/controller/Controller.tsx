@@ -14,6 +14,7 @@ interface Props {
 export default function Controller({ snapshot, send, connected, roomCode, onExit }: Props) {
   const [text, setText] = useState('')
   const [history, setHistory] = useState<string[]>([])
+  const [confirmingExit, setConfirmingExit] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const historyRef = useRef<HTMLDivElement>(null)
 
@@ -50,7 +51,15 @@ export default function Controller({ snapshot, send, connected, roomCode, onExit
           )}
           <span className={styles.roomCode}>{roomCode}</span>
           <span className={`${styles.conn} ${connected ? styles.connOn : styles.connOff}`} />
-          <button className={styles.exitBtn} onClick={onExit}>✕</button>
+          {confirmingExit ? (
+            <>
+              <span className={styles.exitConfirmLabel}>Leave?</span>
+              <button className={styles.exitConfirmYes} onClick={onExit}>Yes</button>
+              <button className={styles.exitConfirmNo} onClick={() => setConfirmingExit(false)}>No</button>
+            </>
+          ) : (
+            <button className={styles.exitBtn} onClick={() => setConfirmingExit(true)}>✕</button>
+          )}
         </div>
       </div>
 

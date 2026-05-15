@@ -83,6 +83,39 @@
   color: #c03830;
 }
 
+.exitConfirmLabel {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.exitConfirmYes {
+  padding: 4px 8px;
+  background: #c03830;
+  border: none;
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.exitConfirmNo {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
+
 /* ── History ── */
 
 .history {
