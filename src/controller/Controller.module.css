@@ -22,6 +22,19 @@
   position: relative;
 }
 
+/* #root in index.html is 1440px wide and centered with margin-left: -720px
+   for the desktop game's fixed-design-width scaling. On viewports under
+   1440px, .controller inherits that 1440px width, pushing the header,
+   history, and inputRow horizontally off-screen on phones. Reclaim the
+   actual viewport width and shift the controller left to align with
+   viewport x=0. */
+@media (max-width: 1440px) {
+  .controller {
+    width: 100vw;
+    margin-left: calc(720px - 50vw);
+  }
+}
+
 /* ── Screen flash overlay ── */
 
 .flashOverlay {
