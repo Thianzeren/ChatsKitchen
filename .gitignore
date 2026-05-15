@@ -7,4 +7,5 @@ dist
 .claude
 graphify-out/
 test-*.png
+controller-*.png
 src/shared/protocol.js

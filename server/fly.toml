@@ -1,13 +1,20 @@
-app = "chatskitchen-relay"
-primary_region = "sin"
+# fly.toml app configuration file generated for chatskitchen-relay on 2026-05-15T15:53:51+08:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'chatskitchen-relay'
+primary_region = 'sin'
+
+[build]
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = "suspend"
+  auto_stop_machines = 'suspend'
   auto_start_machines = true
   min_machines_running = 0
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "256mb"
+  size = 'shared-cpu-1x'
+  memory = '256mb'

@@ -4,7 +4,7 @@ import type { PlayerJoinMsg, PlayerActionMsg, HostSnapshotMsg } from '../../src/
 
 const http = createServer()
 const io = new Server(http, {
-  cors: { origin: '*' },
+  cors: { origin: ['https://letchatcook.vercel.app', 'http://localhost:5174'] },
   transports: ['websocket', 'polling'],
 })
 
