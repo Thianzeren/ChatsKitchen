@@ -104,6 +104,8 @@ export default function App() {
   const [roomPlayers, setRoomPlayers] = useState<Array<{ id: string; nickname: string }>>([])
   const chatModeRef = useRef(chatMode)
   chatModeRef.current = chatMode
+  const roomPlayersRef = useRef(roomPlayers)
+  roomPlayersRef.current = roomPlayers
 
   const {
     finalStats, setFinalStats, finalStatsRef,
@@ -162,6 +164,7 @@ export default function App() {
       restrictSlots: gameOptions.restrictSlots,
       enabledRecipes: gameOptions.enabledRecipes,
       teams,
+      participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.length : 0,
     })
     setStarThresholds(null)
     if (chatModeRef.current === 'room') roomRef.current.lockJoins()
@@ -205,6 +208,7 @@ export default function App() {
       restrictSlots:   false,
       enabledRecipes:  playset.recipes,
       teams: {},
+      participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.length : 0,
     })
     setStarThresholds(null)
     if (chatModeRef.current === 'room') roomRef.current.lockJoins()
@@ -329,10 +333,10 @@ export default function App() {
     } else {
       // Compute star thresholds from actual player count (non-PvP free play only)
       if (!s.teams || Object.keys(s.teams).length === 0) {
-        const playerCount = Object.keys(s.playerStats).length
+        const playerCount = Math.max(s.participantCount, Object.keys(s.playerStats).length, 1)
         const optionsForThresholds = activeGameOptionsRef.current ?? gameOptionsRef.current
         activeGameOptionsRef.current = null
-        setStarThresholds(computeStarThresholds(optionsForThresholds, Math.max(1, playerCount)))
+        setStarThresholds(computeStarThresholds(optionsForThresholds, playerCount))
       } else {
         setStarThresholds(null)
       }

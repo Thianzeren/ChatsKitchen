@@ -210,6 +210,7 @@ export interface GameState {
   chatMessages: ChatMessage[]
   nextMessageId: number
   playerStats: Record<string, PlayerStats>
+  participantCount: number  // known at game start (roomPlayers.length for room mode, 0 = derive from playerStats)
   cookingSpeedModifier?: { multiplier: number; expiresAt: number }
   moneyMultiplier?: { multiplier: number; expiresAt: number }
   disabledStations?: string[]

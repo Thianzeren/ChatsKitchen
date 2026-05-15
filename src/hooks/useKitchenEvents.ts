@@ -68,7 +68,7 @@ export function useKitchenEvents(
   // ── Spawn a new event ──────────────────────────────────────────────────────
   const spawnEvent = useCallback(() => {
     const s = stateRef.current
-    const playerCount = Object.keys(s.playerStats).length
+    const playerCount = Math.max(s.participantCount, Object.keys(s.playerStats).length)
     const threshold = calcThreshold(playerCount)
 
     const enabled = enabledEventsRef.current
