@@ -63,8 +63,9 @@ export default function Controller({ snapshot, send, connected, roomCode, onExit
       return
     }
 
-    const verb = cmd.toLowerCase().split(/\s+/)[0]
-    if (!VALID_VERBS.has(verb)) {
+    const parts = cmd.replace(/^!/, '').toLowerCase().trim().split(/\s+/)
+    const verb = parts[0]
+    if (!VALID_VERBS.has(verb) || parts.length < 2) {
       showFeedback('invalid', 'Invalid Command')
       return
     }
