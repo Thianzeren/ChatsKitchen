@@ -50,7 +50,6 @@
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
-.floatingValid   { color: var(--accent-secondary); }
 .floatingInvalid { color: #e05050; }
 .floatingBusy    { color: #e07030; }
 

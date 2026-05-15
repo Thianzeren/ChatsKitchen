@@ -8,7 +8,7 @@ const VALID_VERBS = new Set([
 ])
 const COOLDOWN_MS = 1500
 
-type FeedbackKind = 'valid' | 'invalid' | 'busy'
+type FeedbackKind = 'invalid' | 'busy'
 
 interface Props {
   snapshot: SharedSnapshot
@@ -74,7 +74,6 @@ export default function Controller({ snapshot, send, connected, roomCode, onExit
     setHistory(prev => [...prev.slice(-49), cmd.toLowerCase()])
     setText('')
     inputRef.current?.focus()
-    showFeedback('valid', cmd.toLowerCase())
     startCooldown()
   }
 
@@ -100,9 +99,7 @@ export default function Controller({ snapshot, send, connected, roomCode, onExit
         <div
           key={`float-${feedback.key}`}
           className={`${styles.floatingFeedback} ${
-            feedback.kind === 'valid' ? styles.floatingValid
-            : feedback.kind === 'invalid' ? styles.floatingInvalid
-            : styles.floatingBusy
+            feedback.kind === 'invalid' ? styles.floatingInvalid : styles.floatingBusy
           }`}
         >
           {feedback.label}
