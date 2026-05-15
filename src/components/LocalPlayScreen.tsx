@@ -4,7 +4,6 @@ import styles from './LocalPlayScreen.module.css'
 
 interface Props {
   code: string | null
-  connected: boolean
   players: Array<{ id: string; nickname: string }>
   onBack: () => void
   onStart: () => void
