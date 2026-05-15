@@ -41,13 +41,15 @@ export default function Controller({ snapshot, send, connected, roomCode }: Prop
       <div className={styles.header}>
         <span className={styles.money}>${snapshot.money}</span>
         <span className={styles.timer}>{formatTime(snapshot.timeRemainingMs)}</span>
-        {snapshot.teamMoney && (
-          <span className={styles.teamMoney}>
-            🔴 ${snapshot.teamMoney.red} &nbsp; 🔵 ${snapshot.teamMoney.blue}
-          </span>
-        )}
-        <span className={styles.roomCode}>{roomCode}</span>
-        <span className={`${styles.conn} ${connected ? styles.connOn : styles.connOff}`} />
+        <div className={styles.headerRight}>
+          {snapshot.teamMoney && (
+            <span className={styles.teamMoney}>
+              🔴 ${snapshot.teamMoney.red} 🔵 ${snapshot.teamMoney.blue}
+            </span>
+          )}
+          <span className={styles.roomCode}>{roomCode}</span>
+          <span className={`${styles.conn} ${connected ? styles.connOn : styles.connOff}`} />
+        </div>
       </div>
 
       <div className={styles.history} ref={historyRef}>

@@ -10,14 +10,20 @@
 /* ── Header ── */
 
 .header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   padding: 10px 16px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  gap: 10px;
   flex-shrink: 0;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .money {
