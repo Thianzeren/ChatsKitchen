@@ -37,17 +37,17 @@ export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeed
   return (
     <div className={styles.screen}>
 
-      {/* ── BANNER ── */}
-      <div className={styles.banner}>
-        <div className={styles.bannerTitle}>Let Chat Cook</div>
-        <div className={styles.bannerTagline}>⚔&nbsp;&nbsp;Dungeon Kitchen &nbsp;·&nbsp; Twitch Chat Restaurant Game</div>
-      </div>
-
       {/* ── BODY ── */}
       <div className={styles.body}>
 
         {/* ── LEFT PANEL ── */}
         <div className={styles.leftCol}>
+
+          {/* ── BANNER ── */}
+          <div className={styles.banner}>
+            <div className={styles.bannerTitle}>Let Chat Cook</div>
+            <div className={styles.bannerTagline}>⚔&nbsp;&nbsp;Dungeon Kitchen &nbsp;·&nbsp; Twitch Chat Restaurant Game</div>
+          </div>
 
           <div className={styles.steps}>
             <div className={styles.sectionLabel}>How to play</div>

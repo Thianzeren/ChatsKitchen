@@ -12,27 +12,24 @@
 .body {
   display: grid;
   grid-template-columns: 580px 1fr;
-  flex: 1;
-  min-height: 0;
+  height: 100%;
   overflow: hidden;
 }
 
-/* ── Banner ── */
+/* ── Banner (inside left column) ── */
 
 .banner {
-  background: linear-gradient(180deg, #231e19 0%, #1e1915 100%);
-  border-bottom: 2px solid var(--border);
-  padding: 28px 48px 22px;
   position: relative;
   flex-shrink: 0;
   overflow: hidden;
+  padding-bottom: 4px;
 }
 
 .banner::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 60% 80% at 30% 50%, rgba(216, 116, 40, 0.08) 0%, transparent 70%);
+  background: radial-gradient(ellipse 80% 120% at 10% 60%, rgba(216, 116, 40, 0.10) 0%, transparent 65%);
   pointer-events: none;
 }
 
@@ -58,9 +55,10 @@
   font-weight: 400;
   color: #c4a020;
   text-transform: uppercase;
-  letter-spacing: 3px;
+  letter-spacing: 1.5px;
   margin-top: 10px;
   position: relative;
+  white-space: nowrap;
 }
 
 .leftCol {
