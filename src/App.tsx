@@ -580,7 +580,7 @@ export default function App() {
       <PlaysetPicker
         onStart={startFromPlayset}
         onCustomise={() => setScreen('freeplaysetup')}
-        onBack={() => setScreen('menu')}
+        onBack={() => setScreen(chatMode === 'room' ? 'localplay' : 'menu')}
       />
     )
   } else if (screen === 'freeplaysetup') {
