@@ -18,6 +18,14 @@
         margin-left: -720px;
         overflow: hidden;
       }
+      /* Controller route: proper responsive layout, no desktop scaling tricks */
+      html[data-controller] #root {
+        width: 100%;
+        height: 100dvh;
+        transform: none;
+        left: 0;
+        margin-left: 0;
+      }
     </style>
   </head>
   <body>

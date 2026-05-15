@@ -11,7 +11,7 @@
 
 .title {
   font-family: 'Fredoka', sans-serif;
-  font-size: 2.8rem;
+  font-size: clamp(2rem, 11vw, 2.8rem);
   font-weight: 700;
   color: var(--text);
   text-align: center;
@@ -30,6 +30,7 @@
   color: var(--text-muted);
   text-align: center;
   line-height: 1.5;
+  max-width: 280px;
 }
 
 .input {
