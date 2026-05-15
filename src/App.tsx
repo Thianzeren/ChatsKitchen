@@ -36,6 +36,7 @@ import PlaysetPicker from './components/PlaysetPicker'
 import { DIFFICULTY_PRESETS, type Playset, type Difficulty } from './data/playsets'
 import { mergePlayerStats } from './data/adventureMode'
 import GameplayScreen from './components/GameplayScreen'
+import LocalPlayScreen from './components/LocalPlayScreen'
 import { DEFAULT_GAME_OPTIONS } from './state/defaultOptions'
 
 const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
@@ -166,6 +167,12 @@ export default function App() {
     if (chatModeRef.current === 'room') roomRef.current.lockJoins()
     setScreen('countdown')
   }, [gameOptions, pvpLobbyRef, setAdventureRun, setStarThresholds])
+
+  const handleLocalPlay = useCallback(() => {
+    setChatMode('room')
+    setRoomPlayers([])
+    setScreen('localplay')
+  }, [])
 
   const startFromPlayset = useCallback((playset: Playset, difficulty: Difficulty) => {
     const preset = DIFFICULTY_PRESETS[difficulty]
@@ -504,16 +511,22 @@ export default function App() {
         onCredits={() => setScreen('credits')}
         onTutorial={handleMenuTutorial}
         onStartTutorial={startTutorial}
+        onLocalPlay={handleLocalPlay}
         twitchChannel={twitchChannel}
         twitchStatus={twitchChat.status}
         twitchError={twitchChat.error}
         onTwitchConnect={(ch) => setTwitchChannel(ch)}
         onTwitchDisconnect={() => setTwitchChannel(null)}
-        roomCode={chatMode === 'room' ? room.code : null}
-        roomConnected={room.connected}
-        roomPlayers={chatMode === 'room' ? roomPlayers : []}
-        onHostRoom={() => { setChatMode('room'); setRoomPlayers([]) }}
-        onLeaveRoom={() => setChatMode('local')}
+      />
+    )
+  } else if (screen === 'localplay') {
+    content = (
+      <LocalPlayScreen
+        code={room.code}
+        connected={room.connected}
+        players={roomPlayers}
+        onBack={() => { setChatMode('local'); setScreen('menu') }}
+        onStart={() => setScreen('playsetpicker')}
       />
     )
   } else if (screen === 'pvplobby') {
