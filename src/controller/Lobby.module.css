@@ -122,3 +122,22 @@
 .dotOn {
   background: var(--accent-secondary);
 }
+
+.exitBtn {
+  margin-top: 8px;
+  padding: 12px 28px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.exitBtn:hover {
+  border-color: var(--text-faint);
+  color: var(--text-secondary);
+}

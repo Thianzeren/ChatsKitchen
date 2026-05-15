@@ -43,6 +43,13 @@ export default function ControllerApp() {
     )
   }
 
+  const handleExitRoom = () => {
+    sessionStorage.removeItem('chatskitchen_room')
+    setRoom(null)
+    setCredentials(null)
+    setStage('join')
+  }
+
   if (stage === 'lobby' || stage === 'gameover' || !snapshot) {
     return (
       <Lobby
@@ -51,6 +58,7 @@ export default function ControllerApp() {
         snapshot={snapshot}
         send={send}
         connected={connected}
+        onExit={handleExitRoom}
       />
     )
   }

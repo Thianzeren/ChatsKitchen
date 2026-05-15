@@ -8,9 +8,10 @@ interface Props {
   snapshot: SharedSnapshot | null
   send: (cmd: string) => void
   connected: boolean
+  onExit: () => void
 }
 
-export default function Lobby({ nickname, stage, snapshot, send, connected }: Props) {
+export default function Lobby({ nickname, stage, snapshot, send, connected, onExit }: Props) {
   const [team, setTeam] = useState<'red' | 'blue' | null>(null)
   const isPvP = snapshot?.teamMoney !== undefined
 
@@ -66,6 +67,8 @@ export default function Lobby({ nickname, stage, snapshot, send, connected }: Pr
         <span className={`${styles.dot} ${connected ? styles.dotOn : ''}`} />
         {connected ? 'Connected' : 'Reconnecting…'}
       </div>
+
+      <button className={styles.exitBtn} onClick={onExit}>Leave Room</button>
     </div>
   )
 }
