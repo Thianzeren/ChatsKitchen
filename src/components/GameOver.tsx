@@ -35,12 +35,13 @@ interface Props {
   onPlayAgain: () => void
   onNextLevel?: () => void
   onMenu: () => void
-  onRecipeSelect?: () => void
+  onChangePlayset?: () => void
+  onOpenLobby?: () => void
   onPvpLobby?: () => void
   onEnableAutoRestart?: () => void
 }
 
-export default function GameOver({ money, served, lost, playerStats, teams, level, highScore, isNewHighScore, roundHistory, autoRestart, autoRestartDelay, autoRestartSignal, pvpResult, starThresholds, onPlayAgain, onNextLevel, onMenu, onRecipeSelect, onPvpLobby, onEnableAutoRestart }: Props) {
+export default function GameOver({ money, served, lost, playerStats, teams, level, highScore, isNewHighScore, roundHistory, autoRestart, autoRestartDelay, autoRestartSignal, pvpResult, starThresholds, onPlayAgain, onNextLevel, onMenu, onChangePlayset, onOpenLobby, onPvpLobby, onEnableAutoRestart }: Props) {
   const totalActions = (s: PlayerStats) => s.cooked + s.served + s.extinguished + s.cooled + s.eventParticipations - s.firesCaused
   const leaderboard = useMemo(
     () => Object.entries(playerStats).sort(([, a], [, b]) => totalActions(b) - totalActions(a)),
@@ -180,9 +181,14 @@ export default function GameOver({ money, served, lost, playerStats, teams, leve
             {level != null ? 'Repeat Level' : 'Play Again'}
           </button>
           <div className={styles.btnRow}>
-            {level === null && onRecipeSelect && (
-              <button className={styles.menuBtn} onClick={onRecipeSelect}>
-                Recipe Select
+            {onOpenLobby && (
+              <button className={styles.menuBtn} onClick={onOpenLobby}>
+                Back to Lobby
+              </button>
+            )}
+            {onChangePlayset && (
+              <button className={styles.menuBtn} onClick={onChangePlayset}>
+                Change Playset
               </button>
             )}
             {onPvpLobby && (
