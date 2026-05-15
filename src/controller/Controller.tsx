@@ -53,6 +53,25 @@ export default function Controller({ snapshot, send, connected, roomCode, onExit
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
   }, [])
 
+  // iOS Safari: 100vh/100dvh don't shrink when the virtual keyboard opens,
+  // so the input row gets hidden behind the keyboard. Track visualViewport
+  // and expose it as --vvh so .controller can size to the visible area.
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const update = () => {
+      document.documentElement.style.setProperty('--vvh', `${vv.height}px`)
+    }
+    update()
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+      document.documentElement.style.removeProperty('--vvh')
+    }
+  }, [])
+
   const handleSend = () => {
     const cmd = text.trim()
     if (!cmd) return
