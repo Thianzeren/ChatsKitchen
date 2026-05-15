@@ -1,17 +1,19 @@
 .screen {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   background: var(--bg);
   padding: 32px 24px;
+  padding-bottom: max(32px, env(safe-area-inset-bottom));
   gap: 18px;
 }
 
 .title {
   font-family: 'Fredoka', sans-serif;
-  font-size: 2.8rem;
+  font-size: clamp(2rem, 11vw, 2.8rem);
   font-weight: 700;
   color: var(--text);
   text-align: center;
@@ -30,6 +32,7 @@
   color: var(--text-muted);
   text-align: center;
   line-height: 1.5;
+  max-width: 280px;
 }
 
 .input {
@@ -95,6 +98,7 @@
   cursor: pointer;
   min-height: 56px;
   box-shadow: 0 4px 0 var(--accent-deep);
+  touch-action: manipulation;
   transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
 }
 
