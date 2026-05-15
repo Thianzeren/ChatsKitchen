@@ -525,7 +525,7 @@ export default function App() {
       <LocalPlayScreen
         code={room.code}
         players={roomPlayers}
-        onBack={() => { setChatMode('local'); setScreen('menu') }}
+        onBack={() => { roomRef.current.closeRoom(); setChatMode('local'); setScreen('menu') }}
         onStart={() => setScreen('playsetpicker')}
       />
     )

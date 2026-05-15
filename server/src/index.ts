@@ -62,6 +62,13 @@ io.on('connection', (socket: Socket) => {
     ack({ code })
   })
 
+  socket.on('host:close', (msg: { code: string }) => {
+    const room = rooms.get(msg.code)
+    if (!room || room.hostSocketId !== socket.id) return
+    io.to(`players:${msg.code}`).emit('room:closed', { reason: 'host_gone' })
+    rooms.delete(msg.code)
+  })
+
   socket.on('host:lock_joins', (msg: { code: string }) => {
     const room = rooms.get(msg.code)
     if (!room || room.hostSocketId !== socket.id) return

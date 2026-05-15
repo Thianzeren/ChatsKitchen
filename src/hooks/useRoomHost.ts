@@ -75,5 +75,11 @@ export function useRoomHost({ enabled, onPlayerCommand, onPlayerJoined, onPlayer
     socketRef.current.emit('host:unlock_joins', { code: c })
   }
 
-  return { code, connected, sendSnapshot, lockJoins, unlockJoins }
+  const closeRoom = () => {
+    const c = codeRef.current
+    if (!c || !socketRef.current) return
+    socketRef.current.emit('host:close', { code: c })
+  }
+
+  return { code, connected, sendSnapshot, lockJoins, unlockJoins, closeRoom }
 }
