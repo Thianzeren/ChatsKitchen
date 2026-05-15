@@ -171,6 +171,7 @@ export default function App() {
   const handleLocalPlay = useCallback(() => {
     setChatMode('room')
     setRoomPlayers([])
+    roomRef.current.unlockJoins()
     setScreen('localplay')
   }, [])
 
