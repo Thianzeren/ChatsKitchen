@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { TwitchStatus } from '../hooks/useTwitchChat'
 import styles from './MainMenu.module.css'
-import RoomHostCard from './RoomHostCard'
-
 interface Props {
   onPlay: () => void
   onPvp: () => void
@@ -12,19 +10,15 @@ interface Props {
   onCredits: () => void
   onTutorial: () => void
   onStartTutorial: () => void
+  onLocalPlay: () => void
   twitchChannel: string | null
   twitchStatus: TwitchStatus
   twitchError: string | undefined
   onTwitchConnect: (channel: string) => void
   onTwitchDisconnect: () => void
-  roomCode: string | null
-  roomConnected: boolean
-  roomPlayers: Array<{ id: string; nickname: string }>
-  onHostRoom: () => void
-  onLeaveRoom: () => void
 }
 
-export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeedback, onCredits, onTutorial, onStartTutorial, twitchChannel, twitchStatus, twitchError, onTwitchConnect, onTwitchDisconnect, roomCode, roomConnected, roomPlayers, onHostRoom, onLeaveRoom }: Props) {
+export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeedback, onCredits, onTutorial, onStartTutorial, onLocalPlay, twitchChannel, twitchStatus, twitchError, onTwitchConnect, onTwitchDisconnect }: Props) {
   const [twitchInput, setTwitchInput] = useState(twitchChannel || '')
   const isConnected = twitchStatus === 'connected'
   const isConnecting = twitchStatus === 'connecting'
@@ -147,15 +141,6 @@ export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeed
             )}
           </div>
 
-          {/* Room Host Card */}
-          <RoomHostCard
-            code={roomCode}
-            connected={roomConnected}
-            players={roomPlayers}
-            onHostRoom={onHostRoom}
-            onLeaveRoom={onLeaveRoom}
-          />
-
           {/* Game modes */}
           <div className={styles.modes}>
 
@@ -164,13 +149,23 @@ export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeed
               <button className={styles.modeHowToPlay} onClick={onTutorial}>How To Play</button>
             </div>
 
-            <button className={styles.modeFreePlay} onClick={onPlay}>
-              <div>
-                <div className={styles.fpName}>Free Play</div>
-                <div className={styles.fpDesc}>Pick recipes, set duration &amp; difficulty</div>
-              </div>
-              <div className={styles.fpArrow}>▶</div>
-            </button>
+            <div className={styles.modePlayRow}>
+              <button className={styles.modeFreePlay} onClick={onPlay}>
+                <div>
+                  <div className={styles.fpName}>Free Play</div>
+                  <div className={styles.fpDesc}>Pick recipes, set duration &amp; difficulty</div>
+                </div>
+                <div className={styles.fpArrow}>▶</div>
+              </button>
+
+              <button className={styles.modeLocalPlay} onClick={onLocalPlay}>
+                <div>
+                  <div className={styles.lpName}>Local Play</div>
+                  <div className={styles.lpDesc}>Phone controllers, no Twitch needed</div>
+                </div>
+                <div className={styles.lpArrow}>→</div>
+              </button>
+            </div>
 
             <div className={styles.modeRow}>
               <button className={styles.modeAdventures} onClick={onAdventure}>

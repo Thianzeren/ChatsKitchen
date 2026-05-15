@@ -353,6 +353,13 @@
   min-height: 0;
 }
 
+.modePlayRow {
+  display: flex;
+  gap: 10px;
+  flex: 1.6;
+  min-height: 0;
+}
+
 /* Free Play — featured */
 .modeFreePlay {
   background: #d87428;
@@ -364,7 +371,7 @@
   padding: 0 32px;
   cursor: pointer;
   transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
-  flex: 1.6;
+  flex: 1;
   min-height: 0;
   box-shadow: 0 4px 0 #8e4e18;
   text-align: left;
@@ -399,6 +406,54 @@
 .fpArrow {
   font-size: 36px;
   color: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+
+/* Local Play button */
+.modeLocalPlay {
+  background: var(--surface);
+  border: 2px solid #c4a020;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
+  flex: 1;
+  min-height: 0;
+  box-shadow: 0 4px 0 rgba(196, 160, 32, 0.4);
+  text-align: left;
+}
+
+.modeLocalPlay:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.modeLocalPlay:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(196, 160, 32, 0.4);
+}
+
+.lpName {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: #c4a020;
+  line-height: 1;
+}
+
+.lpDesc {
+  font-family: 'Space Mono', monospace;
+  font-size: 15px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.lpArrow {
+  font-size: 28px;
+  color: rgba(196, 160, 32, 0.4);
   flex-shrink: 0;
 }
 
