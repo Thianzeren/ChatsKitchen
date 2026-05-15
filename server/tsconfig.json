@@ -9,5 +9,6 @@
     "rootDir": "..",
     "skipLibCheck": true
   },
-  "include": ["src/**/*", "../src/shared/**/*"]
+  "include": ["src/**/*", "../src/shared/**/*"],
+  "exclude": ["../src/shared/config.ts"]
 }
