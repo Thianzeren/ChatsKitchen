@@ -8,9 +8,10 @@ interface Props {
   send: (command: string) => void
   connected: boolean
   roomCode: string
+  onExit: () => void
 }
 
-export default function Controller({ snapshot, send, connected, roomCode }: Props) {
+export default function Controller({ snapshot, send, connected, roomCode, onExit }: Props) {
   const [text, setText] = useState('')
   const [history, setHistory] = useState<string[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
@@ -49,6 +50,7 @@ export default function Controller({ snapshot, send, connected, roomCode }: Prop
           )}
           <span className={styles.roomCode}>{roomCode}</span>
           <span className={`${styles.conn} ${connected ? styles.connOn : styles.connOff}`} />
+          <button className={styles.exitBtn} onClick={onExit}>✕</button>
         </div>
       </div>
 
