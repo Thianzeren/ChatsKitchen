@@ -668,7 +668,7 @@ export default function App() {
         onAudioChange={handleAudioChange}
         onExit={() => { setPaused(false); setTutorialStep(null); setScreen('menu') }}
         onPlaysetPicker={!adventureRun && !isTutorial ? () => { setPaused(false); setScreen('playsetpicker') } : undefined}
-        onRecipeSelect={!adventureRun && !isTutorial ? () => { setPaused(false); setScreen('freeplaysetup') } : undefined}
+        onOpenLobby={chatMode === 'room' && !isTutorial ? () => { setPaused(false); roomRef.current.unlockJoins(); setScreen('localplay') } : undefined}
         onTutorialNext={handleTutorialNext}
         onTutorialBack={handleTutorialBack}
         onTutorialSkip={handleTutorialComplete}

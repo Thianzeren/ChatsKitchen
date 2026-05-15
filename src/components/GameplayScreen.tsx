@@ -31,7 +31,7 @@ interface Props {
   onAudioChange: (s: AudioSettings) => void
   onExit: () => void
   onPlaysetPicker: (() => void) | undefined
-  onRecipeSelect: (() => void) | undefined
+  onOpenLobby: (() => void) | undefined
   onTutorialNext: () => void
   onTutorialBack: () => void
   onTutorialSkip: () => void
@@ -59,7 +59,7 @@ export default function GameplayScreen({
   onAudioChange,
   onExit,
   onPlaysetPicker,
-  onRecipeSelect,
+  onOpenLobby,
   onTutorialNext,
   onTutorialBack,
   onTutorialSkip,
@@ -117,7 +117,7 @@ export default function GameplayScreen({
           onResume={() => onPause(false)}
           onExit={onExit}
           onPlaysetPicker={onPlaysetPicker}
-          onRecipeSelect={onRecipeSelect}
+          onOpenLobby={onOpenLobby}
         />
       )}
       {isTutorial && tutorialStep !== null && (
