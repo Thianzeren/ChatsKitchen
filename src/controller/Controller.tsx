@@ -2,6 +2,14 @@ import { useState, useRef, useEffect } from 'react'
 import type { SharedSnapshot, PartialPlayerView } from '../shared/protocol'
 import styles from './Controller.module.css'
 
+const VALID_VERBS = new Set([
+  'chop','grill','fry','boil','toast','roast','stirfry','steam','simmer',
+  'cook','mix','grind','knead','serve','cool','extinguish','plate',
+])
+const COOLDOWN_MS = 1500
+
+type FeedbackKind = 'valid' | 'invalid' | 'busy'
+
 interface Props {
   snapshot: SharedSnapshot
   you: PartialPlayerView
@@ -15,21 +23,58 @@ export default function Controller({ snapshot, send, connected, roomCode, onExit
   const [text, setText] = useState('')
   const [history, setHistory] = useState<string[]>([])
   const [confirmingExit, setConfirmingExit] = useState(false)
+  const [feedback, setFeedback] = useState<{ kind: FeedbackKind; label: string; key: number } | null>(null)
+  const [onCooldown, setOnCooldown] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const historyRef = useRef<HTMLDivElement>(null)
+  const cooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const feedbackKeyRef = useRef(0)
 
   const formatTime = (ms: number) => {
     const s = Math.ceil(ms / 1000)
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
   }
 
+  const showFeedback = (kind: FeedbackKind, label: string) => {
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
+    feedbackKeyRef.current += 1
+    setFeedback({ kind, label, key: feedbackKeyRef.current })
+    feedbackTimerRef.current = setTimeout(() => setFeedback(null), 1600)
+  }
+
+  const startCooldown = () => {
+    setOnCooldown(true)
+    if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current)
+    cooldownTimerRef.current = setTimeout(() => setOnCooldown(false), COOLDOWN_MS)
+  }
+
+  useEffect(() => () => {
+    if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current)
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
+  }, [])
+
   const handleSend = () => {
     const cmd = text.trim()
     if (!cmd) return
+
+    if (onCooldown) {
+      showFeedback('busy', 'Still Busy')
+      return
+    }
+
+    const verb = cmd.toLowerCase().split(/\s+/)[0]
+    if (!VALID_VERBS.has(verb)) {
+      showFeedback('invalid', 'Invalid Command')
+      return
+    }
+
     send(cmd)
-    setHistory(prev => [...prev.slice(-49), cmd])
+    setHistory(prev => [...prev.slice(-49), cmd.toLowerCase()])
     setText('')
     inputRef.current?.focus()
+    showFeedback('valid', cmd.toLowerCase())
+    startCooldown()
   }
 
   useEffect(() => {
@@ -38,8 +83,31 @@ export default function Controller({ snapshot, send, connected, roomCode, onExit
     }
   }, [history])
 
+  const flashClass = feedback?.kind === 'invalid' ? styles.flashRed
+    : feedback?.kind === 'busy' ? styles.flashOrange
+    : ''
+
   return (
     <div className={styles.controller}>
+      {/* Screen flash overlay */}
+      {feedback && flashClass && (
+        <div key={`flash-${feedback.key}`} className={`${styles.flashOverlay} ${flashClass}`} />
+      )}
+
+      {/* Floating feedback text */}
+      {feedback && (
+        <div
+          key={`float-${feedback.key}`}
+          className={`${styles.floatingFeedback} ${
+            feedback.kind === 'valid' ? styles.floatingValid
+            : feedback.kind === 'invalid' ? styles.floatingInvalid
+            : styles.floatingBusy
+          }`}
+        >
+          {feedback.label}
+        </div>
+      )}
+
       <div className={styles.header}>
         <span className={styles.money}>${snapshot.money}</span>
         <span className={styles.timer}>{formatTime(snapshot.timeRemainingMs)}</span>

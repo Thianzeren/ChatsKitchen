@@ -1,3 +1,15 @@
+@keyframes floatUp {
+  0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-56px); }
+}
+
+@keyframes flashIn {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 .controller {
   height: 100vh;
   display: flex;
@@ -5,7 +17,42 @@
   background: var(--bg);
   color: var(--text);
   overflow: hidden;
+  position: relative;
 }
+
+/* ── Screen flash overlay ── */
+
+.flashOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  animation: flashIn 0.5s ease-out forwards;
+}
+
+.flashRed   { background: rgba(192, 56, 48, 0.35); }
+.flashOrange { background: rgba(224, 112, 48, 0.30); }
+
+/* ── Floating feedback text ── */
+
+.floatingFeedback {
+  position: absolute;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  z-index: 20;
+  pointer-events: none;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  white-space: nowrap;
+  animation: floatUp 1.6s ease-out forwards;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.floatingValid   { color: var(--accent-secondary); }
+.floatingInvalid { color: #e05050; }
+.floatingBusy    { color: #e07030; }
 
 /* ── Header ── */
 
