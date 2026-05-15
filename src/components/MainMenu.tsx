@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { TwitchStatus } from '../hooks/useTwitchChat'
 import styles from './MainMenu.module.css'
-
 interface Props {
   onPlay: () => void
   onPvp: () => void
@@ -11,6 +10,7 @@ interface Props {
   onCredits: () => void
   onTutorial: () => void
   onStartTutorial: () => void
+  onLocalPlay: () => void
   twitchChannel: string | null
   twitchStatus: TwitchStatus
   twitchError: string | undefined
@@ -18,7 +18,7 @@ interface Props {
   onTwitchDisconnect: () => void
 }
 
-export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeedback, onCredits, onTutorial, onStartTutorial, twitchChannel, twitchStatus, twitchError, onTwitchConnect, onTwitchDisconnect }: Props) {
+export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeedback, onCredits, onTutorial, onStartTutorial, onLocalPlay, twitchChannel, twitchStatus, twitchError, onTwitchConnect, onTwitchDisconnect }: Props) {
   const [twitchInput, setTwitchInput] = useState(twitchChannel || '')
   const isConnected = twitchStatus === 'connected'
   const isConnecting = twitchStatus === 'connecting'
@@ -31,17 +31,17 @@ export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeed
   return (
     <div className={styles.screen}>
 
-      {/* ── BANNER ── */}
-      <div className={styles.banner}>
-        <div className={styles.bannerTitle}>Let Chat Cook</div>
-        <div className={styles.bannerTagline}>⚔&nbsp;&nbsp;Dungeon Kitchen &nbsp;·&nbsp; Twitch Chat Restaurant Game</div>
-      </div>
-
       {/* ── BODY ── */}
       <div className={styles.body}>
 
         {/* ── LEFT PANEL ── */}
         <div className={styles.leftCol}>
+
+          {/* ── BANNER ── */}
+          <div className={styles.banner}>
+            <div className={styles.bannerTitle}>Let Chat Cook</div>
+            <div className={styles.bannerTagline}>⚔&nbsp;&nbsp;Dungeon Kitchen &nbsp;·&nbsp; Twitch Chat Restaurant Game</div>
+          </div>
 
           <div className={styles.steps}>
             <div className={styles.sectionLabel}>How to play</div>
@@ -149,13 +149,23 @@ export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeed
               <button className={styles.modeHowToPlay} onClick={onTutorial}>How To Play</button>
             </div>
 
-            <button className={styles.modeFreePlay} onClick={onPlay}>
-              <div>
-                <div className={styles.fpName}>Free Play</div>
-                <div className={styles.fpDesc}>Pick recipes, set duration &amp; difficulty</div>
-              </div>
-              <div className={styles.fpArrow}>▶</div>
-            </button>
+            <div className={styles.modePlayRow}>
+              <button className={styles.modeFreePlay} onClick={onPlay}>
+                <div>
+                  <div className={styles.fpName}>Free Play</div>
+                  <div className={styles.fpDesc}>Pick recipes, set duration &amp; difficulty</div>
+                </div>
+                <div className={styles.fpArrow}>▶</div>
+              </button>
+
+              <button className={styles.modeLocalPlay} onClick={onLocalPlay}>
+                <div>
+                  <div className={styles.lpName}>Local Play</div>
+                  <div className={styles.lpDesc}>Phone controllers, no Twitch needed</div>
+                </div>
+                <div className={styles.lpArrow}>→</div>
+              </button>
+            </div>
 
             <div className={styles.modeRow}>
               <button className={styles.modeAdventures} onClick={onAdventure}>

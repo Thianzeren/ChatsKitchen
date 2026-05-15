@@ -12,27 +12,24 @@
 .body {
   display: grid;
   grid-template-columns: 580px 1fr;
-  flex: 1;
-  min-height: 0;
+  height: 100%;
   overflow: hidden;
 }
 
-/* ── Banner ── */
+/* ── Banner (inside left column) ── */
 
 .banner {
-  background: linear-gradient(180deg, #231e19 0%, #1e1915 100%);
-  border-bottom: 2px solid var(--border);
-  padding: 28px 48px 22px;
   position: relative;
   flex-shrink: 0;
   overflow: hidden;
+  padding-bottom: 4px;
 }
 
 .banner::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 60% 80% at 30% 50%, rgba(216, 116, 40, 0.08) 0%, transparent 70%);
+  background: radial-gradient(ellipse 80% 120% at 10% 60%, rgba(216, 116, 40, 0.10) 0%, transparent 65%);
   pointer-events: none;
 }
 
@@ -58,9 +55,10 @@
   font-weight: 400;
   color: #c4a020;
   text-transform: uppercase;
-  letter-spacing: 3px;
+  letter-spacing: 1.5px;
   margin-top: 10px;
   position: relative;
+  white-space: nowrap;
 }
 
 .leftCol {
@@ -355,6 +353,13 @@
   min-height: 0;
 }
 
+.modePlayRow {
+  display: flex;
+  gap: 10px;
+  flex: 1.6;
+  min-height: 0;
+}
+
 /* Free Play — featured */
 .modeFreePlay {
   background: #d87428;
@@ -366,7 +371,7 @@
   padding: 0 32px;
   cursor: pointer;
   transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
-  flex: 1.6;
+  flex: 1;
   min-height: 0;
   box-shadow: 0 4px 0 #8e4e18;
   text-align: left;
@@ -401,6 +406,54 @@
 .fpArrow {
   font-size: 36px;
   color: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+
+/* Local Play button */
+.modeLocalPlay {
+  background: var(--surface);
+  border: 2px solid #c4a020;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
+  flex: 1;
+  min-height: 0;
+  box-shadow: 0 4px 0 rgba(196, 160, 32, 0.4);
+  text-align: left;
+}
+
+.modeLocalPlay:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.modeLocalPlay:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(196, 160, 32, 0.4);
+}
+
+.lpName {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: #c4a020;
+  line-height: 1;
+}
+
+.lpDesc {
+  font-family: 'Space Mono', monospace;
+  font-size: 15px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.lpArrow {
+  font-size: 28px;
+  color: rgba(196, 160, 32, 0.4);
   flex-shrink: 0;
 }
 

@@ -1,4 +1,4 @@
-export type Screen = 'menu' | 'pvplobby' | 'adventurebriefing' | 'options' | 'playsetpicker' | 'freeplaysetup' | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'adventureshiftpassed' | 'adventurerunend' | 'credits'
+export type Screen = 'menu' | 'localplay' | 'pvplobby' | 'adventurebriefing' | 'options' | 'playsetpicker' | 'freeplaysetup' | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'adventureshiftpassed' | 'adventurerunend' | 'credits'
 export type TutorialDestination = 'menu' | 'playsetpicker' | 'freeplaysetup'
 
 export interface ActiveEventOptions {
@@ -210,6 +210,7 @@ export interface GameState {
   chatMessages: ChatMessage[]
   nextMessageId: number
   playerStats: Record<string, PlayerStats>
+  participantCount: number  // known at game start (roomPlayers.length for room mode, 0 = derive from playerStats)
   cookingSpeedModifier?: { multiplier: number; expiresAt: number }
   moneyMultiplier?: { multiplier: number; expiresAt: number }
   disabledStations?: string[]

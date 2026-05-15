@@ -15,8 +15,8 @@ interface PauseModalProps {
   onBotsToggle: () => void
   onResume: () => void
   onExit: () => void
-  onRecipeSelect?: () => void
   onPlaysetPicker?: () => void
+  onOpenLobby?: () => void
 }
 
 export default function PauseModal({
@@ -29,8 +29,8 @@ export default function PauseModal({
   onBotsToggle,
   onResume,
   onExit,
-  onRecipeSelect,
   onPlaysetPicker,
+  onOpenLobby,
 }: PauseModalProps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -75,14 +75,14 @@ export default function PauseModal({
 
           <div className={styles.divider} />
 
+          {onOpenLobby && (
+            <button className={styles.exitBtn} onClick={onOpenLobby}>
+              Room Lobby
+            </button>
+          )}
           {onPlaysetPicker && (
             <button className={styles.exitBtn} onClick={onPlaysetPicker}>
               Change Playset
-            </button>
-          )}
-          {onRecipeSelect && (
-            <button className={styles.exitBtn} onClick={onRecipeSelect}>
-              Customise Shift
             </button>
           )}
           <button className={styles.exitBtn} onClick={onExit}>

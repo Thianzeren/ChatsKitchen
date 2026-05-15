@@ -10,6 +10,8 @@ import { computeStarThresholds } from './data/starThresholds'
 import { useGameLoop } from './hooks/useGameLoop'
 import { useBotSimulation } from './hooks/useBotSimulation'
 import { useTwitchChat } from './hooks/useTwitchChat'
+import { useRoomHost } from './hooks/useRoomHost'
+import { gameStateToSnapshot } from './state/snapshot'
 import { useGameAudio } from './audio/useGameAudio'
 import { useViewportScale } from './hooks/useViewportScale'
 import MainMenu from './components/MainMenu'
@@ -34,6 +36,7 @@ import PlaysetPicker from './components/PlaysetPicker'
 import { DIFFICULTY_PRESETS, type Playset, type Difficulty } from './data/playsets'
 import { mergePlayerStats } from './data/adventureMode'
 import GameplayScreen from './components/GameplayScreen'
+import LocalPlayScreen from './components/LocalPlayScreen'
 import { DEFAULT_GAME_OPTIONS } from './state/defaultOptions'
 
 const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
@@ -89,6 +92,8 @@ export default function App() {
   })
   const stateRef = useRef(state)
   stateRef.current = state
+  const lastSnapshotStateRef = useRef<object | null>(null)
+  const lastSnapshotPhaseRef = useRef<string | null>(null)
   const activeGameOptionsRef = useRef<GameOptions | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -97,6 +102,12 @@ export default function App() {
   const gameOptionsRef = useRef(gameOptions)
   const [showNoTwitchPrompt, setShowNoTwitchPrompt] = useState(false)
   const pendingActionRef = useRef<(() => void) | null>(null)
+  const [chatMode, setChatMode] = useState<'local' | 'twitch' | 'room'>('local')
+  const [roomPlayers, setRoomPlayers] = useState<Array<{ id: string; nickname: string }>>([])
+  const chatModeRef = useRef(chatMode)
+  chatModeRef.current = chatMode
+  const roomPlayersRef = useRef(roomPlayers)
+  roomPlayersRef.current = roomPlayers
 
   const {
     finalStats, setFinalStats, finalStatsRef,
@@ -155,10 +166,19 @@ export default function App() {
       restrictSlots: gameOptions.restrictSlots,
       enabledRecipes: gameOptions.enabledRecipes,
       teams,
+      participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.length : 0,
     })
     setStarThresholds(null)
+    if (chatModeRef.current === 'room') roomRef.current.lockJoins()
     setScreen('countdown')
   }, [gameOptions, pvpLobbyRef, setAdventureRun, setStarThresholds])
+
+  const handleLocalPlay = useCallback(() => {
+    setChatMode('room')
+    setRoomPlayers([])
+    roomRef.current.unlockJoins()
+    setScreen('localplay')
+  }, [])
 
   const startFromPlayset = useCallback((playset: Playset, difficulty: Difficulty) => {
     const preset = DIFFICULTY_PRESETS[difficulty]
@@ -190,8 +210,10 @@ export default function App() {
       restrictSlots:   false,
       enabledRecipes:  playset.recipes,
       teams: {},
+      participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.length : 0,
     })
     setStarThresholds(null)
+    if (chatModeRef.current === 'room') roomRef.current.lockJoins()
     setScreen('countdown')
   }, [setAdventureRun, setStarThresholds])
 
@@ -313,10 +335,10 @@ export default function App() {
     } else {
       // Compute star thresholds from actual player count (non-PvP free play only)
       if (!s.teams || Object.keys(s.teams).length === 0) {
-        const playerCount = Object.keys(s.playerStats).length
+        const playerCount = Math.max(s.participantCount, Object.keys(s.playerStats).length, 1)
         const optionsForThresholds = activeGameOptionsRef.current ?? gameOptionsRef.current
         activeGameOptionsRef.current = null
-        setStarThresholds(computeStarThresholds(optionsForThresholds, Math.max(1, playerCount)))
+        setStarThresholds(computeStarThresholds(optionsForThresholds, playerCount))
       } else {
         setStarThresholds(null)
       }
@@ -336,6 +358,7 @@ export default function App() {
         return updated
       })
     }
+    if (chatModeRef.current === 'room') roomRef.current.unlockJoins()
     setScreen('shiftend')
   }, [adventureRunRef, setAdventureRun, setFinalStats, setStarThresholds, setFreePlayHighScore, setIsNewHighScore, setFreePlayHistory])
 
@@ -384,7 +407,18 @@ export default function App() {
     if (!isTutorialRef.current) handleCommand(user, text)
   }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin])
 
-  const twitchChat = useTwitchChat(twitchChannel, handleTwitchMessage)
+  const effectiveTwitchChannel = chatMode === 'twitch' ? twitchChannel : null
+  const twitchChat = useTwitchChat(effectiveTwitchChannel, handleTwitchMessage)
+
+  const room = useRoomHost({
+    enabled: chatMode === 'room',
+    onPlayerCommand: (nickname, command) => handleTwitchMessage(nickname, command, false),
+    onPlayerJoined: (id, nickname) => setRoomPlayers(prev => [...prev, { id, nickname }]),
+    onPlayerLeft: (id) => setRoomPlayers(prev => prev.filter(p => p.id !== id)),
+  })
+  const roomRef = useRef(room)
+  roomRef.current = room
+
   const handleChatSend = useCallback((text: string) => {
     dispatch({ type: 'ADD_CHAT', username: 'You', text, msgType: 'normal' })
     if (screenRef.current === 'pvplobby') {
@@ -443,6 +477,27 @@ export default function App() {
     }
   }, [handleTwitchChannelChange, resetTutorial, resetAdventureBestRun, resetSession])
 
+  useEffect(() => {
+    if (chatMode !== 'room') return
+    const interval = setInterval(() => {
+      const currentScreen = screenRef.current
+      const phase: 'lobby' | 'playing' | 'gameover' =
+        currentScreen === 'playing' ? 'playing'
+        : (currentScreen === 'shiftend' || currentScreen === 'gameover') ? 'gameover'
+        : 'lobby'
+      const s = stateRef.current
+      if (s === lastSnapshotStateRef.current && phase === lastSnapshotPhaseRef.current) return
+      lastSnapshotStateRef.current = s
+      lastSnapshotPhaseRef.current = phase
+      roomRef.current.sendSnapshot(gameStateToSnapshot(s, phase))
+    }, 300)
+    return () => clearInterval(interval)
+  }, [chatMode])
+
+  useEffect(() => {
+    if (chatMode !== 'room') setRoomPlayers([])
+  }, [chatMode])
+
   const isPlaying = screen === 'playing'
   useGameLoop(state, dispatch, isPlaying ? (isTutorial ? tutorialGameOver : handleGameOver) : undefined, paused, tutorialResetKey)
   useBotSimulation(state, dispatch, handleCommand, isPlaying && botsEnabled)
@@ -467,11 +522,21 @@ export default function App() {
         onCredits={() => setScreen('credits')}
         onTutorial={handleMenuTutorial}
         onStartTutorial={startTutorial}
+        onLocalPlay={handleLocalPlay}
         twitchChannel={twitchChannel}
         twitchStatus={twitchChat.status}
         twitchError={twitchChat.error}
         onTwitchConnect={(ch) => setTwitchChannel(ch)}
         onTwitchDisconnect={() => setTwitchChannel(null)}
+      />
+    )
+  } else if (screen === 'localplay') {
+    content = (
+      <LocalPlayScreen
+        code={room.code}
+        players={roomPlayers}
+        onBack={() => { roomRef.current.closeRoom(); setChatMode('local'); setScreen('menu') }}
+        onStart={() => setScreen('playsetpicker')}
       />
     )
   } else if (screen === 'pvplobby') {
@@ -521,7 +586,7 @@ export default function App() {
       <PlaysetPicker
         onStart={startFromPlayset}
         onCustomise={() => setScreen('freeplaysetup')}
-        onBack={() => setScreen('menu')}
+        onBack={() => setScreen(chatMode === 'room' ? 'localplay' : 'menu')}
       />
     )
   } else if (screen === 'freeplaysetup') {
@@ -564,7 +629,8 @@ export default function App() {
         onPlayAgain={startFreePlay}
         onNextLevel={undefined}
         onMenu={() => { setPvpLobby(null); setScreen('menu') }}
-        onRecipeSelect={() => setScreen('freeplaysetup')}
+        onChangePlayset={!adventureRun ? () => setScreen('playsetpicker') : undefined}
+        onOpenLobby={chatMode === 'room' && !adventureRun ? () => { roomRef.current.unlockJoins(); setScreen('localplay') } : undefined}
         onPvpLobby={finalStats.redMoney !== undefined ? () => setScreen('pvplobby') : undefined}
         onEnableAutoRestart={() => handleGameOptionsChange({ ...gameOptionsRef.current, autoRestart: true })}
       />
@@ -614,7 +680,7 @@ export default function App() {
         onAudioChange={handleAudioChange}
         onExit={() => { setPaused(false); setTutorialStep(null); setScreen('menu') }}
         onPlaysetPicker={!adventureRun && !isTutorial ? () => { setPaused(false); setScreen('playsetpicker') } : undefined}
-        onRecipeSelect={!adventureRun && !isTutorial ? () => { setPaused(false); setScreen('freeplaysetup') } : undefined}
+        onOpenLobby={chatMode === 'room' && !isTutorial ? () => { setPaused(false); roomRef.current.unlockJoins(); setScreen('localplay') } : undefined}
         onTutorialNext={handleTutorialNext}
         onTutorialBack={handleTutorialBack}
         onTutorialSkip={handleTutorialComplete}

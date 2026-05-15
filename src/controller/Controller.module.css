@@ -1,0 +1,262 @@
+@keyframes floatUp {
+  0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-56px); }
+}
+
+@keyframes flashIn {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.controller {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Screen flash overlay ── */
+
+.flashOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  animation: flashIn 0.5s ease-out forwards;
+}
+
+.flashRed   { background: rgba(192, 56, 48, 0.35); }
+.flashOrange { background: rgba(224, 112, 48, 0.30); }
+
+/* ── Floating feedback text ── */
+
+.floatingFeedback {
+  position: absolute;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  z-index: 20;
+  pointer-events: none;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  white-space: nowrap;
+  animation: floatUp 1.6s ease-out forwards;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.floatingInvalid { color: #e05050; }
+.floatingBusy    { color: #e07030; }
+
+/* ── Header ── */
+
+.header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.money {
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--accent-gold);
+}
+
+.timer {
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-dim);
+}
+
+.teamMoney {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.conn {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.connOn  { background: var(--accent-secondary); }
+.connOff { background: #c03830; }
+
+.roomCode {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.exitBtn {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.exitBtn:hover {
+  border-color: #c03830;
+  color: #c03830;
+}
+
+.exitConfirmLabel {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.exitConfirmYes {
+  padding: 4px 8px;
+  background: #c03830;
+  border: none;
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.exitConfirmNo {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
+
+/* ── History ── */
+
+.history {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.historyHint {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--text-faint);
+  text-align: center;
+  line-height: 1.6;
+  align-self: center;
+  margin: auto 0;
+}
+
+.historyEntry {
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  background: var(--surface);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  word-break: break-all;
+}
+
+.historyPrompt {
+  color: var(--accent);
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+/* ── Input row ── */
+
+.inputRow {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.chatInput {
+  flex: 1;
+  padding: 14px 16px;
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+  min-height: 50px;
+}
+
+.chatInput::placeholder {
+  color: var(--text-faint);
+  font-size: 0.82rem;
+}
+
+.chatInput:focus {
+  border-color: var(--accent);
+}
+
+.sendBtn {
+  padding: 14px 22px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--accent-deep);
+  transition: filter 0.1s, transform 0.08s, box-shadow 0.08s;
+  white-space: nowrap;
+  min-height: 50px;
+}
+
+.sendBtn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.sendBtn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--accent-deep);
+}

@@ -12,7 +12,7 @@ export type GameAction =
   | { type: 'COOL'; user: string; stationId: string }
   | { type: 'SPAWN_ORDER'; now: number }
   | { type: 'ADD_CHAT'; username: string; text: string; msgType: ChatMessage['type'] }
-  | { type: 'RESET'; shiftDuration: number; cookingSpeed: number; orderSpeed: number; orderSpawnRate: number; stationCapacity: StationCapacity; restrictSlots: boolean; enabledRecipes: string[]; teams?: Record<string, 'red' | 'blue'> }
+  | { type: 'RESET'; shiftDuration: number; cookingSpeed: number; orderSpeed: number; orderSpawnRate: number; stationCapacity: StationCapacity; restrictSlots: boolean; enabledRecipes: string[]; teams?: Record<string, 'red' | 'blue'>; participantCount?: number }
   | { type: 'ADJUST_COOK_TIMES'; offset: number }
   | { type: 'SET_STATION_HEAT'; stationId: string; heat: number }
   | { type: 'OVERHEAT_STATION'; stationId: string }
@@ -33,7 +33,8 @@ export function createInitialState(
   stationCapacity: StationCapacity = { chopping: 3, cooking: 2 },
   restrictSlots = false,
   enabledRecipes: string[] = Object.keys(RECIPES),
-  teams: Record<string, 'red' | 'blue'> = {}
+  teams: Record<string, 'red' | 'blue'> = {},
+  participantCount = 0
 ): GameState {
   const stations: Record<string, Station> = {}
   for (const id of Object.keys(STATION_DEFS)) {
@@ -62,6 +63,7 @@ export function createInitialState(
     chatMessages: [],
     nextMessageId: 1,
     playerStats: {},
+    participantCount,
     disabledStations: undefined,
     cookingSpeedModifier: undefined,
     moneyMultiplier: undefined,
@@ -125,7 +127,7 @@ function setTeamPrepItems(state: GameState, user: string, items: string[]): Game
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'RESET':
-      return createInitialState(action.shiftDuration, action.cookingSpeed, action.orderSpeed, action.orderSpawnRate, action.stationCapacity, action.restrictSlots, action.enabledRecipes, action.teams ?? {})
+      return createInitialState(action.shiftDuration, action.cookingSpeed, action.orderSpeed, action.orderSpawnRate, action.stationCapacity, action.restrictSlots, action.enabledRecipes, action.teams ?? {}, action.participantCount ?? 0)
 
     case 'ADD_CHAT':
       return addMsg(state, action.username, action.text, action.msgType)
@@ -145,7 +147,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         const blueSize = Object.values(state.teams).filter(t => t === 'blue').length
         needed = Math.max(1, Math.ceil(Math.max(redSize, blueSize) * 0.5))
       } else {
-        const totalPlayers = Math.max(1, Object.keys(state.playerStats).length)
+        const totalPlayers = Math.max(state.participantCount, Object.keys(state.playerStats).length, 1)
         needed = Math.max(1, Math.ceil(totalPlayers * 0.5))
       }
       const withStat = addStat(state, user, 'extinguished', 1)
