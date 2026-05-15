@@ -5,7 +5,7 @@ import type { SharedSnapshot, PartialPlayerView } from '../shared/protocol'
 const RELAY_URL = import.meta.env.VITE_RELAY_URL ?? 'http://localhost:8080'
 const SESSION_KEY = 'chatskitchen_room'
 
-export interface Credentials { code: string; nickname: string }
+export interface Credentials { code: string; nickname: string; playerId?: string }
 interface RoomInfo { code: string; playerId: string; nickname: string }
 
 interface Args {
@@ -38,7 +38,7 @@ export function usePlayerSocket({ credentials, onJoined, onSnapshot, onRoomClose
       setConnected(true)
       // Only join once — skip re-join on reconnect if we already have a playerId
       if (roomRef.current) return
-      s.emit('player:join', { code: credentials.code, nickname: credentials.nickname }, (res: any) => {
+      s.emit('player:join', { code: credentials.code, nickname: credentials.nickname, playerId: credentials.playerId }, (res: any) => {
         if (res.error) {
           onErrorRef.current(res.error)
           s.disconnect()

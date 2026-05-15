@@ -2,7 +2,7 @@ export type RoomCode = string  // 4 uppercase letters, e.g. "ABCD"
 export type PlayerId = string  // server-generated ~8 chars
 
 // ── Client → Server ──────────────────────────────────────────────
-export interface PlayerJoinMsg { code: RoomCode; nickname: string }
+export interface PlayerJoinMsg { code: RoomCode; nickname: string; playerId?: PlayerId }
 export interface PlayerJoinAck { playerId: PlayerId; nickname: string }
 export interface PlayerJoinErr { error: string }
 

@@ -8,16 +8,23 @@ const io = new Server(http, {
   transports: ['websocket', 'polling'],
 })
 
+interface PlayerRecord {
+  socketId: string
+  nickname: string
+  disconnectedAt?: number
+}
+
 interface Room {
   code: string
   hostSocketId: string
-  players: Map<string, { socketId: string; nickname: string }>
+  players: Map<string, PlayerRecord>
   locked: boolean
   hostDisconnectedAt?: number
 }
 
 const rooms = new Map<string, Room>()
 const HOST_GRACE_MS = 30_000
+const PLAYER_RECONNECT_GRACE_MS = 60_000
 
 function makeCode(): string {
   const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
@@ -84,6 +91,26 @@ io.on('connection', (socket: Socket) => {
   socket.on('player:join', (msg: PlayerJoinMsg, ack: (r: any) => void) => {
     const room = rooms.get(msg.code)
     if (!room) return ack({ error: 'Room not found' })
+
+    // Reconnection: player provides their existing playerId
+    if (msg.playerId) {
+      const existing = room.players.get(msg.playerId)
+      if (existing) {
+        // Restore the player on the new socket regardless of lock state
+        existing.socketId = socket.id
+        existing.disconnectedAt = undefined
+        socket.join(`room:${msg.code}`)
+        socket.join(`players:${msg.code}`)
+        role = 'player'
+        roomCode = msg.code
+        playerId = msg.playerId
+        ack({ playerId: msg.playerId, nickname: existing.nickname })
+        io.to(`host:${msg.code}`).emit('room:player_joined', { playerId: msg.playerId, nickname: existing.nickname })
+        return
+      }
+    }
+
+    // New join
     if (room.locked) return ack({ error: 'Game already in progress — wait for next round' })
     if (room.players.size >= 20) return ack({ error: 'Room full' })
     const pid = makePlayerId()
@@ -142,9 +169,22 @@ io.on('connection', (socket: Socket) => {
         }
       }, HOST_GRACE_MS + 500)
     } else if (role === 'player' && playerId) {
-      room.players.delete(playerId)
-      buckets.delete(playerId)
-      io.to(`host:${roomCode}`).emit('room:player_left', { playerId })
+      const p = room.players.get(playerId)
+      if (p) {
+        // Mark disconnected but keep record so the player can reconnect
+        p.disconnectedAt = Date.now()
+        io.to(`host:${roomCode}`).emit('room:player_left', { playerId })
+        // Clean up after grace period if they don't reconnect
+        setTimeout(() => {
+          const r = rooms.get(roomCode!)
+          if (!r) return
+          const record = r.players.get(playerId!)
+          if (record?.disconnectedAt && Date.now() - record.disconnectedAt >= PLAYER_RECONNECT_GRACE_MS) {
+            r.players.delete(playerId!)
+            buckets.delete(playerId!)
+          }
+        }, PLAYER_RECONNECT_GRACE_MS + 500)
+      }
     }
   })
 })

@@ -4,7 +4,7 @@ import styles from './JoinScreen.module.css'
 const SESSION_KEY = 'chatskitchen_room'
 
 interface Props {
-  onCredentials: (creds: { code: string; nickname: string }) => void
+  onCredentials: (creds: { code: string; nickname: string; playerId?: string }) => void
   error: string | null
   loading: boolean
 }
@@ -20,10 +20,10 @@ export default function JoinScreen({ onCredentials, error, loading }: Props) {
     const stored = sessionStorage.getItem(SESSION_KEY)
     if (!stored) return
     try {
-      const cached = JSON.parse(stored) as { code: string; nickname: string }
+      const cached = JSON.parse(stored) as { code: string; nickname: string; playerId?: string }
       const urlRoom = params.get('room')
       if (!urlRoom || urlRoom.toUpperCase() === cached.code.toUpperCase()) {
-        onCredentials({ code: cached.code, nickname: cached.nickname })
+        onCredentials({ code: cached.code, nickname: cached.nickname, playerId: cached.playerId })
       }
     } catch {
       sessionStorage.removeItem(SESSION_KEY)
