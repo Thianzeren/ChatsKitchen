@@ -4,72 +4,108 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #1a1a2e;
-  color: #fff;
-  padding: 24px;
-  gap: 20px;
-  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  padding: 32px 24px;
+  gap: 18px;
 }
 
 .title {
-  font-size: 2rem;
-  font-weight: 800;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: var(--text);
   text-align: center;
+  line-height: 1;
+  text-shadow:
+    0 4px 0 var(--accent-deep),
+    -1px -1px 0 var(--accent),
+     1px -1px 0 var(--accent),
+    -1px  1px 0 var(--accent),
+     1px  1px 0 var(--accent);
 }
 
 .subtitle {
-  font-size: 1rem;
-  opacity: 0.7;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--text-muted);
   text-align: center;
+  line-height: 1.5;
 }
 
 .input {
   width: 100%;
   max-width: 320px;
   padding: 16px;
-  font-size: 1.5rem;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
   text-align: center;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
-  border: 2px solid #444;
-  border-radius: 12px;
-  background: #2a2a3e;
-  color: #fff;
+  letter-spacing: 0.25em;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-4);
+  color: var(--text);
   outline: none;
+  transition: border-color 0.15s;
+}
+
+.input::placeholder {
+  color: var(--text-faint);
+  letter-spacing: 0.15em;
 }
 
 .input:focus {
-  border-color: #7c6af7;
+  border-color: var(--accent);
 }
 
 .nicknameInput {
   width: 100%;
   max-width: 320px;
   padding: 14px 16px;
-  font-size: 1.1rem;
-  border: 2px solid #444;
-  border-radius: 12px;
-  background: #2a2a3e;
-  color: #fff;
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-4);
+  color: var(--text);
   outline: none;
+  transition: border-color 0.15s;
+}
+
+.nicknameInput::placeholder {
+  color: var(--text-muted);
 }
 
 .nicknameInput:focus {
-  border-color: #7c6af7;
+  border-color: var(--accent);
 }
 
 .btn {
   width: 100%;
   max-width: 320px;
   padding: 18px;
-  font-size: 1.2rem;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.4rem;
   font-weight: 700;
   border: none;
-  border-radius: 12px;
-  background: #7c6af7;
-  color: #fff;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--text);
   cursor: pointer;
   min-height: 56px;
+  box-shadow: 0 4px 0 var(--accent-deep);
+  transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--accent-deep);
 }
 
 .btn:disabled {
@@ -78,7 +114,9 @@
 }
 
 .error {
-  color: #ff6b6b;
-  font-size: 0.95rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.88rem;
+  color: #c03830;
   text-align: center;
+  line-height: 1.4;
 }

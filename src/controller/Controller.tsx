@@ -73,7 +73,7 @@ export default function Controller({ snapshot, you, send, connected }: Props) {
           : snapshot.orders.map(o => (
             <div key={o.id} className={styles.orderChip}>
               <span className={styles.orderEmoji}>{o.emoji}</span>
-              <span>{o.dish}</span>
+              <span className={styles.orderName}>{o.dish}</span>
               <div className={styles.patienceBar}>
                 <div
                   className={`${styles.patienceFill} ${o.patiencePct < 0.3 ? styles.patienceLow : ''}`}
