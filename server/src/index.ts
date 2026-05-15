@@ -73,6 +73,7 @@ io.on('connection', (socket: Socket) => {
     const room = rooms.get(msg.code)
     if (!room || room.hostSocketId !== socket.id) return
     io.to(`players:${msg.code}`).emit('room:closed', { reason: 'host_gone' })
+    room.players.forEach((_, pid) => buckets.delete(pid))
     rooms.delete(msg.code)
   })
 
@@ -161,11 +162,13 @@ io.on('connection', (socket: Socket) => {
     if (!room) return
     if (role === 'host' && room.hostSocketId === socket.id) {
       room.hostDisconnectedAt = Date.now()
+      const capturedHostCode = roomCode
       setTimeout(() => {
-        const r = rooms.get(roomCode!)
+        const r = rooms.get(capturedHostCode)
         if (r?.hostDisconnectedAt && Date.now() - r.hostDisconnectedAt >= HOST_GRACE_MS) {
-          io.to(`players:${roomCode!}`).emit('room:closed', { reason: 'host_gone' })
-          rooms.delete(roomCode!)
+          r.players.forEach((_, pid) => buckets.delete(pid))
+          io.to(`players:${capturedHostCode}`).emit('room:closed', { reason: 'host_gone' })
+          rooms.delete(capturedHostCode)
         }
       }, HOST_GRACE_MS + 500)
     } else if (role === 'player' && playerId) {
@@ -174,14 +177,15 @@ io.on('connection', (socket: Socket) => {
         // Mark disconnected but keep record so the player can reconnect
         p.disconnectedAt = Date.now()
         io.to(`host:${roomCode}`).emit('room:player_left', { playerId })
-        // Clean up after grace period if they don't reconnect
+        const capturedPlayerCode = roomCode
+        const capturedPlayerId = playerId
         setTimeout(() => {
-          const r = rooms.get(roomCode!)
+          const r = rooms.get(capturedPlayerCode)
           if (!r) return
-          const record = r.players.get(playerId!)
+          const record = r.players.get(capturedPlayerId)
           if (record?.disconnectedAt && Date.now() - record.disconnectedAt >= PLAYER_RECONNECT_GRACE_MS) {
-            r.players.delete(playerId!)
-            buckets.delete(playerId!)
+            r.players.delete(capturedPlayerId)
+            buckets.delete(capturedPlayerId)
           }
         }, PLAYER_RECONNECT_GRACE_MS + 500)
       }

@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { io, Socket } from 'socket.io-client'
-import type { SharedSnapshot, PartialPlayerView } from '../shared/protocol'
-
-const RELAY_URL = import.meta.env.VITE_RELAY_URL ?? 'http://localhost:8080'
-const SESSION_KEY = 'chatskitchen_room'
+import type { SharedSnapshot, PartialPlayerView, PlayerJoinAck, PlayerJoinErr } from '../shared/protocol'
+import { RELAY_URL, SESSION_KEY } from '../shared/config'
 
 export interface Credentials { code: string; nickname: string; playerId?: string }
-interface RoomInfo { code: string; playerId: string; nickname: string }
+export interface RoomInfo { code: string; playerId: string; nickname: string }
 
 interface Args {
   credentials: Credentials | null
@@ -36,10 +34,10 @@ export function usePlayerSocket({ credentials, onJoined, onSnapshot, onRoomClose
 
     s.on('connect', () => {
       setConnected(true)
-      // Only join once — skip re-join on reconnect if we already have a playerId
+      // On reconnect, socket.io fires 'connect' again — skip re-join if already in the room
       if (roomRef.current) return
-      s.emit('player:join', { code: credentials.code, nickname: credentials.nickname, playerId: credentials.playerId }, (res: any) => {
-        if (res.error) {
+      s.emit('player:join', { code: credentials.code, nickname: credentials.nickname, playerId: credentials.playerId }, (res: PlayerJoinAck | PlayerJoinErr) => {
+        if ('error' in res) {
           onErrorRef.current(res.error)
           s.disconnect()
           return
@@ -62,11 +60,7 @@ export function usePlayerSocket({ credentials, onJoined, onSnapshot, onRoomClose
   const send = (command: string) => {
     const room = roomRef.current
     if (!room || !socketRef.current) return
-    socketRef.current.emit('player:action', {
-      code: room.code,
-      playerId: room.playerId,
-      command,
-    })
+    socketRef.current.emit('player:action', { code: room.code, playerId: room.playerId, command })
   }
 
   return { send, connected }

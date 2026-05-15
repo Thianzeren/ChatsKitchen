@@ -1,39 +1,35 @@
 import { useState } from 'react'
-import type { SharedSnapshot, PartialPlayerView } from '../shared/protocol'
-import { usePlayerSocket, type Credentials } from './usePlayerSocket'
+import type { SharedSnapshot } from '../shared/protocol'
+import { SESSION_KEY } from '../shared/config'
+import { usePlayerSocket, type Credentials, type RoomInfo } from './usePlayerSocket'
 import JoinScreen from './JoinScreen'
 import Lobby from './Lobby'
 import Controller from './Controller'
 
-type Stage = 'join' | 'lobby' | 'playing' | 'gameover'
-
-interface RoomInfo { code: string; playerId: string; nickname: string }
-
 export default function ControllerApp() {
-  const [stage, setStage] = useState<Stage>('join')
   const [room, setRoom] = useState<RoomInfo | null>(null)
   const [credentials, setCredentials] = useState<Credentials | null>(null)
   const [joinError, setJoinError] = useState<string | null>(null)
   const [snapshot, setSnapshot] = useState<SharedSnapshot | null>(null)
-  const [you, setYou] = useState<PartialPlayerView>({ cooldownMs: 0 })
 
   const { send, connected } = usePlayerSocket({
     credentials,
-    onJoined: (r) => { setRoom(r); setStage('lobby'); setJoinError(null) },
-    onSnapshot: (shared, playerView) => {
-      setSnapshot(shared)
-      setYou(playerView)
-      if (shared.phase === 'playing' && stage !== 'playing') setStage('playing')
-      if (shared.phase === 'gameover' && stage !== 'gameover') setStage('gameover')
-      if (shared.phase === 'lobby' && stage !== 'lobby' && stage !== 'join') setStage('lobby')
-    },
-    onRoomClosed: () => { setRoom(null); setCredentials(null); setStage('join') },
+    onJoined: (r) => { setRoom(r); setJoinError(null) },
+    onSnapshot: (shared) => setSnapshot(shared),
+    onRoomClosed: () => { setRoom(null); setCredentials(null); setSnapshot(null) },
     onError: (msg) => { setJoinError(msg); setCredentials(null) },
   })
 
+  const handleExitRoom = () => {
+    sessionStorage.removeItem(SESSION_KEY)
+    setRoom(null)
+    setCredentials(null)
+    setSnapshot(null)
+  }
+
   const joining = credentials !== null && room === null
 
-  if (stage === 'join' || !room) {
+  if (!room) {
     return (
       <JoinScreen
         onCredentials={(creds) => { setJoinError(null); setCredentials(creds) }}
@@ -43,18 +39,13 @@ export default function ControllerApp() {
     )
   }
 
-  const handleExitRoom = () => {
-    sessionStorage.removeItem('chatskitchen_room')
-    setRoom(null)
-    setCredentials(null)
-    setStage('join')
-  }
+  const phase = snapshot?.phase ?? 'lobby'
 
-  if (stage === 'lobby' || stage === 'gameover' || !snapshot) {
+  if (phase !== 'playing') {
     return (
       <Lobby
         nickname={room.nickname}
-        stage={stage}
+        stage={phase}
         snapshot={snapshot}
         send={send}
         connected={connected}
@@ -63,5 +54,5 @@ export default function ControllerApp() {
     )
   }
 
-  return <Controller snapshot={snapshot} you={you} send={send} connected={connected} roomCode={room.code} onExit={handleExitRoom} />
+  return <Controller snapshot={snapshot!} send={send} connected={connected} roomCode={room.code} onExit={handleExitRoom} />
 }

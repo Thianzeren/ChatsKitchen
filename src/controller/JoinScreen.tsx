@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
+import { SESSION_KEY } from '../shared/config'
 import styles from './JoinScreen.module.css'
-
-const SESSION_KEY = 'chatskitchen_room'
 
 interface Props {
   onCredentials: (creds: { code: string; nickname: string; playerId?: string }) => void
@@ -10,8 +9,8 @@ interface Props {
 }
 
 export default function JoinScreen({ onCredentials, error, loading }: Props) {
-  const params = new URLSearchParams(window.location.search)
-  const [code, setCode] = useState(params.get('room') ?? '')
+  const urlRoom = new URLSearchParams(window.location.search).get('room') ?? ''
+  const [code, setCode] = useState(urlRoom)
   const [nickname, setNickname] = useState('')
   const [localError, setLocalError] = useState<string | null>(null)
 
@@ -21,7 +20,6 @@ export default function JoinScreen({ onCredentials, error, loading }: Props) {
     if (!stored) return
     try {
       const cached = JSON.parse(stored) as { code: string; nickname: string; playerId?: string }
-      const urlRoom = params.get('room')
       if (!urlRoom || urlRoom.toUpperCase() === cached.code.toUpperCase()) {
         onCredentials({ code: cached.code, nickname: cached.nickname, playerId: cached.playerId })
       }

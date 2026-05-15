@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { io, Socket } from 'socket.io-client'
 import type { SharedSnapshot, PartialPlayerView } from '../shared/protocol'
-
-const RELAY_URL = import.meta.env.VITE_RELAY_URL ?? 'http://localhost:8080'
+import { RELAY_URL } from '../shared/config'
 
 interface Args {
   enabled: boolean
@@ -17,7 +16,6 @@ export function useRoomHost({ enabled, onPlayerCommand, onPlayerJoined, onPlayer
   const socketRef = useRef<Socket | null>(null)
   const codeRef = useRef<string | null>(null)
 
-  // Stable refs for callbacks so the useEffect dep array stays [enabled]
   const onPlayerCommandRef = useRef(onPlayerCommand)
   const onPlayerJoinedRef = useRef(onPlayerJoined)
   const onPlayerLeftRef = useRef(onPlayerLeft)

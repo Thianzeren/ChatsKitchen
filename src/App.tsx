@@ -92,6 +92,8 @@ export default function App() {
   })
   const stateRef = useRef(state)
   stateRef.current = state
+  const lastSnapshotStateRef = useRef<object | null>(null)
+  const lastSnapshotPhaseRef = useRef<string | null>(null)
   const activeGameOptionsRef = useRef<GameOptions | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -483,7 +485,11 @@ export default function App() {
         currentScreen === 'playing' ? 'playing'
         : (currentScreen === 'shiftend' || currentScreen === 'gameover') ? 'gameover'
         : 'lobby'
-      roomRef.current.sendSnapshot(gameStateToSnapshot(stateRef.current, phase))
+      const s = stateRef.current
+      if (s === lastSnapshotStateRef.current && phase === lastSnapshotPhaseRef.current) return
+      lastSnapshotStateRef.current = s
+      lastSnapshotPhaseRef.current = phase
+      roomRef.current.sendSnapshot(gameStateToSnapshot(s, phase))
     }, 300)
     return () => clearInterval(interval)
   }, [chatMode])

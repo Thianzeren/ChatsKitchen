@@ -1,18 +1,22 @@
 import { useState, useRef, useEffect } from 'react'
-import type { SharedSnapshot, PartialPlayerView } from '../shared/protocol'
+import type { SharedSnapshot } from '../shared/protocol'
 import styles from './Controller.module.css'
 
 const VALID_VERBS = new Set([
   'chop','grill','fry','boil','toast','roast','stirfry','steam','simmer',
-  'cook','mix','grind','knead','serve','cool','extinguish','plate',
+  'cook','mix','grind','knead','serve','cool','extinguish',
 ])
 const COOLDOWN_MS = 1500
 
 type FeedbackKind = 'invalid' | 'busy'
 
+function formatTime(ms: number): string {
+  const s = Math.ceil(ms / 1000)
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+}
+
 interface Props {
   snapshot: SharedSnapshot
-  you: PartialPlayerView
   send: (command: string) => void
   connected: boolean
   roomCode: string
@@ -30,11 +34,6 @@ export default function Controller({ snapshot, send, connected, roomCode, onExit
   const cooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const feedbackKeyRef = useRef(0)
-
-  const formatTime = (ms: number) => {
-    const s = Math.ceil(ms / 1000)
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
-  }
 
   const showFeedback = (kind: FeedbackKind, label: string) => {
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
