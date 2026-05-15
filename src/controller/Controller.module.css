@@ -1,12 +1,13 @@
 .controller {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background: var(--bg);
   color: var(--text);
-  padding: 0;
-  overflow-y: auto;
+  overflow: hidden;
 }
+
+/* ── Header ── */
 
 .header {
   display: flex;
@@ -15,7 +16,7 @@
   padding: 10px 16px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
@@ -33,6 +34,14 @@
   color: var(--text-dim);
 }
 
+.teamMoney {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
 .conn {
   width: 8px;
   height: 8px;
@@ -43,303 +52,101 @@
 .connOn  { background: var(--accent-secondary); }
 .connOff { background: #c03830; }
 
-/* ── Orders strip ── */
+/* ── History ── */
 
-.ordersStrip {
-  display: flex;
-  gap: 8px;
-  padding: 10px 14px;
-  overflow-x: auto;
-  background: var(--bg-dark);
-  min-height: 76px;
-  align-items: center;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.orderChip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 10px;
-  flex-shrink: 0;
-  gap: 3px;
-}
-
-.orderEmoji {
-  font-size: 1.5rem;
-  line-height: 1;
-}
-
-.orderName {
-  font-family: 'Fredoka', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-dim);
-  white-space: nowrap;
-}
-
-.patienceBar {
-  width: 44px;
-  height: 3px;
-  background: var(--border);
-  border-radius: 2px;
-}
-
-.patienceFill {
-  height: 100%;
-  border-radius: 2px;
-  background: var(--accent-secondary);
-  transition: width 0.3s linear;
-}
-
-.patienceLow { background: #c03830; }
-
-/* ── Section labels ── */
-
-.section {
-  padding: 10px 16px 3px;
-  font-family: 'Space Mono', monospace;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-/* ── Verb buttons ── */
-
-.verbGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  padding: 6px 14px;
-}
-
-.verbBtn {
-  padding: 11px 13px;
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text-secondary);
-  font-family: 'Fredoka', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  min-height: 46px;
-  cursor: pointer;
-  transition: border-color 0.1s, background 0.1s, color 0.1s;
-}
-
-.verbBtn.selected {
-  border-color: var(--accent);
-  background: var(--surface-2);
-  color: var(--text);
-}
-
-.verbBtn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-/* ── Ingredient buttons ── */
-
-.ingredientGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 6px 14px;
-}
-
-.ingredientBtn {
-  padding: 13px 15px;
-  border: none;
-  border-radius: 8px;
-  background: var(--accent);
-  color: var(--text);
-  font-family: 'Fredoka', sans-serif;
-  font-size: 1.05rem;
-  font-weight: 700;
-  min-height: 50px;
-  cursor: pointer;
-  box-shadow: 0 3px 0 var(--accent-deep);
-  transition: filter 0.1s, transform 0.08s, box-shadow 0.08s;
-}
-
-.ingredientBtn:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 var(--accent-deep);
-}
-
-/* ── Serve buttons ── */
-
-.serveGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 6px 14px;
-}
-
-.serveBtn {
-  padding: 12px 15px;
-  border: none;
-  border-radius: 8px;
-  background: var(--accent-secondary);
-  color: var(--text);
-  font-family: 'Fredoka', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  min-height: 48px;
-  cursor: pointer;
-  box-shadow: 0 3px 0 var(--accent-secondary-deep);
-  transition: filter 0.1s, transform 0.08s, box-shadow 0.08s;
-}
-
-.serveBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.serveBtn:not(:disabled):active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 var(--accent-secondary-deep);
-}
-
-/* ── Station heat ── */
-
-.stationRow {
-  display: flex;
-  gap: 10px;
-  padding: 6px 14px 14px;
-  overflow-x: auto;
-}
-
-.stationChip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
-  padding: 8px 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-
-.heatBar {
-  width: 44px;
-  height: 5px;
-  background: var(--border);
-  border-radius: 3px;
-}
-
-.heatFill {
-  height: 100%;
-  border-radius: 3px;
-  background: var(--accent-secondary);
-}
-
-.heatWarm { background: #e07030; }
-.heatHot  { background: #c03830; }
-
-.stationLabel {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  text-align: center;
-  max-width: 56px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.coolBtn {
-  padding: 7px 10px;
-  border: 1.5px solid var(--accent-tertiary);
-  border-radius: 7px;
-  background: transparent;
-  color: var(--accent-tertiary);
-  font-family: 'Fredoka', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  min-height: 34px;
-  transition: background 0.1s;
-}
-
-.coolBtn:active {
-  background: rgba(120, 88, 204, 0.15);
-}
-
-.extBtn {
-  padding: 7px 10px;
-  border: none;
-  border-radius: 7px;
-  background: #c03830;
-  color: var(--text);
-  font-family: 'Fredoka', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  min-height: 34px;
-  box-shadow: 0 2px 0 #7a1a18;
-}
-
-/* ── Cooldown bar ── */
-
-.cooldownBar {
-  height: 3px;
-  background: var(--accent);
-  transition: width 0.1s linear;
-  margin: 0 14px 6px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-/* ── Freeform input ── */
-
-.freeform {
-  display: flex;
-  gap: 8px;
-  padding: 4px 14px 8px;
-}
-
-.freeformInput {
+.history {
   flex: 1;
-  padding: 11px 12px;
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface-4);
-  color: var(--text);
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.historyHint {
   font-family: 'Space Mono', monospace;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  color: var(--text-faint);
+  text-align: center;
+  line-height: 1.6;
+  align-self: center;
+  margin: auto 0;
+}
+
+.historyEntry {
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  background: var(--surface);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  word-break: break-all;
+}
+
+.historyPrompt {
+  color: var(--accent);
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+/* ── Input row ── */
+
+.inputRow {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.chatInput {
+  flex: 1;
+  padding: 14px 16px;
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
   outline: none;
   transition: border-color 0.15s;
+  min-height: 50px;
 }
 
-.freeformInput:focus {
+.chatInput::placeholder {
+  color: var(--text-faint);
+  font-size: 0.82rem;
+}
+
+.chatInput:focus {
   border-color: var(--accent);
 }
 
-.freeformInput::placeholder {
-  color: var(--text-muted);
-}
-
-.freeformBtn {
-  padding: 11px 16px;
-  border: none;
-  border-radius: 8px;
-  background: var(--surface-2);
-  color: var(--text-secondary);
+.sendBtn {
+  padding: 14px 22px;
   font-family: 'Fredoka', sans-serif;
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--text);
   cursor: pointer;
-  transition: background 0.1s;
+  box-shadow: 0 4px 0 var(--accent-deep);
+  transition: filter 0.1s, transform 0.08s, box-shadow 0.08s;
+  white-space: nowrap;
+  min-height: 50px;
 }
 
-.freeformBtn:active {
-  background: var(--surface);
+.sendBtn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.sendBtn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--accent-deep);
 }
