@@ -52,6 +52,14 @@
 .connOn  { background: var(--accent-secondary); }
 .connOff { background: #c03830; }
 
+.roomCode {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
 /* ── History ── */
 
 .history {

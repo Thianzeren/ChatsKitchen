@@ -63,5 +63,5 @@ export default function ControllerApp() {
     )
   }
 
-  return <Controller snapshot={snapshot} you={you} send={send} connected={connected} />
+  return <Controller snapshot={snapshot} you={you} send={send} connected={connected} roomCode={room.code} />
 }

@@ -7,9 +7,10 @@ interface Props {
   you: PartialPlayerView
   send: (command: string) => void
   connected: boolean
+  roomCode: string
 }
 
-export default function Controller({ snapshot, send, connected }: Props) {
+export default function Controller({ snapshot, send, connected, roomCode }: Props) {
   const [text, setText] = useState('')
   const [history, setHistory] = useState<string[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
@@ -45,6 +46,7 @@ export default function Controller({ snapshot, send, connected }: Props) {
             🔴 ${snapshot.teamMoney.red} &nbsp; 🔵 ${snapshot.teamMoney.blue}
           </span>
         )}
+        <span className={styles.roomCode}>{roomCode}</span>
         <span className={`${styles.conn} ${connected ? styles.connOn : styles.connOff}`} />
       </div>
 
