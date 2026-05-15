@@ -5,3 +5,6 @@ dist
 .superpowers
 .playwright-mcp
 .claude
+graphify-out/
+test-*.png
+src/shared/protocol.js
