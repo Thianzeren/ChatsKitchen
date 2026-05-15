@@ -32,6 +32,7 @@ export default function Lobby({ nickname, stage, snapshot, send, connected, onEx
           <span className={`${styles.dot} ${connected ? styles.dotOn : ''}`} />
           {connected ? 'Connected' : 'Reconnecting…'}
         </div>
+        <button className={styles.exitBtn} onClick={onExit}>Leave Room</button>
       </div>
     )
   }
