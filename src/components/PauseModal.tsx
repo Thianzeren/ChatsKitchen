@@ -77,7 +77,7 @@ export default function PauseModal({
 
           {onOpenLobby && (
             <button className={styles.exitBtn} onClick={onOpenLobby}>
-              Open Lobby
+              Room Lobby
             </button>
           )}
           {onPlaysetPicker && (
