@@ -5,7 +5,7 @@ import { useAdventureRun } from './hooks/useAdventureRun'
 import { useGameSession } from './hooks/useGameSession'
 import { gameReducer, createInitialState } from './state/gameReducer'
 import { parseCommand } from './state/commandProcessor'
-import { AudioSettings, GameOptions, Screen, TutorialDestination, ActiveEventOptions } from './state/types'
+import { AudioSettings, GameOptions, Screen, TutorialDestination, ActiveEventOptions, toActiveEventOptions } from './state/types'
 import { computeStarThresholds } from './data/starThresholds'
 import { useGameLoop } from './hooks/useGameLoop'
 import { useBotSimulation } from './hooks/useBotSimulation'
@@ -150,26 +150,12 @@ export default function App() {
   } = tutorial
 
   const startFreePlay = useCallback((replay = false) => {
-    const lastOpts = replay ? lastPlayedOptionsRef.current : null
-    const opts = lastOpts ?? gameOptions
+    const replayOpts = replay ? lastPlayedOptionsRef.current : null
+    const opts = replayOpts ?? gameOptions
+    if (!replay) lastPlayedOptionsRef.current = gameOptions
 
-    if (!replay) {
-      lastPlayedOptionsRef.current = gameOptions
-    }
-
-    if (lastOpts) {
-      setActiveEventOptions({
-        kitchenEventsEnabled: lastOpts.kitchenEventsEnabled,
-        enabledKitchenEvents: lastOpts.enabledKitchenEvents,
-        kitchenEventSpawnMin: lastOpts.kitchenEventSpawnMin,
-        kitchenEventSpawnMax: lastOpts.kitchenEventSpawnMax,
-        kitchenEventDuration: lastOpts.kitchenEventDuration,
-      })
-      activeGameOptionsRef.current = lastOpts
-    } else {
-      setActiveEventOptions(null)
-      activeGameOptionsRef.current = null
-    }
+    setActiveEventOptions(replayOpts ? toActiveEventOptions(replayOpts) : null)
+    activeGameOptionsRef.current = replayOpts
 
     setAdventureRun(null)
     const teams: Record<string, 'red' | 'blue'> = pvpLobbyRef.current

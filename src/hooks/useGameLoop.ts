@@ -59,7 +59,6 @@ export function useGameLoop(
 
       gameTimeRef.current += delta
 
-      // Tick game state — slot elapsedMs advances only here, so pause naturally freezes cooking
       dispatch({ type: 'TICK', delta, now })
 
       // Spawn orders

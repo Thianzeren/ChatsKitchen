@@ -372,7 +372,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       for (const [id, station] of Object.entries(newStations)) {
         if (station.overheated || station.slots.length === 0) continue
 
-        let slotsChanged = false
         const updatedSlots: StationSlot[] = []
         let currentHeat = newStations[id].heat
 
@@ -380,17 +379,17 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           const elapsed = slot.elapsedMs + delta
 
           // Step A: Apply incremental heat delta (chopping board is exempt)
-          let updatedSlot: StationSlot = { ...slot, elapsedMs: elapsed }
-          slotsChanged = true
+          let newHeatApplied = slot.heatApplied
           if (!HEAT_EXEMPT_STATIONS.has(id) && slot.state === 'cooking') {
             const progress = Math.min(1, elapsed / slot.cookDuration)
             const expectedHeat = progress * slot.heatPerCook
             const heatDelta = expectedHeat - slot.heatApplied
             if (heatDelta > 0) {
               currentHeat += heatDelta
-              updatedSlot = { ...updatedSlot, heatApplied: expectedHeat }
+              newHeatApplied = expectedHeat
             }
           }
+          const updatedSlot: StationSlot = { ...slot, elapsedMs: elapsed, heatApplied: newHeatApplied }
 
           // Step B: Check overheat
           if (currentHeat >= 100) {
@@ -405,7 +404,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
               text: `🔥 ${STATION_DEFS[id].name} OVERHEATED! Type extinguish ${id} to restore it!`,
               type: 'system',
             })
-            slotsChanged = true
             break // station is locked, skip remaining slots
           }
 
@@ -420,7 +418,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
               newPreparedItems.push(slot.produces)
             }
             delete newActiveUsers[slot.user]
-            slotsChanged = true
             messages.push({
               id: nextMsgId++,
               username: 'KITCHEN',
@@ -434,7 +431,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           }
         }
 
-        if (slotsChanged && !newStations[id].overheated) {
+        if (!newStations[id].overheated) {
           newStations[id] = { ...newStations[id], heat: currentHeat, slots: updatedSlots }
         }
       }

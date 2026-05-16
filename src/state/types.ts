@@ -9,6 +9,11 @@ export interface ActiveEventOptions {
   kitchenEventDuration: number
 }
 
+export function toActiveEventOptions(opts: ActiveEventOptions): ActiveEventOptions {
+  const { kitchenEventsEnabled, enabledKitchenEvents, kitchenEventSpawnMin, kitchenEventSpawnMax, kitchenEventDuration } = opts
+  return { kitchenEventsEnabled, enabledKitchenEvents, kitchenEventSpawnMin, kitchenEventSpawnMax, kitchenEventDuration }
+}
+
 export type SlotState = 'cooking'
 
 export interface StationSlot {
