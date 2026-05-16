@@ -11,7 +11,7 @@ function hashStr(s: string): number {
 }
 
 function calcScore(s: PlayerStats): number {
-  return s.cooked + s.served + s.extinguished + s.cooled + s.eventParticipations - s.firesCaused + s.bonusPoints
+  return s.cooked + s.served + s.extinguished * 2 + s.cooled + s.eventParticipations * 2 - s.firesCaused + s.bonusPoints
 }
 
 interface Props {
