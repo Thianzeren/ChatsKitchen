@@ -231,6 +231,16 @@
   flex-shrink: 0;
 }
 
+.twitchCardDisconnected {
+  border-color: #bf94ff;
+  animation: twitchCardGlow 2.5s ease-in-out infinite;
+}
+
+@keyframes twitchCardGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(145, 70, 255, 0); }
+  50% { box-shadow: 0 0 12px 3px rgba(145, 70, 255, 0.25); }
+}
+
 .twitchLabel {
   font-family: 'Fredoka', sans-serif;
   font-size: 18px;
@@ -335,6 +345,24 @@
 @keyframes twitchPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
+}
+
+.twitchStatusDisconnected {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 16px;
+  color: #d94f4f;
+}
+
+.twitchDotDisconnected {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d94f4f;
+  flex-shrink: 0;
+  animation: twitchPulse 2s ease-in-out infinite;
 }
 
 .twitchChannel {

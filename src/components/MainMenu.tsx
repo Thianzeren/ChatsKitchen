@@ -22,6 +22,7 @@ export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeed
   const [twitchInput, setTwitchInput] = useState(twitchChannel || '')
   const isConnected = twitchStatus === 'connected'
   const isConnecting = twitchStatus === 'connecting'
+  const isDisconnected = twitchStatus === 'disconnected'
 
   const handleConnect = () => {
     if (!twitchInput.trim()) return
@@ -102,7 +103,7 @@ export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeed
         <div className={styles.rightCol}>
 
           {/* Twitch Connect Card */}
-          <div className={styles.twitchCard}>
+          <div className={`${styles.twitchCard} ${isDisconnected ? styles.twitchCardDisconnected : ''}`}>
             <div className={styles.twitchLabel}>TWITCH CONNECT</div>
             <div className={styles.twitchForm}>
               <input
@@ -137,6 +138,12 @@ export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeed
               <div className={`${styles.twitchStatus} ${styles.twitchStatusWarning}`}>
                 <span className={`${styles.twitchDot} ${styles.twitchDotWarning}`} />
                 {twitchError || 'Connection failed'}
+              </div>
+            )}
+            {isDisconnected && (
+              <div className={styles.twitchStatusDisconnected}>
+                <span className={styles.twitchDotDisconnected} />
+                Not connected — enter your channel to play with chat
               </div>
             )}
           </div>
