@@ -43,7 +43,7 @@ interface Props {
 }
 
 export default function GameOver({ money, served, lost, playerStats, teams, level, highScore, isNewHighScore, roundHistory, autoRestart, autoRestartDelay, autoRestartSignal, pvpResult, starThresholds, onPlayAgain, onNextLevel, onMenu, onChangePlayset, onOpenLobby, onPvpLobby, onEnableAutoRestart, onDisableAutoRestart }: Props) {
-  const calcScore = (s: PlayerStats) => s.cooked + s.served + s.extinguished + s.cooled + s.eventParticipations - s.firesCaused + s.bonusPoints
+  const calcScore = (s: PlayerStats) => s.cooked + s.served + s.extinguished * 2 + s.cooled + s.eventParticipations * 2 - s.firesCaused + s.bonusPoints
   const leaderboard = useMemo(
     () => Object.entries(playerStats).sort(([, a], [, b]) => calcScore(b) - calcScore(a)),
     [playerStats]

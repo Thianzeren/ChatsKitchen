@@ -171,8 +171,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       let withStat = addStat(state, user, 'extinguished', 1)
 
       if (newVotes.length >= needed) {
-        // Bonus to all voters: coordinating an extinguish is meaningful safety work
-        for (const voter of newVotes) withStat = addStat(withStat, voter, 'bonusPoints', 2)
+        // extinguish base stat (×2 in calcScore) already rewards coordination — no extra bonus needed
         const newStations = {
           ...withStat.stations,
           [stationId]: { ...station, slots: [], heat: 0, overheated: false, extinguishVotes: [], lastExtinguishedAt: Date.now(), lastExtinguishedBy: newVotes },
