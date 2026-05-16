@@ -10,29 +10,21 @@
   100% { opacity: 0; }
 }
 
+/* position: fixed + visual-viewport tracking keeps the controller locked to
+   the visible area on iOS Safari regardless of:
+   - the game's 1440px #root layout (neutralised by body.is-controller)
+   - keyboard opening (--vvh shrinks, --vv-top compensates for layout scroll) */
 .controller {
-  height: 100vh;
-  height: 100dvh;
+  position: fixed;
+  top: var(--vv-top, 0px);
+  left: 0;
+  width: 100%;
   height: var(--vvh, 100dvh);
   display: flex;
   flex-direction: column;
   background: var(--bg);
   color: var(--text);
   overflow: hidden;
-  position: relative;
-}
-
-/* #root in index.html is 1440px wide and centered with margin-left: -720px
-   for the desktop game's fixed-design-width scaling. On viewports under
-   1440px, .controller inherits that 1440px width, pushing the header,
-   history, and inputRow horizontally off-screen on phones. Reclaim the
-   actual viewport width and shift the controller left to align with
-   viewport x=0. */
-@media (max-width: 1440px) {
-  .controller {
-    width: 100vw;
-    margin-left: calc(720px - 50vw);
-  }
 }
 
 /* ── Screen flash overlay ── */

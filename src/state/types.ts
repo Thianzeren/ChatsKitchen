@@ -9,6 +9,11 @@ export interface ActiveEventOptions {
   kitchenEventDuration: number
 }
 
+export function toActiveEventOptions(opts: ActiveEventOptions): ActiveEventOptions {
+  const { kitchenEventsEnabled, enabledKitchenEvents, kitchenEventSpawnMin, kitchenEventSpawnMax, kitchenEventDuration } = opts
+  return { kitchenEventsEnabled, enabledKitchenEvents, kitchenEventSpawnMin, kitchenEventSpawnMax, kitchenEventDuration }
+}
+
 export type SlotState = 'cooking'
 
 export interface StationSlot {
@@ -16,7 +21,7 @@ export interface StationSlot {
   user: string
   target: string
   produces: string
-  cookStart: number
+  elapsedMs: number
   cookDuration: number
   heatApplied: number
   heatPerCook: number   // total heat this slot contributes when fully cooked (10–20)

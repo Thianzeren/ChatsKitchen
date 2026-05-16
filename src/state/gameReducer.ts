@@ -13,7 +13,6 @@ export type GameAction =
   | { type: 'SPAWN_ORDER'; now: number }
   | { type: 'ADD_CHAT'; username: string; text: string; msgType: ChatMessage['type'] }
   | { type: 'RESET'; shiftDuration: number; cookingSpeed: number; orderSpeed: number; orderSpawnRate: number; stationCapacity: StationCapacity; restrictSlots: boolean; enabledRecipes: string[]; teams?: Record<string, 'red' | 'blue'>; participantCount?: number }
-  | { type: 'ADJUST_COOK_TIMES'; offset: number }
   | { type: 'SET_STATION_HEAT'; stationId: string; heat: number }
   | { type: 'OVERHEAT_STATION'; stationId: string }
   | { type: 'REMOVE_PREPARED_ITEMS'; count: number; message?: string }
@@ -302,7 +301,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         user,
         target: matchedStep.target,
         produces: matchedStep.produces,
-        cookStart: now,
+        elapsedMs: 0,
         cookDuration: matchedStep.duration / (speed * (state.cookingSpeedModifier?.multiplier ?? 1)),
         heatApplied: 0,
         heatPerCook: 10 + Math.floor(Math.random() * 11),  // 10–20
@@ -373,25 +372,24 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       for (const [id, station] of Object.entries(newStations)) {
         if (station.overheated || station.slots.length === 0) continue
 
-        let slotsChanged = false
         const updatedSlots: StationSlot[] = []
         let currentHeat = newStations[id].heat
 
         for (const slot of station.slots) {
-          const elapsed = now - slot.cookStart
+          const elapsed = slot.elapsedMs + delta
 
           // Step A: Apply incremental heat delta (chopping board is exempt)
-          let updatedSlot = slot
+          let newHeatApplied = slot.heatApplied
           if (!HEAT_EXEMPT_STATIONS.has(id) && slot.state === 'cooking') {
             const progress = Math.min(1, elapsed / slot.cookDuration)
             const expectedHeat = progress * slot.heatPerCook
             const heatDelta = expectedHeat - slot.heatApplied
             if (heatDelta > 0) {
               currentHeat += heatDelta
-              updatedSlot = { ...slot, heatApplied: expectedHeat }
-              slotsChanged = true
+              newHeatApplied = expectedHeat
             }
           }
+          const updatedSlot: StationSlot = { ...slot, elapsedMs: elapsed, heatApplied: newHeatApplied }
 
           // Step B: Check overheat
           if (currentHeat >= 100) {
@@ -406,7 +404,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
               text: `🔥 ${STATION_DEFS[id].name} OVERHEATED! Type extinguish ${id} to restore it!`,
               type: 'system',
             })
-            slotsChanged = true
             break // station is locked, skip remaining slots
           }
 
@@ -421,7 +418,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
               newPreparedItems.push(slot.produces)
             }
             delete newActiveUsers[slot.user]
-            slotsChanged = true
             messages.push({
               id: nextMsgId++,
               username: 'KITCHEN',
@@ -435,7 +431,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           }
         }
 
-        if (slotsChanged && !newStations[id].overheated) {
+        if (!newStations[id].overheated) {
           newStations[id] = { ...newStations[id], heat: currentHeat, slots: updatedSlots }
         }
       }
@@ -482,21 +478,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         cookingSpeedModifier,
         moneyMultiplier,
       }
-    }
-
-    case 'ADJUST_COOK_TIMES': {
-      // Shift all cookStart timestamps forward by the pause duration so elapsed
-      // calculations exclude the time the game was paused.
-      const { offset } = action
-      const newStations = { ...state.stations }
-      for (const [id, station] of Object.entries(newStations)) {
-        if (station.slots.length === 0) continue
-        newStations[id] = {
-          ...station,
-          slots: station.slots.map(slot => ({ ...slot, cookStart: slot.cookStart + offset })),
-        }
-      }
-      return { ...state, stations: newStations }
     }
 
     case 'SET_STATION_HEAT': {

@@ -8,6 +8,14 @@
     <style>
       *, *::before, *::after { box-sizing: border-box; }
       html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+      /* Controller page: neutralise the game's fixed-width desktop root layout */
+      body.is-controller { background: #12100e; overflow: auto; }
+      body.is-controller #root {
+        width: 100%; height: auto;
+        transform: none; transform-origin: unset;
+        position: static; left: auto; margin-left: 0;
+        overflow: visible;
+      }
       #root {
         width: 1440px;
         height: var(--app-height, 100vh);
