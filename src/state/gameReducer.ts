@@ -172,7 +172,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       if (newVotes.length >= needed) {
         // Bonus to all voters: coordinating an extinguish is meaningful safety work
-        for (const voter of newVotes) withStat = addStat(withStat, voter, 'bonusPoints', 3)
+        for (const voter of newVotes) withStat = addStat(withStat, voter, 'bonusPoints', 2)
         const newStations = {
           ...withStat.stations,
           [stationId]: { ...station, slots: [], heat: 0, overheated: false, extinguishVotes: [], lastExtinguishedAt: Date.now(), lastExtinguishedBy: newVotes },
@@ -207,7 +207,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const withCooldown = { ...state, stations: newStations, userCooldowns: { ...state.userCooldowns, [user]: Date.now() } }
       let withStat = addStat(withCooldown, user, 'cooled', 1)
       // Bonus for proactive monitoring: cooling a notably hot station (≥60%) prevents overheats
-      if (station.heat >= 60) withStat = addStat(withStat, user, 'bonusPoints', 2)
+      if (station.heat >= 60) withStat = addStat(withStat, user, 'bonusPoints', 1)
       return addMsg(withStat, 'KITCHEN', `${user} cooled the ${STATION_DEFS[stationId].name}! Heat: ${newHeat}%`, 'success')
     }
 
@@ -251,9 +251,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       let withStats = addStat(state, user, 'served', 1)
       withStats = addStat(withStats, user, 'moneyEarned', reward)
-      // Serve quality bonus: higher-value dishes reward the server more
-      const serveBonus = recipe.reward >= 70 ? 3 : recipe.reward >= 55 ? 2 : 1
-      withStats = addStat(withStats, user, 'bonusPoints', serveBonus)
       // Cooking contribution bonuses to each player whose ingredient was used
       for (const [cooker, bonus] of Object.entries(cookerBonuses)) {
         withStats = addStat(withStats, cooker, 'bonusPoints', bonus)
