@@ -644,6 +644,7 @@ export default function App() {
         onOpenLobby={chatMode === 'room' && !adventureRun ? () => { roomRef.current.unlockJoins(); setScreen('localplay') } : undefined}
         onPvpLobby={finalStats.redMoney !== undefined ? () => setScreen('pvplobby') : undefined}
         onEnableAutoRestart={() => handleGameOptionsChange({ ...gameOptionsRef.current, autoRestart: true })}
+        onDisableAutoRestart={() => handleGameOptionsChange({ ...gameOptionsRef.current, autoRestart: false })}
       />
     )
   } else if (screen === 'adventureshiftpassed') {

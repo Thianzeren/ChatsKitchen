@@ -92,11 +92,7 @@
   font-weight: 600;
   color: #e0d8c8;
   flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   text-transform: capitalize;
-  min-width: 0;
 }
 
 .count {
