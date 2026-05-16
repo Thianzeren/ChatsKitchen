@@ -537,8 +537,8 @@ export default function App() {
         twitchChannel={twitchChannel}
         twitchStatus={twitchChat.status}
         twitchError={twitchChat.error}
-        onTwitchConnect={(ch) => setTwitchChannel(ch)}
-        onTwitchDisconnect={() => setTwitchChannel(null)}
+        onTwitchConnect={(ch) => { setTwitchChannel(ch); setChatMode('twitch') }}
+        onTwitchDisconnect={() => { setTwitchChannel(null); setChatMode('local') }}
       />
     )
   } else if (screen === 'localplay') {
