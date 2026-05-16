@@ -388,11 +388,8 @@ score = cooked + served + extinguished + cooled + eventParticipations - firesCau
 | Action | Condition | Bonus |
 |--------|-----------|-------|
 | Cook | Ingredient is later consumed in a served order | +2 per ingredient |
-| Serve | Recipe base value $35–$50 | +1 |
-| Serve | Recipe base value $55–$65 | +2 |
-| Serve | Recipe base value $70+ | +3 |
-| Cool | Station heat was ≥ 60% when cooled | +2 |
-| Extinguish | This vote was the final one that restored the station | +3 to **all** voters in that batch |
+| Cool | Station heat was ≥ 60% when cooled | +1 |
+| Extinguish | This vote was the final one that restored the station | +2 to **all** voters in that batch |
 
 **Provenance tracking** — to know which player cooked each ingredient, `GameState` maintains `preparedItemSources: string[]` as a parallel array to `preparedItems`. Each slot in `preparedItemSources[i]` is the username who cooked `preparedItems[i]`. When `SERVE` consumes ingredients, it splices both arrays at the same indices and awards cooker bonuses. Items added by kitchen events (e.g. `ADD_PREPARED_ITEMS`) push `''` as their source (no cooker, no bonus). `REMOVE_PREPARED_ITEMS` splices sources at the same random indices.
 
