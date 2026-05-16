@@ -95,6 +95,9 @@ export default function App() {
   const lastSnapshotStateRef = useRef<object | null>(null)
   const lastSnapshotPhaseRef = useRef<string | null>(null)
   const activeGameOptionsRef = useRef<GameOptions | null>(null)
+  const lastPlayedOptionsRef = useRef<GameOptions | null>(null)
+  const pausedRef = useRef(paused)
+  pausedRef.current = paused
   const [toast, setToast] = useState<string | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [autoRestartSignal, setAutoRestartSignal] = useState(0)
@@ -146,9 +149,28 @@ export default function App() {
     handleMenuTutorial, tutorialGameOver, persistHideTutorialPrompt, resetTutorial,
   } = tutorial
 
-  const startFreePlay = useCallback(() => {
-    setActiveEventOptions(null)
-    activeGameOptionsRef.current = null
+  const startFreePlay = useCallback((replay = false) => {
+    const lastOpts = replay ? lastPlayedOptionsRef.current : null
+    const opts = lastOpts ?? gameOptions
+
+    if (!replay) {
+      lastPlayedOptionsRef.current = gameOptions
+    }
+
+    if (lastOpts) {
+      setActiveEventOptions({
+        kitchenEventsEnabled: lastOpts.kitchenEventsEnabled,
+        enabledKitchenEvents: lastOpts.enabledKitchenEvents,
+        kitchenEventSpawnMin: lastOpts.kitchenEventSpawnMin,
+        kitchenEventSpawnMax: lastOpts.kitchenEventSpawnMax,
+        kitchenEventDuration: lastOpts.kitchenEventDuration,
+      })
+      activeGameOptionsRef.current = lastOpts
+    } else {
+      setActiveEventOptions(null)
+      activeGameOptionsRef.current = null
+    }
+
     setAdventureRun(null)
     const teams: Record<string, 'red' | 'blue'> = pvpLobbyRef.current
       ? Object.fromEntries([
@@ -158,13 +180,13 @@ export default function App() {
       : {}
     dispatch({
       type: 'RESET',
-      shiftDuration: gameOptions.shiftDuration,
-      cookingSpeed: gameOptions.cookingSpeed,
-      orderSpeed: gameOptions.orderSpeed,
-      orderSpawnRate: gameOptions.orderSpawnRate,
-      stationCapacity: gameOptions.stationCapacity,
-      restrictSlots: gameOptions.restrictSlots,
-      enabledRecipes: gameOptions.enabledRecipes,
+      shiftDuration: opts.shiftDuration,
+      cookingSpeed: opts.cookingSpeed,
+      orderSpeed: opts.orderSpeed,
+      orderSpawnRate: opts.orderSpawnRate,
+      stationCapacity: opts.stationCapacity,
+      restrictSlots: opts.restrictSlots,
+      enabledRecipes: opts.enabledRecipes,
       teams,
       participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.length : 0,
     })
@@ -190,7 +212,7 @@ export default function App() {
       kitchenEventDuration: 30, // 30s gives players more time to respond than the 12s default
     }
     setActiveEventOptions(eventOpts)
-    activeGameOptionsRef.current = {
+    const playsetGameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
       shiftDuration:  preset.shiftDuration,
       cookingSpeed:   1.0,
@@ -199,6 +221,8 @@ export default function App() {
       enabledRecipes: playset.recipes,
       ...eventOpts,
     }
+    activeGameOptionsRef.current = playsetGameOptions
+    lastPlayedOptionsRef.current = playsetGameOptions
     setAdventureRun(null)
     dispatch({
       type: 'RESET',
@@ -286,6 +310,7 @@ export default function App() {
   }, [continueFromTutorial, tutorialDestination, setTutorialOpen])
 
   const handleCommand = useCallback((user: string, text: string) => {
+    if (pausedRef.current) return
     const teams = stateRef.current.teams
     if (teams && !teams[user]) return  // PvP: only registered team members can act
     const action = parseCommand(user, text, gameOptions.allowShortformCommands)
@@ -626,7 +651,7 @@ export default function App() {
           redServed: finalStats.redServed ?? 0,
           blueServed: finalStats.blueServed ?? 0,
         } : undefined}
-        onPlayAgain={startFreePlay}
+        onPlayAgain={() => startFreePlay(true)}
         onNextLevel={undefined}
         onMenu={() => { setPvpLobby(null); setScreen('menu') }}
         onChangePlayset={!adventureRun ? () => setScreen('playsetpicker') : undefined}

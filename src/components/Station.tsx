@@ -11,9 +11,7 @@ function hashStr(s: string): number {
 }
 
 function SlotRow({ slot }: { slot: StationSlot }) {
-  const now = Date.now()
-  const elapsed = now - slot.cookStart
-  const progress = slot.cookDuration > 0 ? Math.min(1, elapsed / slot.cookDuration) : 0
+  const progress = slot.cookDuration > 0 ? Math.min(1, slot.elapsedMs / slot.cookDuration) : 0
 
   const barColor = progress > 0.85
     ? 'rgba(192, 56, 48, 0.6)'

@@ -2,13 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import type { SharedSnapshot } from '../shared/protocol'
 import styles from './Controller.module.css'
 
-const VALID_VERBS = new Set([
-  'chop','grill','fry','boil','toast','roast','stirfry','steam','simmer',
-  'cook','mix','grind','knead','serve','cool','extinguish',
-])
 const COOLDOWN_MS = 1500
 
-type FeedbackKind = 'invalid' | 'busy'
+type FeedbackKind = 'busy'
 
 function formatTime(ms: number): string {
   const s = Math.ceil(ms / 1000)
@@ -53,14 +49,15 @@ export default function Controller({ snapshot, send, connected, roomCode, onExit
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
   }, [])
 
-  // iOS Safari: 100vh/100dvh don't shrink when the virtual keyboard opens,
-  // so the input row gets hidden behind the keyboard. Track visualViewport
-  // and expose it as --vvh so .controller can size to the visible area.
+  // Track visualViewport so the controller stays anchored to the visible area
+  // on iOS Safari — both when the keyboard shrinks the viewport height and when
+  // iOS scrolls the layout viewport to reveal the focused input (offsetTop > 0).
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
     const update = () => {
       document.documentElement.style.setProperty('--vvh', `${vv.height}px`)
+      document.documentElement.style.setProperty('--vv-top', `${vv.offsetTop}px`)
     }
     update()
     vv.addEventListener('resize', update)
@@ -69,6 +66,7 @@ export default function Controller({ snapshot, send, connected, roomCode, onExit
       vv.removeEventListener('resize', update)
       vv.removeEventListener('scroll', update)
       document.documentElement.style.removeProperty('--vvh')
+      document.documentElement.style.removeProperty('--vv-top')
     }
   }, [])
 
@@ -78,13 +76,6 @@ export default function Controller({ snapshot, send, connected, roomCode, onExit
 
     if (onCooldown) {
       showFeedback('busy', 'Still Busy')
-      return
-    }
-
-    const parts = cmd.replace(/^!/, '').toLowerCase().trim().split(/\s+/)
-    const verb = parts[0]
-    if (!VALID_VERBS.has(verb) || parts.length < 2) {
-      showFeedback('invalid', 'Invalid Command')
       return
     }
 
@@ -101,9 +92,7 @@ export default function Controller({ snapshot, send, connected, roomCode, onExit
     }
   }, [history])
 
-  const flashClass = feedback?.kind === 'invalid' ? styles.flashRed
-    : feedback?.kind === 'busy' ? styles.flashOrange
-    : ''
+  const flashClass = feedback?.kind === 'busy' ? styles.flashOrange : ''
 
   return (
     <div className={styles.controller}>
@@ -116,9 +105,7 @@ export default function Controller({ snapshot, send, connected, roomCode, onExit
       {feedback && (
         <div
           key={`float-${feedback.key}`}
-          className={`${styles.floatingFeedback} ${
-            feedback.kind === 'invalid' ? styles.floatingInvalid : styles.floatingBusy
-          }`}
+          className={`${styles.floatingFeedback} ${styles.floatingBusy}`}
         >
           {feedback.label}
         </div>
