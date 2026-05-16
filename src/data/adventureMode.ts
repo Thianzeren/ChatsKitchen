@@ -23,7 +23,7 @@ export function mergePlayerStats(
     const e = result[user] ?? {
       cooked: 0, served: 0,
       moneyEarned: 0, extinguished: 0, firesCaused: 0,
-      cooled: 0, eventParticipations: 0,
+      cooled: 0, eventParticipations: 0, bonusPoints: 0,
     }
     result[user] = {
       cooked:              e.cooked              + s.cooked,
@@ -33,6 +33,7 @@ export function mergePlayerStats(
       firesCaused:         e.firesCaused         + s.firesCaused,
       cooled:              e.cooled              + s.cooled,
       eventParticipations: e.eventParticipations + s.eventParticipations,
+      bonusPoints:         e.bonusPoints         + s.bonusPoints,
     }
   }
   return result

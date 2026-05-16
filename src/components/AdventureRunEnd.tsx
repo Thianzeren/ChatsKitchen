@@ -9,8 +9,8 @@ function hashStr(s: string): number {
   return h
 }
 
-function totalActions(s: PlayerStats): number {
-  return s.cooked + s.served + s.extinguished + s.cooled + s.eventParticipations - s.firesCaused
+function calcScore(s: PlayerStats): number {
+  return s.cooked + s.served + s.extinguished + s.cooled + s.eventParticipations - s.firesCaused + s.bonusPoints
 }
 
 interface Props {
@@ -28,7 +28,7 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
   const totalLost    = run.shiftResults.reduce((sum, r) => sum + r.lost, 0)
 
   const leaderboard = Object.entries(run.accumulatedPlayerStats)
-    .sort(([, a], [, b]) => totalActions(b) - totalActions(a))
+    .sort(([, a], [, b]) => calcScore(b) - calcScore(a))
 
   return (
     <div className={styles.screen}>
@@ -112,7 +112,8 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
               <span className={styles.lbDetail} title="Cooled">❄️</span>
               <span className={styles.lbDetail} title="Event Participations">✨</span>
               <span className={styles.lbDetail} title="Fires Caused">🔥</span>
-              <span className={styles.lbTotal}>Total</span>
+              <span className={styles.lbDetail} title="Bonus Points">⭐</span>
+              <span className={styles.lbTotal}>Score</span>
             </div>
           </div>
           {leaderboard.length === 0 ? (
@@ -131,7 +132,8 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
                   <span className={styles.lbDetail}>{s.cooled}</span>
                   <span className={styles.lbDetail}>{s.eventParticipations}</span>
                   <span className={styles.lbDetail} style={{ color: '#d94f4f' }}>{s.firesCaused}</span>
-                  <span className={styles.lbTotal}>{totalActions(s)}</span>
+                  <span className={styles.lbDetail} style={{ color: '#c4a020' }}>{s.bonusPoints > 0 ? `+${s.bonusPoints}` : '0'}</span>
+                  <span className={styles.lbTotal}>{calcScore(s)}</span>
                 </div>
               )
             })
