@@ -68,6 +68,7 @@ export interface PlayerStats {
   firesCaused: number
   cooled: number
   eventParticipations: number
+  bonusPoints: number   // awarded for meaningful contributions (see scoring design)
 }
 
 export interface RoundRecord {
@@ -208,6 +209,7 @@ export interface GameState {
   stations: Record<string, Station>
   orders: Order[]
   preparedItems: string[]
+  preparedItemSources: string[]    // parallel to preparedItems: username who cooked each item
   nextOrderId: number
   userCooldowns: Record<string, number>
   activeUsers: Record<string, string>
@@ -222,6 +224,8 @@ export interface GameState {
   teams?: Record<string, 'red' | 'blue'>
   redPreparedItems?: string[]
   bluePreparedItems?: string[]
+  redPreparedItemSources?: string[]
+  bluePreparedItemSources?: string[]
   redMoney?: number
   blueMoney?: number
   redServed?: number

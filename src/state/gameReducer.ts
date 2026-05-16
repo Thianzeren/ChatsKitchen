@@ -55,6 +55,7 @@ export function createInitialState(
     stations,
     orders: [],
     preparedItems: [],
+    preparedItemSources: [],
     nextOrderId: 1,
     userCooldowns: {},
     activeUsers: {},
@@ -69,6 +70,8 @@ export function createInitialState(
     teams: pvp ? teams : undefined,
     redPreparedItems: pvp ? [] : undefined,
     bluePreparedItems: pvp ? [] : undefined,
+    redPreparedItemSources: pvp ? [] : undefined,
+    bluePreparedItemSources: pvp ? [] : undefined,
     redMoney: pvp ? 0 : undefined,
     blueMoney: pvp ? 0 : undefined,
     redServed: pvp ? 0 : undefined,
@@ -82,7 +85,7 @@ function addMsg(state: GameState, username: string, text: string, msgType: ChatM
   return { ...state, chatMessages: messages, nextMessageId: state.nextMessageId + 1 }
 }
 
-const EMPTY_STATS: PlayerStats = { cooked: 0, served: 0, moneyEarned: 0, extinguished: 0, firesCaused: 0, cooled: 0, eventParticipations: 0 }
+const EMPTY_STATS: PlayerStats = { cooked: 0, served: 0, moneyEarned: 0, extinguished: 0, firesCaused: 0, cooled: 0, eventParticipations: 0, bonusPoints: 0 }
 
 function addStat(state: GameState, user: string, stat: keyof PlayerStats, amount: number): GameState {
   const prev = state.playerStats[user] || { ...EMPTY_STATS }
@@ -123,6 +126,22 @@ function setTeamPrepItems(state: GameState, user: string, items: string[]): Game
   return state
 }
 
+function teamPrepSources(state: GameState, user: string): string[] {
+  if (!state.teams) return state.preparedItemSources
+  const team = state.teams[user]
+  if (team === 'red') return state.redPreparedItemSources ?? []
+  if (team === 'blue') return state.bluePreparedItemSources ?? []
+  return []
+}
+
+function setTeamPrepSources(state: GameState, user: string, sources: string[]): GameState {
+  if (!state.teams) return { ...state, preparedItemSources: sources }
+  const team = state.teams[user]
+  if (team === 'red') return { ...state, redPreparedItemSources: sources }
+  if (team === 'blue') return { ...state, bluePreparedItemSources: sources }
+  return state
+}
+
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'RESET':
@@ -149,9 +168,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         const totalPlayers = Math.max(state.participantCount, Object.keys(state.playerStats).length, 1)
         needed = Math.max(1, Math.ceil(totalPlayers * 0.5))
       }
-      const withStat = addStat(state, user, 'extinguished', 1)
+      let withStat = addStat(state, user, 'extinguished', 1)
 
       if (newVotes.length >= needed) {
+        // Bonus to all voters: coordinating an extinguish is meaningful safety work
+        for (const voter of newVotes) withStat = addStat(withStat, voter, 'bonusPoints', 3)
         const newStations = {
           ...withStat.stations,
           [stationId]: { ...station, slots: [], heat: 0, overheated: false, extinguishVotes: [], lastExtinguishedAt: Date.now(), lastExtinguishedBy: newVotes },
@@ -184,7 +205,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newHeat = Math.max(0, station.heat - coolAmount)
       const newStations = { ...state.stations, [stationId]: { ...station, heat: newHeat, lastCooledAt: Date.now(), lastCooledBy: user } }
       const withCooldown = { ...state, stations: newStations, userCooldowns: { ...state.userCooldowns, [user]: Date.now() } }
-      const withStat = addStat(withCooldown, user, 'cooled', 1)
+      let withStat = addStat(withCooldown, user, 'cooled', 1)
+      // Bonus for proactive monitoring: cooling a notably hot station (≥60%) prevents overheats
+      if (station.heat >= 60) withStat = addStat(withStat, user, 'bonusPoints', 2)
       return addMsg(withStat, 'KITCHEN', `${user} cooled the ${STATION_DEFS[stationId].name}! Heat: ${newHeat}%`, 'success')
     }
 
@@ -207,10 +230,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // Check preparedItems has all required ingredients (team-aware)
       const needed = [...recipe.plate]
       const available = [...teamPrepItems(state, user)]
+      const sourcesPool = [...teamPrepSources(state, user)]
+      const cookerBonuses: Record<string, number> = {}
       for (const item of needed) {
         const idx = available.indexOf(item)
         if (idx === -1) return addMsg(state, 'KITCHEN', `Missing ${item.replace(/_/g, ' ')} for ${recipe.name}!`, 'error')
         available.splice(idx, 1)
+        const cooker = sourcesPool.splice(idx, 1)[0] ?? ''
+        // Bonus for cooking an ingredient that ends up in a real served order
+        if (cooker) cookerBonuses[cooker] = (cookerBonuses[cooker] ?? 0) + 2
       }
 
       const newOrders = state.orders.map((o, i) =>
@@ -223,8 +251,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       let withStats = addStat(state, user, 'served', 1)
       withStats = addStat(withStats, user, 'moneyEarned', reward)
+      // Serve quality bonus: higher-value dishes reward the server more
+      const serveBonus = recipe.reward >= 70 ? 3 : recipe.reward >= 55 ? 2 : 1
+      withStats = addStat(withStats, user, 'bonusPoints', serveBonus)
+      // Cooking contribution bonuses to each player whose ingredient was used
+      for (const [cooker, bonus] of Object.entries(cookerBonuses)) {
+        withStats = addStat(withStats, cooker, 'bonusPoints', bonus)
+      }
 
       let afterPool = setTeamPrepItems(withStats, user, available)
+      afterPool = setTeamPrepSources(afterPool, user, sourcesPool)
 
       if (state.teams) {
         const isRed = state.teams[user] === 'red'
@@ -311,8 +347,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (matchedStep.duration === 0) {
         const withStat = addStat(afterRequire, user, 'cooked', 1)
         const instantItems = [...teamPrepItems(withStat, user), matchedStep.produces]
+        const instantSources = [...teamPrepSources(withStat, user), user]
+        const withItems = setTeamPrepItems(withStat, user, instantItems)
         return addMsg(
-          setTeamPrepItems(withStat, user, instantItems),
+          setTeamPrepSources(withItems, user, instantSources),
           'KITCHEN', `${user} ${PAST_TENSE[cookAction] || cookAction + 'ed'} ${target.replace(/_/g, ' ')}!`, 'success'
         )
       }
@@ -365,8 +403,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const messages = [...state.chatMessages]
       let nextMsgId = state.nextMessageId
       const newPreparedItems = [...state.preparedItems]
+      const newPreparedItemSources = [...state.preparedItemSources]
       const newRedPreparedItems = [...(state.redPreparedItems ?? [])]
       const newBluePreparedItems = [...(state.bluePreparedItems ?? [])]
+      const newRedPreparedItemSources = [...(state.redPreparedItemSources ?? [])]
+      const newBluePreparedItemSources = [...(state.bluePreparedItemSources ?? [])]
       let newPlayerStats = { ...state.playerStats }
       // Update all station slots
       for (const [id, station] of Object.entries(newStations)) {
@@ -411,11 +452,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           if (slot.state === 'cooking' && elapsed >= slot.cookDuration) {
             if (state.teams) {
               const team = state.teams[slot.user]
-              if (team === 'red') newRedPreparedItems.push(slot.produces)
-              else if (team === 'blue') newBluePreparedItems.push(slot.produces)
+              if (team === 'red') { newRedPreparedItems.push(slot.produces); newRedPreparedItemSources.push(slot.user) }
+              else if (team === 'blue') { newBluePreparedItems.push(slot.produces); newBluePreparedItemSources.push(slot.user) }
               // else: unregistered player in PvP — item dropped
             } else {
               newPreparedItems.push(slot.produces)
+              newPreparedItemSources.push(slot.user)
             }
             delete newActiveUsers[slot.user]
             messages.push({
@@ -467,8 +509,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         stations: newStations,
         activeUsers: newActiveUsers,
         preparedItems: newPreparedItems,
+        preparedItemSources: newPreparedItemSources,
         redPreparedItems: state.teams ? newRedPreparedItems : state.redPreparedItems,
         bluePreparedItems: state.teams ? newBluePreparedItems : state.bluePreparedItems,
+        redPreparedItemSources: state.teams ? newRedPreparedItemSources : state.redPreparedItemSources,
+        bluePreparedItemSources: state.teams ? newBluePreparedItemSources : state.bluePreparedItemSources,
         playerStats: newPlayerStats,
         orders,
         lost,
@@ -497,12 +542,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const count = Math.min(action.count, state.preparedItems.length)
       if (count === 0) return state
       const items = [...state.preparedItems]
+      const sources = [...state.preparedItemSources]
       for (let i = 0; i < count; i++) {
         const idx = Math.floor(Math.random() * items.length)
         items.splice(idx, 1)
+        sources.splice(idx, 1)
       }
       const msg = action.message ?? `🐀 Rats stole ${count} prepared ingredient(s)!`
-      return addMsg({ ...state, preparedItems: items }, 'KITCHEN', msg, 'error')
+      return addMsg({ ...state, preparedItems: items, preparedItemSources: sources }, 'KITCHEN', msg, 'error')
     }
 
     case 'SET_COOKING_SPEED_MODIFIER':
@@ -526,7 +573,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'ADD_PREPARED_ITEMS': {
       const msg = action.message ?? `🧩 Mystery solved! ${action.items.length} ingredients added to the tray!`
       return addMsg(
-        { ...state, preparedItems: [...state.preparedItems, ...action.items] },
+        {
+          ...state,
+          preparedItems: [...state.preparedItems, ...action.items],
+          preparedItemSources: [...state.preparedItemSources, ...action.items.map(() => '')],
+        },
         'KITCHEN', msg, 'success'
       )
     }

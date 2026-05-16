@@ -42,9 +42,9 @@ interface Props {
 }
 
 export default function GameOver({ money, served, lost, playerStats, teams, level, highScore, isNewHighScore, roundHistory, autoRestart, autoRestartDelay, autoRestartSignal, pvpResult, starThresholds, onPlayAgain, onNextLevel, onMenu, onChangePlayset, onOpenLobby, onPvpLobby, onEnableAutoRestart }: Props) {
-  const totalActions = (s: PlayerStats) => s.cooked + s.served + s.extinguished + s.cooled + s.eventParticipations - s.firesCaused
+  const calcScore = (s: PlayerStats) => s.cooked + s.served + s.extinguished + s.cooled + s.eventParticipations - s.firesCaused + s.bonusPoints
   const leaderboard = useMemo(
-    () => Object.entries(playerStats).sort(([, a], [, b]) => totalActions(b) - totalActions(a)),
+    () => Object.entries(playerStats).sort(([, a], [, b]) => calcScore(b) - calcScore(a)),
     [playerStats]
   )
 
@@ -52,7 +52,7 @@ export default function GameOver({ money, served, lost, playerStats, teams, leve
 
   const mvps = useMemo(() => {
     if (!teams) return null
-    const sortByActions = (a: [string, PlayerStats], b: [string, PlayerStats]) => totalActions(b[1]) - totalActions(a[1])
+    const sortByActions = (a: [string, PlayerStats], b: [string, PlayerStats]) => calcScore(b[1]) - calcScore(a[1])
     const entries = Object.entries(playerStats)
     return {
       red:  entries.filter(([n]) => teams[n] === 'red').sort(sortByActions)[0] ?? null,
@@ -256,7 +256,7 @@ export default function GameOver({ money, served, lost, playerStats, teams, leve
                     mvp ? (
                       <div key={icon} className={`${styles.mvpCard} ${teamClass}`}>
                         <div className={styles.mvpCardName}>{icon} {mvp[0]}</div>
-                        <div className={styles.mvpCardScore}>{totalActions(mvp[1])} pts</div>
+                        <div className={styles.mvpCardScore}>{calcScore(mvp[1])} pts</div>
                         <div className={styles.mvpStats}>
                           {mvpStat(mvp[1]).map(({ icon: ic, label, value }) => (
                             <div key={label} className={styles.mvpStatRow}>
@@ -318,7 +318,8 @@ export default function GameOver({ money, served, lost, playerStats, teams, leve
                 <span className={styles.lbDetail} title="Cooled">{'\u{2744}'}</span>
                 <span className={styles.lbDetail} title="Event Participations">{'\u{2728}'}</span>
                 <span className={styles.lbDetail} title="Fires Caused">{'\u{1F525}'}</span>
-                <span className={styles.lbTotal}>Total</span>
+                <span className={styles.lbDetail} title="Bonus Points">{'\u{2B50}'}</span>
+                <span className={styles.lbTotal}>Score</span>
               </div>
             </div>
             <div className={styles.lbScrollBody}>
@@ -340,7 +341,8 @@ export default function GameOver({ money, served, lost, playerStats, teams, leve
                     <span className={styles.lbDetail}>{stats.cooled}</span>
                     <span className={styles.lbDetail}>{stats.eventParticipations}</span>
                     <span className={styles.lbDetail} style={{ color: '#d94f4f' }}>{stats.firesCaused}</span>
-                    <span className={styles.lbTotal}>{totalActions(stats)}</span>
+                    <span className={styles.lbDetail} style={{ color: '#c4a020' }}>{stats.bonusPoints > 0 ? `+${stats.bonusPoints}` : '0'}</span>
+                    <span className={styles.lbTotal}>{calcScore(stats)}</span>
                   </div>
                 )
               })
