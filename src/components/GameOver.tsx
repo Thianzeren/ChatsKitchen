@@ -310,6 +310,10 @@ export default function GameOver({ money, served, lost, playerStats, teams, leve
           <div className={styles.leaderboard}>
             <div className={styles.lbStickyHead}>
               <div className={styles.lbTitle}>Leaderboard</div>
+              <div className={styles.lbLegend}>
+                <strong>Score</strong> = cooked + served + cooled + extinguished×2 + events×2 − fires + ⭐<br />
+                <strong>⭐ bonus</strong>: +2 per ingredient used in a serve · +1 for cooling at ≥60% heat
+              </div>
               <div className={styles.lbHeader}>
                 <span className={styles.lbRank}>#</span>
                 <span className={styles.lbName}>Player</span>

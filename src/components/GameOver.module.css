@@ -287,6 +287,19 @@
   padding-top: 2px;
 }
 
+.lbLegend {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--text-faint);
+  text-align: center;
+  line-height: 1.5;
+  padding: 0 8px 8px;
+}
+
+.lbLegend strong {
+  color: var(--text-muted);
+}
+
 .lbHeader {
   display: flex;
   align-items: center;
