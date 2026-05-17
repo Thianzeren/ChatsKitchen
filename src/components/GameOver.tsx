@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { PlayerStats, RoundRecord, calcPlayerScore } from '../state/types'
 import { NAME_COLORS, hashStr } from '../data/recipes'
 import { getStarCount } from '../data/starThresholds'
-import LeaderboardLegend from './LeaderboardLegend'
 import styles from './GameOver.module.css'
 
 interface PvpResult {
@@ -303,7 +302,6 @@ export default function GameOver({ money, served, lost, playerStats, teams, leve
           <div className={styles.leaderboard}>
             <div className={styles.lbStickyHead}>
               <div className={styles.lbTitle}>Leaderboard</div>
-              <LeaderboardLegend />
               <div className={styles.lbHeader}>
                 <span className={styles.lbRank}>#</span>
                 <span className={styles.lbName}>Player</span>

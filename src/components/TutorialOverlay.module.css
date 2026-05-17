@@ -31,7 +31,7 @@
 
 .stepCounter {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: #8a8fa8;
   margin-bottom: 8px;
   text-transform: uppercase;
@@ -47,14 +47,14 @@
 
 .highlightHint {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: #a855f7;
   margin-bottom: 10px;
 }
 
 .body {
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 600;
   color: #d8dae8;
   line-height: 1.5;
@@ -87,7 +87,7 @@
 
 .nextBtn {
   font-family: 'Lilita One', cursive;
-  font-size: 18px;
+  font-size: var(--base-fs);
   background: #c4a020;
   color: #1c1917;
   border: none;
@@ -103,7 +103,7 @@
 
 .backBtn {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   background: none;
   color: #8a8fa8;
   border: 1px solid #4a4f68;
@@ -120,7 +120,7 @@
 
 .skipBtn {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   background: none;
   color: #8a8fa8;
   border: 1px solid #4a4f68;
@@ -136,7 +136,7 @@
 
 .repeatBtn {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   background: none;
   color: #8a8fa8;
   border: 1px solid #4a4f68;
@@ -156,13 +156,13 @@
   align-items: center;
   gap: 8px;
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: #d8dae8;
 }
 
 .skipConfirmYes {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   background: none;
   color: #f87171;
   border: 1px solid #f87171;
@@ -178,7 +178,7 @@
 
 .skipConfirmNo {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   background: none;
   color: #8a8fa8;
   border: 1px solid #4a4f68;
@@ -194,7 +194,7 @@
 
 .waitingHint {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: #8a8fa8;
   font-style: italic;
   margin-right: auto;

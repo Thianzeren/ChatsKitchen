@@ -296,37 +296,48 @@
   letter-spacing: 1px;
 }
 
-.dishChecklist {
+.dishIngredients {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
   margin-bottom: 10px;
 }
 
-.dishCheckItem {
+.dishIngredientTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  padding: 14px 12px;
+  flex: 1;
+  min-width: 90px;
+  max-width: 140px;
+}
+
+.dishIngredientName {
   font-family: 'Space Mono', monospace;
-  font-size: var(--ev-xs-fs);
+  font-size: 24px;
   font-weight: 700;
   color: #3a2e20;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.2;
 }
 
-.dishCheck {
-  font-size: var(--ev-xs-fs);
-  color: #5a8a40;
-  flex-shrink: 0;
-  width: 16px;
+.dishIngredientMissing {
+  background: color-mix(in srgb, var(--event-cmd-color) 15%, transparent);
+  border: 2px dashed var(--event-cmd-color);
+  justify-content: center;
 }
 
-.dishBlank {
-  color: #9a7a60;
-  font-style: italic;
-}
-
-.dishBlank .dishCheck {
+.dishQuestionMark {
+  font-family: 'Lilita One', cursive;
+  font-size: var(--ev-lg-fs);
   color: var(--event-cmd-color);
+  line-height: 1;
 }
 
 /* ── Dance Simon Says sequence ── */

@@ -208,19 +208,19 @@ export const RECIPES: Record<string, Recipe> = {
   shio_pan: {
     name: 'Shio Pan', emoji: '\u{1F950}', reward: 50, patience: 65000,
     steps: [
-      { action: 'knead', target: 'dough', station: 'knead_board', duration: 7000, produces: 'bread_dough' },
-      { action: 'toast', target: 'dough', station: 'oven',        duration: 9000, produces: 'toasted_bread', requires: 'bread_dough' },
+      { action: 'knead', target: 'bread', station: 'knead_board', duration: 7000, produces: 'bread_dough' },
+      { action: 'toast', target: 'bread', station: 'oven',        duration: 9000, produces: 'toasted_bread', requires: 'bread_dough' },
     ],
     plate: ['toasted_bread']
   },
   melon_pan: {
     name: 'Melon Pan', emoji: '\u{1F36A}', reward: 65, patience: 75000,
     steps: [
-      { action: 'knead', target: 'dough',          station: 'knead_board', duration: 7000,  produces: 'bread_dough' },
-      { action: 'mix',   target: 'topping',         station: 'mixing_bowl', duration: 6000,  produces: 'cookie_dough' },
-      { action: 'toast', target: 'dough',          station: 'oven',        duration: 10000, produces: 'toasted_bread', requires: 'bread_dough' },
+      { action: 'knead', target: 'bread',   station: 'knead_board', duration: 7000,  produces: 'bread_dough' },
+      { action: 'mix',   target: 'topping', station: 'mixing_bowl', duration: 6000,  produces: 'mixed_topping' },
+      { action: 'toast', target: 'bread',   station: 'oven',        duration: 10000, produces: 'toasted_bread', requires: 'bread_dough' },
     ],
-    plate: ['toasted_bread', 'cookie_dough']
+    plate: ['toasted_bread', 'mixed_topping']
   },
   pour_over_coffee: {
     name: 'Pour-Over Coffee', emoji: '\u{2615}', reward: 45, patience: 55000,
@@ -367,7 +367,7 @@ export const INGREDIENT_EMOJI: Record<string, string> = {
 
   // Japanese Bakery
   bread_dough:         '\u{1FAD3}',
-  cookie_dough:        '\u{1F36A}',
+  mixed_topping:       '\u{1F36A}',
   ground_coffee:       '\u{1FAD8}',
   hot_water:           '\u{1FAD7}',
   matcha_mix:          '\u{1F375}',

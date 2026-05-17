@@ -430,8 +430,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
           // Step B: Check overheat
           if (currentHeat >= 100) {
-            const statSnap = addStat({ ...state, playerStats: newPlayerStats }, slot.user, 'firesCaused', 1)
-            newPlayerStats = statSnap.playerStats
+            // Penalise every player cooking at this station, not just the one whose slot tipped it over
+            for (const s of station.slots) {
+              const statSnap = addStat({ ...state, playerStats: newPlayerStats }, s.user, 'firesCaused', 1)
+              newPlayerStats = statSnap.playerStats
+            }
             // Free all users assigned to all slots on this station
             for (const s of newStations[id].slots) delete newActiveUsers[s.user]
             newStations[id] = { ...newStations[id], slots: [], heat: 100, overheated: true, extinguishVotes: [] }

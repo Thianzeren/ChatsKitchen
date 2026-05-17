@@ -211,7 +211,7 @@ export const EVENT_DEFS: EventDef[] = [
     label: 'Complete the Dish',
     description: 'All but one ingredient is shown — type the missing one to complete the recipe.',
     commandPool: [],
-    rewardDescription: 'Reward: missing ingredient added to prep tray',
+    rewardDescription: 'Reward: add missing ingredient',
     color: '#20a060',
     cmdColor: '#0a6030',
     audio: { ambient: 'event-mystery-ambient', success: 'event-success', fail: 'event-fail' },
@@ -298,13 +298,27 @@ export function makeAuditGrid(enabledRecipes: string[]): { grid: string[]; targe
   return { grid, target, answer }
 }
 
+// Strips cooking-verb prefix and trailing descriptor suffix from a plate produces key,
+// leaving just the core ingredient noun (e.g. toasted_bread → bread, matcha_mix → matcha).
+const COOKING_VERBS = new Set(['boiled','chopped','cooked','fried','grilled','ground','kneaded','mixed','roasted','simmered','sliced','steamed','toasted'])
+const TRAILING_DESCRIPTORS = new Set(['sauce','paste','spread','dip','mix','block'])
+
+function stripPlateIngredient(key: string): string {
+  if (key.startsWith('stir_fried_')) return key.slice('stir_fried_'.length).replace(/_/g, ' ')
+  const parts = key.split('_')
+  let inner = COOKING_VERBS.has(parts[0]) ? parts.slice(1) : parts
+  if (inner.length > 1 && TRAILING_DESCRIPTORS.has(inner[inner.length - 1])) inner = inner.slice(0, -1)
+  return inner.join(' ')
+}
+
 // Picks a qualifying recipe and selects which ingredient to hide for Complete the Dish.
-// Returns null if no enabled recipe has 3+ plate items.
+// Returns null if no enabled recipe has 2+ plate items.
 export function pickCompleteTheDish(enabledRecipes: string[]): {
   dishName: string; dishEmoji: string
-  shownIngredients: string[]; missingIngredient: string
+  shownIngredients: string[]; shownIngredientKeys: string[]
+  missingIngredient: string; missingIngredientKey: string
 } | null {
-  const fmt = (s: string) => s.replace(/_/g, ' ').toUpperCase()
+  const fmt = (s: string) => stripPlateIngredient(s).toUpperCase()
   const keys = (enabledRecipes.length > 0 ? enabledRecipes : Object.keys(RECIPES))
     .filter(key => { const r = RECIPES[key]; return r && r.plate.length >= 2 })
 
@@ -313,12 +327,16 @@ export function pickCompleteTheDish(enabledRecipes: string[]): {
   const key = keys[Math.floor(Math.random() * keys.length)]
   const recipe = RECIPES[key]
   const shuffled = [...recipe.plate].sort(() => Math.random() - 0.5)
+  const shownKeys = shuffled.slice(0, shuffled.length - 1)
+  const missingKey = shuffled[shuffled.length - 1]
 
   return {
     dishName: recipe.name,
     dishEmoji: recipe.emoji,
-    shownIngredients: shuffled.slice(0, shuffled.length - 1).map(fmt),
-    missingIngredient: fmt(shuffled[shuffled.length - 1]),
+    shownIngredients: shownKeys.map(fmt),
+    shownIngredientKeys: shownKeys,
+    missingIngredient: fmt(missingKey),
+    missingIngredientKey: missingKey,
   }
 }
 

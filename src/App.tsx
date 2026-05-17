@@ -46,7 +46,6 @@ const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
   musicMuted: false,
   sfxMuted: false,
   darkMode: true,
-  mobileFriendly: false,
   trackEnabled: { menu: false, gameplay: true, gameover: true }
 }
 
@@ -106,7 +105,7 @@ export default function App() {
   const [showNoTwitchPrompt, setShowNoTwitchPrompt] = useState(false)
   const pendingActionRef = useRef<(() => void) | null>(null)
   const [chatMode, setChatMode] = useState<'local' | 'twitch' | 'room'>('local')
-  const [roomPlayers, setRoomPlayers] = useState<Array<{ id: string; nickname: string }>>([])
+  const [roomPlayers, setRoomPlayers] = useState<Array<{ id: string; nickname: string; disconnected?: boolean }>>([])
   const chatModeRef = useRef(chatMode)
   chatModeRef.current = chatMode
   const roomPlayersRef = useRef(roomPlayers)
@@ -174,7 +173,7 @@ export default function App() {
       restrictSlots: opts.restrictSlots,
       enabledRecipes: opts.enabledRecipes,
       teams,
-      participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.length : 0,
+      participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.filter(p => !p.disconnected).length : 0,
     })
     setStarThresholds(null)
     if (chatModeRef.current === 'room') roomRef.current.lockJoins()
@@ -220,7 +219,7 @@ export default function App() {
       restrictSlots:   false,
       enabledRecipes:  playset.recipes,
       teams: {},
-      participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.length : 0,
+      participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.filter(p => !p.disconnected).length : 0,
     })
     setStarThresholds(null)
     if (chatModeRef.current === 'room') roomRef.current.lockJoins()
@@ -406,6 +405,8 @@ export default function App() {
 
   const handleTwitchMessage = useCallback((user: string, text: string, isMod: boolean) => {
     dispatch({ type: 'ADD_CHAT', username: user, text, msgType: 'normal' })
+    // In Local Play (room mode) Twitch chat is view-only — messages are logged but don't drive the game
+    if (chatModeRef.current === 'room') return
     // PvP lobby: intercept !red / !blue / !join / !leave and lobby mod commands
     if (screenRef.current === 'pvplobby') {
       if (handleLobbyJoin(user, text.trim().toLowerCase())) return
@@ -418,13 +419,26 @@ export default function App() {
     if (!isTutorialRef.current) handleCommand(user, text)
   }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin])
 
-  const effectiveTwitchChannel = chatMode === 'twitch' ? twitchChannel : null
+  // Keep Twitch connected regardless of chatMode so streamers can still see chat while using Local Play
+  const effectiveTwitchChannel = twitchChannel
   const twitchChat = useTwitchChat(effectiveTwitchChannel, handleTwitchMessage)
 
   const room = useRoomHost({
     enabled: chatMode === 'room',
-    onPlayerCommand: (nickname, command) => handleTwitchMessage(nickname, command, false),
-    onPlayerJoined: (id, nickname) => setRoomPlayers(prev => [...prev, { id, nickname }]),
+    // Room player commands bypass handleTwitchMessage so they always drive the game in Local Play
+    onPlayerCommand: (nickname, command) => {
+      dispatch({ type: 'ADD_CHAT', username: nickname, text: command, msgType: 'normal' })
+      handleEventCommand(nickname, command)
+      handleTutorialEventCommand(command)
+      handleMetaCommand(nickname, command, false)
+      if (!isTutorialRef.current) handleCommand(nickname, command)
+    },
+    onPlayerJoined: (id, nickname, isReconnect) => setRoomPlayers(prev =>
+      isReconnect
+        ? prev.map(p => p.id === id ? { ...p, disconnected: false } : p)
+        : [...prev, { id, nickname }]
+    ),
+    onPlayerDisconnected: (id) => setRoomPlayers(prev => prev.map(p => p.id === id ? { ...p, disconnected: true } : p)),
     onPlayerLeft: (id) => setRoomPlayers(prev => prev.filter(p => p.id !== id)),
   })
   const roomRef = useRef(room)
@@ -447,10 +461,6 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', audioSettings.darkMode ? 'dark' : 'light')
   }, [audioSettings.darkMode])
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-mobile', audioSettings.mobileFriendly ? 'true' : 'false')
-  }, [audioSettings.mobileFriendly])
 
   const handleAudioChange = useCallback((settings: AudioSettings) => {
     setAudioSettings(settings)

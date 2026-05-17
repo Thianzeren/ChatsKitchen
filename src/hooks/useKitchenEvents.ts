@@ -58,6 +58,13 @@ export function useKitchenEvents(
   const lastEventTypeRef = useRef<EventType | null>(null)
   const concludingEventIdRef = useRef<string | null>(null)  // prevents double resolve/fail if React hasn't re-rendered yet
   const spawnTimerRef = useRef(0)
+  // Tracks which answers/commands have been used this round so events don't repeat the same word/question
+  const usedEventAnswers = useRef<Map<EventType, Set<string>>>(new Map())
+  const prevActiveRef = useRef(active)
+  useEffect(() => {
+    if (active && !prevActiveRef.current) usedEventAnswers.current = new Map()
+    prevActiveRef.current = active
+  }, [active])
   const spawnIntervalRef = useRef(pickSpawnInterval(spawnMinMs, spawnMaxMs))
 
   useEffect(() => {
@@ -92,7 +99,15 @@ export function useKitchenEvents(
     const id = `evt_${Date.now()}`
     const timeLeft = def.category === 'hazard-immediate' ? null : eventDurationRef.current
 
-    let chosenCommand = pickRandom(def.commandPool.length > 0 ? def.commandPool : [''])
+    // For commandPool events, exclude already-used commands this round
+    const cmdPool = def.commandPool.length > 0 ? def.commandPool : ['']
+    const usedCmds = usedEventAnswers.current.get(def.type) ?? new Set<string>()
+    const availableCmds = cmdPool.filter(c => !usedCmds.has(c))
+    let chosenCommand = pickRandom(availableCmds.length > 0 ? availableCmds : cmdPool)
+    if (def.commandPool.length > 0) {
+      usedCmds.add(chosenCommand)
+      usedEventAnswers.current.set(def.type, usedCmds)
+    }
     const payload: KitchenEvent['payload'] = {}
 
     if (def.type === 'power_trip') {
@@ -107,8 +122,12 @@ export function useKitchenEvents(
 
     if (def.type === 'mystery_recipe') {
       const targets = getIngredientTargets(s.enabledRecipes)
-      const raw = pickRandom(targets)
-      const answer = raw.replace(/_/g, ' ')  // normalise so players never need to type underscores
+      const used = usedEventAnswers.current.get('mystery_recipe') ?? new Set<string>()
+      const available = targets.filter(t => !used.has(t.replace(/_/g, ' ')))
+      const raw = pickRandom(available.length > 0 ? available : targets)
+      const answer = raw.replace(/_/g, ' ')
+      used.add(answer)
+      usedEventAnswers.current.set('mystery_recipe', used)
       payload.anagramAnswer = answer
       chosenCommand = makeAnagram(answer)
     }
@@ -126,8 +145,12 @@ export function useKitchenEvents(
     }
 
     if (def.type === 'inventory_audit') {
-      const audit = makeAuditGrid(s.enabledRecipes)
+      const usedTargets = usedEventAnswers.current.get('inventory_audit') ?? new Set<string>()
+      let audit = makeAuditGrid(s.enabledRecipes)
+      for (let i = 0; i < 8 && audit && usedTargets.has(audit.target); i++) audit = makeAuditGrid(s.enabledRecipes)
       if (!audit) return
+      usedTargets.add(audit.target)
+      usedEventAnswers.current.set('inventory_audit', usedTargets)
       payload.auditGrid = audit.grid
       payload.auditTarget = audit.target
       payload.auditAnswer = audit.answer
@@ -135,10 +158,16 @@ export function useKitchenEvents(
     }
 
     if (def.type === 'complete_dish') {
-      const dish = pickCompleteTheDish(s.enabledRecipes)
+      const usedAnswers = usedEventAnswers.current.get('complete_dish') ?? new Set<string>()
+      let dish = pickCompleteTheDish(s.enabledRecipes)
+      for (let i = 0; i < 8 && dish && usedAnswers.has(dish.missingIngredient); i++) dish = pickCompleteTheDish(s.enabledRecipes)
       if (!dish) return
+      usedAnswers.add(dish.missingIngredient)
+      usedEventAnswers.current.set('complete_dish', usedAnswers)
       payload.shownIngredients = dish.shownIngredients
+      payload.shownIngredientKeys = dish.shownIngredientKeys
       payload.missingIngredient = dish.missingIngredient
+      payload.missingIngredientKey = dish.missingIngredientKey
       payload.dishName = dish.dishName
       payload.dishEmoji = dish.dishEmoji
       chosenCommand = dish.missingIngredient
