@@ -402,8 +402,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newPreparedItemSources = [...state.preparedItemSources]
       const newRedPreparedItems = [...(state.redPreparedItems ?? [])]
       const newBluePreparedItems = [...(state.bluePreparedItems ?? [])]
-      const newRedPreparedItemSources = [...(state.redPreparedItemSources ?? [])]
-      const newBluePreparedItemSources = [...(state.bluePreparedItemSources ?? [])]
+      const newRedPreparedItemSources = state.teams ? [...(state.redPreparedItemSources ?? [])] : []
+      const newBluePreparedItemSources = state.teams ? [...(state.bluePreparedItemSources ?? [])] : []
       let newPlayerStats = { ...state.playerStats }
       // Update all station slots
       for (const [id, station] of Object.entries(newStations)) {

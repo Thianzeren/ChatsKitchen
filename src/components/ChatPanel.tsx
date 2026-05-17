@@ -1,13 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { ChatMessage } from '../state/types'
-import { NAME_COLORS } from '../data/recipes'
+import { NAME_COLORS, hashStr } from '../data/recipes'
 import styles from './ChatPanel.module.css'
-
-function hashStr(s: string): number {
-  let h = 0
-  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0
-  return h
-}
 
 interface Props {
   messages: ChatMessage[]

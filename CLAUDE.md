@@ -380,10 +380,10 @@ interface PlayerStats {
 
 **Score formula** (used in `GameOver`, `AdventureShiftPassed`, `AdventureRunEnd`):
 ```
-score = cooked + served + extinguished×2 + cooled + eventParticipations×2 - firesCaused + bonusPoints
+score = cooked + served + cooled + extinguished×2 + eventParticipations×2 − firesCaused + bonusPoints
 ```
 
-Extinguish and event participation are weighted ×2 to reward safety and community engagement. All other base actions count ×1.
+Extinguish and event participation are weighted ×2 to reward safety and community engagement. All other base actions count ×1. This formula is also displayed in-game as a `.lbLegend` note above the column headers on every leaderboard screen.
 
 **Bonus point awards** (accumulated in `bonusPoints` via `addStat`):
 
@@ -391,6 +391,7 @@ Extinguish and event participation are weighted ×2 to reward safety and communi
 |--------|-----------|-------|
 | Cook | Ingredient is later consumed in a served order | +2 per ingredient |
 | Cool | Station heat was ≥ 60% when cooled | +1 |
+| Extinguish | ~~+2 to all voters on restore~~ **removed** — ×2 base weight covers it | — |
 
 **Provenance tracking** — to know which player cooked each ingredient, `GameState` maintains `preparedItemSources: string[]` as a parallel array to `preparedItems`. Each slot in `preparedItemSources[i]` is the username who cooked `preparedItems[i]`. When `SERVE` consumes ingredients, it splices both arrays at the same indices and awards cooker bonuses. Items added by kitchen events (e.g. `ADD_PREPARED_ITEMS`) push `''` as their source (no cooker, no bonus). `REMOVE_PREPARED_ITEMS` splices sources at the same random indices.
 

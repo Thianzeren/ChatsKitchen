@@ -1,14 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
-import { PlayerStats, RoundRecord } from '../state/types'
-import { NAME_COLORS } from '../data/recipes'
+import { PlayerStats, RoundRecord, calcPlayerScore } from '../state/types'
+import { NAME_COLORS, hashStr } from '../data/recipes'
 import { getStarCount } from '../data/starThresholds'
+import LeaderboardLegend from './LeaderboardLegend'
 import styles from './GameOver.module.css'
-
-function hashStr(s: string): number {
-  let h = 0
-  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0
-  return h
-}
 
 interface PvpResult {
   redMoney: number
@@ -38,14 +33,12 @@ interface Props {
   onChangePlayset?: () => void
   onOpenLobby?: () => void
   onPvpLobby?: () => void
-  onEnableAutoRestart?: () => void
-  onDisableAutoRestart?: () => void
+  onSetAutoRestart?: (enabled: boolean) => void
 }
 
-export default function GameOver({ money, served, lost, playerStats, teams, level, highScore, isNewHighScore, roundHistory, autoRestart, autoRestartDelay, autoRestartSignal, pvpResult, starThresholds, onPlayAgain, onNextLevel, onMenu, onChangePlayset, onOpenLobby, onPvpLobby, onEnableAutoRestart, onDisableAutoRestart }: Props) {
-  const calcScore = (s: PlayerStats) => s.cooked + s.served + s.extinguished * 2 + s.cooled + s.eventParticipations * 2 - s.firesCaused + s.bonusPoints
+export default function GameOver({ money, served, lost, playerStats, teams, level, highScore, isNewHighScore, roundHistory, autoRestart, autoRestartDelay, autoRestartSignal, pvpResult, starThresholds, onPlayAgain, onNextLevel, onMenu, onChangePlayset, onOpenLobby, onPvpLobby, onSetAutoRestart }: Props) {
   const leaderboard = useMemo(
-    () => Object.entries(playerStats).sort(([, a], [, b]) => calcScore(b) - calcScore(a)),
+    () => Object.entries(playerStats).sort(([, a], [, b]) => calcPlayerScore(b) - calcPlayerScore(a)),
     [playerStats]
   )
 
@@ -53,7 +46,7 @@ export default function GameOver({ money, served, lost, playerStats, teams, leve
 
   const mvps = useMemo(() => {
     if (!teams) return null
-    const sortByActions = (a: [string, PlayerStats], b: [string, PlayerStats]) => calcScore(b[1]) - calcScore(a[1])
+    const sortByActions = (a: [string, PlayerStats], b: [string, PlayerStats]) => calcPlayerScore(b[1]) - calcPlayerScore(a[1])
     const entries = Object.entries(playerStats)
     return {
       red:  entries.filter(([n]) => teams[n] === 'red').sort(sortByActions)[0] ?? null,
@@ -213,7 +206,7 @@ export default function GameOver({ money, served, lost, playerStats, teams, leve
                 <div className={styles.autoRestartHint}>
                   <span>!start</span> to begin now · <span>!offAutoRestart</span> to cancel
                 </div>
-                <button className={styles.cancelBtn} onClick={() => { setCountdown(null); onDisableAutoRestart?.() }}>
+                <button className={styles.cancelBtn} onClick={() => { setCountdown(null); onSetAutoRestart?.(false) }}>
                   Cancel
                 </button>
               </>
@@ -223,9 +216,9 @@ export default function GameOver({ money, served, lost, playerStats, teams, leve
                 <div className={styles.autoRestartHint}>
                   <span>!start</span> to begin now · <span>!onAutoRestart</span> to enable
                 </div>
-                {onEnableAutoRestart && (
+                {onSetAutoRestart && (
                   <button className={styles.enableBtn} onClick={() => {
-                    onEnableAutoRestart()
+                    onSetAutoRestart(true)
                     setCountdown(autoRestartDelay ?? 60)
                   }}>
                     Enable Auto-Restart
@@ -257,7 +250,7 @@ export default function GameOver({ money, served, lost, playerStats, teams, leve
                     mvp ? (
                       <div key={icon} className={`${styles.mvpCard} ${teamClass}`}>
                         <div className={styles.mvpCardName}>{icon} {mvp[0]}</div>
-                        <div className={styles.mvpCardScore}>{calcScore(mvp[1])} pts</div>
+                        <div className={styles.mvpCardScore}>{calcPlayerScore(mvp[1])} pts</div>
                         <div className={styles.mvpStats}>
                           {mvpStat(mvp[1]).map(({ icon: ic, label, value }) => (
                             <div key={label} className={styles.mvpStatRow}>
@@ -310,6 +303,7 @@ export default function GameOver({ money, served, lost, playerStats, teams, leve
           <div className={styles.leaderboard}>
             <div className={styles.lbStickyHead}>
               <div className={styles.lbTitle}>Leaderboard</div>
+              <LeaderboardLegend />
               <div className={styles.lbHeader}>
                 <span className={styles.lbRank}>#</span>
                 <span className={styles.lbName}>Player</span>
@@ -343,7 +337,7 @@ export default function GameOver({ money, served, lost, playerStats, teams, leve
                     <span className={styles.lbDetail}>{stats.eventParticipations}</span>
                     <span className={styles.lbDetail} style={{ color: '#d94f4f' }}>{stats.firesCaused}</span>
                     <span className={styles.lbDetail} style={{ color: '#c4a020' }}>{stats.bonusPoints > 0 ? `+${stats.bonusPoints}` : '0'}</span>
-                    <span className={styles.lbTotal}>{calcScore(stats)}</span>
+                    <span className={styles.lbTotal}>{calcPlayerScore(stats)}</span>
                   </div>
                 )
               })

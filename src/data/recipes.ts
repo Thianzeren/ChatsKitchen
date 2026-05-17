@@ -451,6 +451,12 @@ export const BOT_NAMES = [
   'WokStar', 'RamenRanger', 'SizzleSis', 'PlateUp_Pro', 'OvenMitt'
 ]
 
+export function hashStr(s: string): number {
+  let h = 0
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0
+  return h
+}
+
 export const NAME_COLORS = [
   '#e07050', '#e89050', '#d4a840', '#6aaa5e', '#5a9ab0',
   '#b0785a', '#c86080', '#d08838', '#7aaa80', '#aa8870'

@@ -1,17 +1,8 @@
-import { AdventureRun, AdventureBestRun, PlayerStats } from '../state/types'
-import { RECIPES, NAME_COLORS } from '../data/recipes'
+import { AdventureRun, AdventureBestRun, calcPlayerScore } from '../state/types'
+import { RECIPES, NAME_COLORS, hashStr } from '../data/recipes'
 import FoodIcon from './FoodIcon'
+import LeaderboardLegend from './LeaderboardLegend'
 import styles from './AdventureRunEnd.module.css'
-
-function hashStr(s: string): number {
-  let h = 0
-  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0
-  return h
-}
-
-function calcScore(s: PlayerStats): number {
-  return s.cooked + s.served + s.extinguished * 2 + s.cooled + s.eventParticipations * 2 - s.firesCaused + s.bonusPoints
-}
 
 interface Props {
   run: AdventureRun
@@ -28,7 +19,7 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
   const totalLost    = run.shiftResults.reduce((sum, r) => sum + r.lost, 0)
 
   const leaderboard = Object.entries(run.accumulatedPlayerStats)
-    .sort(([, a], [, b]) => calcScore(b) - calcScore(a))
+    .sort(([, a], [, b]) => calcPlayerScore(b) - calcPlayerScore(a))
 
   return (
     <div className={styles.screen}>
@@ -103,6 +94,7 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
         <div className={styles.leaderboard}>
           <div className={styles.lbStickyHead}>
             <div className={styles.lbTitle}>Leaderboard</div>
+            <LeaderboardLegend />
             <div className={styles.lbHeader}>
               <span className={styles.lbRank}>#</span>
               <span className={styles.lbName}>Player</span>
@@ -133,7 +125,7 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
                   <span className={styles.lbDetail}>{s.eventParticipations}</span>
                   <span className={styles.lbDetail} style={{ color: '#d94f4f' }}>{s.firesCaused}</span>
                   <span className={styles.lbDetail} style={{ color: '#c4a020' }}>{s.bonusPoints > 0 ? `+${s.bonusPoints}` : '0'}</span>
-                  <span className={styles.lbTotal}>{calcScore(s)}</span>
+                  <span className={styles.lbTotal}>{calcPlayerScore(s)}</span>
                 </div>
               )
             })
