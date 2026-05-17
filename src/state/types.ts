@@ -71,6 +71,10 @@ export interface PlayerStats {
   bonusPoints: number   // awarded for meaningful contributions (see scoring design)
 }
 
+export function calcPlayerScore(s: PlayerStats): number {
+  return s.cooked + s.served + s.extinguished * 2 + s.cooled + s.eventParticipations * 2 - s.firesCaused + s.bonusPoints
+}
+
 export interface RoundRecord {
   money: number
   served: number

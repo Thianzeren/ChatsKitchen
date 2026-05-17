@@ -1,14 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Station as StationType, StationSlot } from '../state/types'
-import { STATION_DEFS, NAME_COLORS, INGREDIENT_EMOJI, HEAT_EXEMPT_STATIONS } from '../data/recipes'
+import { STATION_DEFS, NAME_COLORS, INGREDIENT_EMOJI, HEAT_EXEMPT_STATIONS, hashStr } from '../data/recipes'
 import FoodIcon from './FoodIcon'
 import styles from './Station.module.css'
-
-function hashStr(s: string): number {
-  let h = 0
-  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0
-  return h
-}
 
 function SlotRow({ slot }: { slot: StationSlot }) {
   const progress = slot.cookDuration > 0 ? Math.min(1, slot.elapsedMs / slot.cookDuration) : 0

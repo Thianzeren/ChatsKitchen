@@ -1,18 +1,9 @@
 import { useState } from 'react'
-import { PlayerStats } from '../state/types'
-import { NAME_COLORS } from '../data/recipes'
+import { PlayerStats, calcPlayerScore } from '../state/types'
+import { NAME_COLORS, hashStr } from '../data/recipes'
 import AdventureExitConfirm from './AdventureExitConfirm'
+import LeaderboardLegend from './LeaderboardLegend'
 import styles from './AdventureShiftPassed.module.css'
-
-function hashStr(s: string): number {
-  let h = 0
-  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0
-  return h
-}
-
-function calcScore(s: PlayerStats): number {
-  return s.cooked + s.served + s.extinguished * 2 + s.cooled + s.eventParticipations * 2 - s.firesCaused + s.bonusPoints
-}
 
 interface Props {
   shiftNumber: number
@@ -29,7 +20,7 @@ export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, se
   const [confirmExit, setConfirmExit] = useState(false)
 
   const leaderboard = Object.entries(playerStats)
-    .sort(([, a], [, b]) => calcScore(b) - calcScore(a))
+    .sort(([, a], [, b]) => calcPlayerScore(b) - calcPlayerScore(a))
 
   return (
     <div className={styles.screen}>
@@ -68,10 +59,7 @@ export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, se
         <div className={styles.leaderboard}>
           <div className={styles.lbStickyHead}>
             <div className={styles.lbTitle}>Shift Leaderboard</div>
-            <div className={styles.lbLegend}>
-              <strong>Score</strong> = cooked + served + cooled + extinguished×2 + events×2 − fires + ⭐<br />
-              <strong>⭐ bonus</strong>: +2 per ingredient used in a serve · +1 for cooling at ≥60% heat
-            </div>
+            <LeaderboardLegend />
             <div className={styles.lbHeader}>
               <span className={styles.lbRank}>#</span>
               <span className={styles.lbName}>Player</span>
@@ -102,7 +90,7 @@ export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, se
                   <span className={styles.lbDetail}>{s.eventParticipations}</span>
                   <span className={styles.lbDetail} style={{ color: '#d94f4f' }}>{s.firesCaused}</span>
                   <span className={styles.lbDetail} style={{ color: '#c4a020' }}>{s.bonusPoints > 0 ? `+${s.bonusPoints}` : '0'}</span>
-                  <span className={styles.lbTotal}>{calcScore(s)}</span>
+                  <span className={styles.lbTotal}>{calcPlayerScore(s)}</span>
                 </div>
               )
             })
