@@ -93,6 +93,20 @@
   padding: 6px 12px;
   background: var(--surface);
   border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.playerRowDisconnected {
+  opacity: 0.45;
+  font-style: italic;
+}
+
+.reconnecting {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-left: auto;
 }
 
 .buttons {

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { PlayerStats, calcPlayerScore } from '../state/types'
 import { NAME_COLORS, hashStr } from '../data/recipes'
 import AdventureExitConfirm from './AdventureExitConfirm'
-import LeaderboardLegend from './LeaderboardLegend'
 import styles from './AdventureShiftPassed.module.css'
 
 interface Props {
@@ -59,7 +58,6 @@ export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, se
         <div className={styles.leaderboard}>
           <div className={styles.lbStickyHead}>
             <div className={styles.lbTitle}>Shift Leaderboard</div>
-            <LeaderboardLegend />
             <div className={styles.lbHeader}>
               <span className={styles.lbRank}>#</span>
               <span className={styles.lbName}>Player</span>

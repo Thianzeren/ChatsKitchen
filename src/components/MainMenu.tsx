@@ -70,6 +70,14 @@ export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeed
                 <div className={styles.stepDesc}>Earn money, climb the leaderboard</div>
               </div>
             </div>
+
+            <div className={styles.step}>
+              <div className={styles.stepNum}>4</div>
+              <div className={styles.stepContent}>
+                <div className={styles.stepTitle}>Best played in full screen</div>
+                <div className={styles.stepDesc}>Press F11 to go full screen</div>
+              </div>
+            </div>
           </div>
 
           <div className={styles.divider} />

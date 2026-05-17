@@ -1,7 +1,6 @@
 import { AdventureRun, AdventureBestRun, calcPlayerScore } from '../state/types'
 import { RECIPES, NAME_COLORS, hashStr } from '../data/recipes'
 import FoodIcon from './FoodIcon'
-import LeaderboardLegend from './LeaderboardLegend'
 import styles from './AdventureRunEnd.module.css'
 
 interface Props {
@@ -94,7 +93,6 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
         <div className={styles.leaderboard}>
           <div className={styles.lbStickyHead}>
             <div className={styles.lbTitle}>Leaderboard</div>
-            <LeaderboardLegend />
             <div className={styles.lbHeader}>
               <span className={styles.lbRank}>#</span>
               <span className={styles.lbName}>Player</span>

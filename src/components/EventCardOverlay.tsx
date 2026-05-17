@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { KitchenEvent, EventType, EventCategory } from '../state/types'
 import { createPortal } from 'react-dom'
 import { EVENT_DEFS, DanceDir } from '../data/kitchenEventDefs'
+import { INGREDIENT_EMOJI } from '../data/recipes'
+import FoodIcon from './FoodIcon'
 import styles from './EventCardOverlay.module.css'
 
 const DANCE_ARROWS: Record<DanceDir, string> = { UP: '⬆', DOWN: '⬇', LEFT: '⬅', RIGHT: '➡' }
@@ -161,21 +163,26 @@ export default function EventCardOverlay({ activeEvent }: Props) {
                       </>
                     ) : ev.type === 'complete_dish' && ev.payload.shownIngredients ? (
                       <>
+                        <div className={styles.cmdLabel}>{CMD_LABEL[ev.type] ?? 'Type in chat'}</div>
                         <div className={styles.dishHeader}>
                           <span className={styles.dishEmoji}>{ev.payload.dishEmoji}</span>
                           <span className={styles.dishName}>{ev.payload.dishName}</span>
                         </div>
-                        <div className={styles.dishChecklist}>
-                          {ev.payload.shownIngredients.map((ing, i) => (
-                            <div key={i} className={styles.dishCheckItem}>
-                              <span className={styles.dishCheck}>✓</span>{ing}
-                            </div>
-                          ))}
-                          <div className={`${styles.dishCheckItem} ${styles.dishBlank}`}>
-                            <span className={styles.dishCheck}>?</span>___________
+                        <div className={styles.dishIngredients}>
+                          {ev.payload.shownIngredients.map((ing, i) => {
+                            const rawKey = ev.payload.shownIngredientKeys?.[i]
+                            const emoji = rawKey ? INGREDIENT_EMOJI[rawKey] : undefined
+                            return (
+                              <div key={i} className={styles.dishIngredientTile}>
+                                {emoji && <FoodIcon icon={emoji} size={48} />}
+                                <span className={styles.dishIngredientName}>{ing}</span>
+                              </div>
+                            )
+                          })}
+                          <div className={`${styles.dishIngredientTile} ${styles.dishIngredientMissing}`}>
+                            <span className={styles.dishQuestionMark}>?</span>
                           </div>
                         </div>
-                        <div className={styles.cmdLabel}>{CMD_LABEL[ev.type] ?? 'Type in chat'}</div>
                         <div className={styles.desc}>{description}</div>
                         {!ev.resolved && !ev.failed && (
                           <div className={styles.bars}>

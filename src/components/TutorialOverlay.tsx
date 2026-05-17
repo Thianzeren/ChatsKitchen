@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { GameState } from '../state/types'
 import { TUTORIAL_STEPS } from '../data/tutorialData'
@@ -26,11 +26,6 @@ interface Props {
 export default function TutorialOverlay({ stepIndex, state, onNext, onBack, onSkip, onRepeat, shiftLeft, advanceReady }: Props) {
   const step = TUTORIAL_STEPS[stepIndex]
   const isLast = stepIndex === TUTORIAL_STEPS.length - 1
-  const [skipConfirm, setSkipConfirm] = useState(false)
-
-  useEffect(() => {
-    setSkipConfirm(false)
-  }, [stepIndex])
 
   useEffect(() => {
     if (step.advanceMode === 'auto' && step.advanceCondition?.(state)) {
@@ -63,16 +58,6 @@ export default function TutorialOverlay({ stepIndex, state, onNext, onBack, onSk
         <div className={styles.actions}>
           {stepIndex > 0 && (
             <button className={styles.backBtn} onClick={onBack}>← Back</button>
-          )}
-          {!isLast && !skipConfirm && (
-            <button className={styles.skipBtn} onClick={() => setSkipConfirm(true)}>Skip Tutorial</button>
-          )}
-          {!isLast && skipConfirm && (
-            <span className={styles.skipConfirm}>
-              Skip tutorial?
-              <button className={styles.skipConfirmYes} onClick={onSkip}>Yes, skip</button>
-              <button className={styles.skipConfirmNo} onClick={() => setSkipConfirm(false)}>Cancel</button>
-            </span>
           )}
           {isLast && (
             <button className={styles.repeatBtn} onClick={onRepeat}>Repeat Tutorial</button>

@@ -124,7 +124,6 @@ export interface AudioSettings {
   musicMuted: boolean
   sfxMuted: boolean
   darkMode: boolean
-  mobileFriendly: boolean
   trackEnabled: { menu: boolean; gameplay: boolean; gameover: boolean }
 }
 
@@ -192,8 +191,10 @@ export interface KitchenEvent {
     auditTarget?: string
     auditAnswer?: number
     // complete_dish
-    shownIngredients?: string[]
-    missingIngredient?: string
+    shownIngredients?: string[]       // formatted display names (uppercased, verb stripped)
+    shownIngredientKeys?: string[]    // parallel raw produces keys for emoji lookup
+    missingIngredient?: string        // formatted display name
+    missingIngredientKey?: string     // raw produces key for emoji lookup
     dishName?: string
     dishEmoji?: string
   }

@@ -4,7 +4,7 @@ import styles from './LocalPlayScreen.module.css'
 
 interface Props {
   code: string | null
-  players: Array<{ id: string; nickname: string }>
+  players: Array<{ id: string; nickname: string; disconnected?: boolean }>
   onBack: () => void
   onStart: () => void
 }
@@ -40,14 +40,17 @@ export default function LocalPlayScreen({ code, players, onBack, onStart }: Prop
         <div className={styles.playerCount}>
           {players.length === 0
             ? 'No players yet — share the code!'
-            : `${players.length} player${players.length !== 1 ? 's' : ''} joined`
+            : `${players.filter(p => !p.disconnected).length} / ${players.length} player${players.length !== 1 ? 's' : ''} connected`
           }
         </div>
 
         {players.length > 0 && (
           <div className={styles.playerList}>
             {players.map(p => (
-              <div key={p.id} className={styles.playerRow}>👤 {p.nickname}</div>
+              <div key={p.id} className={`${styles.playerRow} ${p.disconnected ? styles.playerRowDisconnected : ''}`}>
+                {p.disconnected ? '🔄' : '👤'} {p.nickname}
+                {p.disconnected && <span className={styles.reconnecting}>reconnecting…</span>}
+              </div>
             ))}
           </div>
         )}

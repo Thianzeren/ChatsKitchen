@@ -131,15 +131,6 @@ export default function OptionsScreen({ options, onChange, audioSettings, onAudi
                   {audioSettings.darkMode ? '🌙 Dark' : '☀️ Light'}
                 </button>
               </div>
-              <div className={styles.capacityRow}>
-                <span className={styles.capacityLabel}>Mobile Friendly</span>
-                <button
-                  className={`${styles.muteBtn} ${audioSettings.mobileFriendly ? styles.muteBtnActive : ''}`}
-                  onClick={() => onAudioChange({ ...audioSettings, mobileFriendly: !audioSettings.mobileFriendly })}
-                >
-                  {audioSettings.mobileFriendly ? '📱 ON' : '🖥️ OFF'}
-                </button>
-              </div>
             </div>
 
             <div className={styles.section}>

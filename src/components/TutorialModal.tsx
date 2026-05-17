@@ -33,7 +33,7 @@ export default function TutorialModal({ onClose, onStartCooking }: Props) {
                   <div className={styles.quickStepNum}>1</div>
                   <div className={styles.quickStepBody}>
                     <strong>Read the order</strong>
-                    <span>Orders appear on the left — note the order number and the required ingredients.</span>
+                    <span>Check the order number and required ingredients on the left.</span>
                   </div>
                 </div>
                 <div className={styles.quickStepArrow}>▶</div>
@@ -41,7 +41,7 @@ export default function TutorialModal({ onClose, onStartCooking }: Props) {
                   <div className={styles.quickStepNum}>2</div>
                   <div className={styles.quickStepBody}>
                     <strong>Cook in chat</strong>
-                    <span>Type commands like <code>chop lettuce</code> or <code>grill patty</code>. Each player works one station at a time. Finished ingredients go straight to the Prepared Items tray.</span>
+                    <span>Type <code>chop lettuce</code>, <code>grill patty</code>, etc. One station per player — done ingredients land in the tray.</span>
                   </div>
                 </div>
                 <div className={styles.quickStepArrow}>▶</div>
@@ -49,7 +49,7 @@ export default function TutorialModal({ onClose, onStartCooking }: Props) {
                   <div className={styles.quickStepNum}>3</div>
                   <div className={styles.quickStepBody}>
                     <strong>Serve the order</strong>
-                    <span>Once all ingredients are ready, type <code>serve [order#]</code> to complete it and earn money.</span>
+                    <span>When ingredients are ready, type <code>serve [#]</code> to complete it and earn money.</span>
                   </div>
                 </div>
               </div>
