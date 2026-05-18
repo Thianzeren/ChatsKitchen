@@ -159,19 +159,30 @@
 .idleStatus {
   text-align: center;
   padding: 8px 4px;
+  background: rgba(196, 160, 32, 0.06);
+  border-radius: 6px;
+  border: 1px solid rgba(196, 160, 32, 0.15);
 }
 
 .idleCmd {
   font-family: 'Space Mono', monospace;
-  font-size: 14px;
-  color: #3a3028;
+  font-size: 18px;
   letter-spacing: 0.3px;
+}
+
+.idleCmdName {
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.idleCmdArg {
+  color: var(--text-secondary);
 }
 
 .idleHint {
   font-family: 'Space Mono', monospace;
   font-size: 10px;
-  color: #2e2820;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 1.5px;
   margin-top: 3px;

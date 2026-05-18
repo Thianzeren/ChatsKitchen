@@ -4,36 +4,56 @@
   padding: 7px 14px 8px;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 0;
+  gap: 5px;
   align-items: center;
   flex-shrink: 0;
 }
 
-.group {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-family: 'Space Mono', monospace;
+  font-size: 18px;
   white-space: nowrap;
 }
 
-.sep {
-  display: inline-block;
-  width: 1px;
-  height: 14px;
-  background: #2a2a2a;
-  margin: 0 10px;
-  flex-shrink: 0;
+.pillEmoji {
+  margin-right: 5px;
 }
 
-.cmd {
-  font-family: 'Space Mono', monospace;
-  font-size: var(--base-fs);
+.pillStep {
+  display: inline;
+}
+
+.pillCmd {
   font-weight: 700;
-  color: #c4a020;
+  color: var(--accent-gold);
 }
 
-.args {
-  font-family: 'Space Mono', monospace;
-  font-size: var(--base-fs);
-  color: #6a6258;
+.pillArg {
+  color: var(--text-muted);
+}
+
+.pillSep {
+  color: var(--text-faint);
+  margin: 0 4px;
+}
+
+.pillArrow {
+  color: var(--text-secondary);
+  margin: 0 4px;
+}
+
+.utilityPill {
+  background: rgba(14, 14, 14, 0.6);
+  border-color: var(--border);
+}
+
+.utilityPill .pillCmd {
+  color: var(--text-secondary);
 }
