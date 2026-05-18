@@ -103,6 +103,7 @@ export default function Station({ station, capacity, playerCount, isHighlighted,
           <span className={styles.capacity}>{station.slots.length}/{capacity}</span>
         )}
       </div>
+
       {completionEmoji && (
         <div key={station.lastCompletion?.at} className={styles.completionFloat}>
           <FoodIcon icon={completionEmoji} size={26} />
@@ -137,7 +138,10 @@ export default function Station({ station, capacity, playerCount, isHighlighted,
         </div>
       ) : station.slots.length === 0 ? (
         <div className={styles.idleStatus}>
-          <div className={styles.idleCmd}>!{def.actions[0]} &lt;ingredient&gt;</div>
+          <div className={styles.idleCmd}>
+            <span className={styles.idleCmdName}>{def.actions[0]}</span>
+            <span className={styles.idleCmdArg}> &lt;ingredient&gt;</span>
+          </div>
           <div className={styles.idleHint}>available</div>
         </div>
       ) : (
