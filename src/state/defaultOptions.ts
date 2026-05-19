@@ -8,7 +8,7 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   stationCapacity: { chopping: 3, cooking: 2 },
   restrictSlots: false,
   enabledRecipes: ['burger', 'fish_burger', 'salad', 'roasted_veggies'],
-  allowShortformCommands: true,
+  allowShortformCommands: false,
   autoRestart: false,
   autoRestartDelay: 60,
   kitchenEventsEnabled: true,

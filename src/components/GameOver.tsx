@@ -330,9 +330,9 @@ export default function GameOver({ money, served, lost, playerStats, teams, leve
                     <span className={styles.lbName} style={{ color }}>{name}</span>
                     <span className={styles.lbDetail}>{stats.cooked}</span>
                     <span className={styles.lbDetail}>{stats.served}</span>
-                    <span className={styles.lbDetail}>{stats.extinguished}</span>
+                    <span className={styles.lbDetail}>{stats.extinguished * 2}</span>
                     <span className={styles.lbDetail}>{stats.cooled}</span>
-                    <span className={styles.lbDetail}>{stats.eventParticipations}</span>
+                    <span className={styles.lbDetail}>{stats.eventParticipations * 2}</span>
                     <span className={styles.lbDetail} style={{ color: '#d94f4f' }}>{stats.firesCaused}</span>
                     <span className={styles.lbDetail} style={{ color: '#c4a020' }}>{stats.bonusPoints > 0 ? `+${stats.bonusPoints}` : '0'}</span>
                     <span className={styles.lbTotal}>{calcPlayerScore(stats)}</span>

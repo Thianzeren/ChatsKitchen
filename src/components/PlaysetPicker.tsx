@@ -6,7 +6,7 @@ import styles from './PlaysetPicker.module.css'
 
 interface Props {
   onStart: (playset: Playset, difficulty: Difficulty) => void
-  onCustomise: () => void
+  onCustomise: (playset: Playset | null) => void
   onBack: () => void
 }
 
@@ -176,7 +176,7 @@ export default function PlaysetPicker({ onStart, onCustomise, onBack }: Props) {
           >
             🍳 Let's Cook!
           </button>
-          <button className={styles.customiseBtn} onClick={onCustomise}>
+          <button className={styles.customiseBtn} onClick={() => onCustomise(PLAYSETS.find(p => p.id === selectedId) ?? null)}>
             ⚙ Customise My Own
           </button>
           {!selectedId && <div className={styles.hint}>Select a playset to start</div>}
