@@ -621,8 +621,6 @@
   cursor: pointer;
   transition: border-color 0.12s, background 0.12s, color 0.12s;
   text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
 }
 
 .eventBtn:hover {
@@ -671,8 +669,6 @@
 
 .eventBtnName {
   font-size: var(--base-fs);
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* ── Detail pane content ── */

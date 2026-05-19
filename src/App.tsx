@@ -606,7 +606,17 @@ export default function App() {
     content = (
       <PlaysetPicker
         onStart={startFromPlayset}
-        onCustomise={() => setScreen('freeplaysetup')}
+        onCustomise={(playset) => {
+          if (playset) {
+            handleGameOptionsChange({
+              ...gameOptions,
+              enabledRecipes: playset.recipes,
+              enabledKitchenEvents: playset.events,
+              kitchenEventsEnabled: playset.events.length > 0,
+            })
+          }
+          setScreen('freeplaysetup')
+        }}
         onBack={() => setScreen(chatMode === 'room' ? 'localplay' : 'menu')}
       />
     )

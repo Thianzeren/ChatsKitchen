@@ -83,9 +83,9 @@ export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, se
                   <span className={styles.lbName} style={{ color }}>{name}</span>
                   <span className={styles.lbDetail}>{s.cooked}</span>
                   <span className={styles.lbDetail}>{s.served}</span>
-                  <span className={styles.lbDetail}>{s.extinguished}</span>
+                  <span className={styles.lbDetail}>{s.extinguished * 2}</span>
                   <span className={styles.lbDetail}>{s.cooled}</span>
-                  <span className={styles.lbDetail}>{s.eventParticipations}</span>
+                  <span className={styles.lbDetail}>{s.eventParticipations * 2}</span>
                   <span className={styles.lbDetail} style={{ color: '#d94f4f' }}>{s.firesCaused}</span>
                   <span className={styles.lbDetail} style={{ color: '#c4a020' }}>{s.bonusPoints > 0 ? `+${s.bonusPoints}` : '0'}</span>
                   <span className={styles.lbTotal}>{calcPlayerScore(s)}</span>
