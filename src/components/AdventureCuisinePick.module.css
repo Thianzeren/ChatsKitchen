@@ -1,18 +1,18 @@
 .screen {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 18px;
   height: 100%;
   background:
     radial-gradient(ellipse at top, rgba(216, 116, 40, 0.05), transparent 65%),
     radial-gradient(ellipse at bottom right, rgba(196, 160, 32, 0.04), transparent 60%),
     var(--bg);
-  padding: 36px 60px;
+  padding: 32px 60px;
   box-sizing: border-box;
   overflow: hidden;
 }
 
-.header {
+.topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -21,14 +21,14 @@
 
 .title {
   font-family: 'Lilita One', cursive;
-  font-size: 44px;
+  font-size: 40px;
   color: #fff;
   text-shadow: 0 0 40px rgba(255, 255, 255, 0.15);
 }
 
 .subtitle {
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: 17px;
   color: var(--text-secondary);
   line-height: 1.4;
   margin-top: 4px;
@@ -42,7 +42,7 @@
   padding: 1px 8px;
   border-radius: 5px;
   color: #c4a020;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .crewBadge {
@@ -51,19 +51,19 @@
   gap: 10px;
   background: rgba(196, 160, 32, 0.10);
   border: 2px solid rgba(196, 160, 32, 0.36);
-  padding: 12px 22px;
+  padding: 10px 20px;
   border-radius: 14px;
 }
 
 .crewBadgeValue {
   font-family: 'Lilita One', cursive;
-  font-size: 32px;
+  font-size: 30px;
   color: #c4a020;
 }
 
 .crewBadgeLabel {
   font-family: 'Fredoka', sans-serif;
-  font-size: 16px;
+  font-size: 15px;
   color: var(--text-secondary);
 }
 
@@ -111,15 +111,43 @@
   pointer-events: none;
 }
 
-/* ── Cuisine grid ───────────────────────────────────────────────────────── */
+/* ── Carousel ──────────────────────────────────────────────────────────── */
 
-.cuisineGrid {
+.carouselArea {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.navArrow {
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  width: 52px;
+  font-family: 'Lilita One', cursive;
+  font-size: 32px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: filter 0.1s, background 0.1s, border-color 0.1s;
+}
+
+.navArrow:not(:disabled):hover {
+  filter: brightness(1.15);
+  background: rgba(196, 160, 32, 0.10);
+  border-color: rgba(196, 160, 32, 0.4);
+  color: #c4a020;
+}
+
+.navArrowDisabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.cardsViewport {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 1fr);
   gap: 18px;
-  flex: 1;
-  min-height: 0;
 }
 
 .card {
@@ -127,21 +155,21 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: linear-gradient(180deg, var(--station-bg) 0%, rgba(0, 0, 0, 0.18) 100%);
   border: 2px solid var(--border);
   border-radius: 16px;
-  padding: 22px 20px 18px;
+  padding: 22px 18px 16px;
   cursor: pointer;
   transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   text-align: center;
   font: inherit;
   color: inherit;
   outline-offset: 4px;
-  min-height: 0;
 }
 
-.card:not(:disabled):hover {
+.card:not(:disabled):hover,
+.cardHovered {
   transform: translateY(-4px);
   filter: brightness(1.06);
   border-color: rgba(196, 160, 32, 0.5);
@@ -168,7 +196,7 @@
 }
 
 .cardFlag {
-  font-size: 42px;
+  font-size: 48px;
   line-height: 1;
   filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.35));
   margin-top: 4px;
@@ -185,41 +213,12 @@
   font-size: 14px;
   color: var(--text-muted);
   line-height: 1.4;
-  max-width: 90%;
-}
-
-.cardRecipes {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 4px;
-  width: 100%;
-  margin-top: 6px;
+  max-width: 92%;
   flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.cardRecipe {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'Fredoka', sans-serif;
-  font-size: 14px;
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 6px;
-  padding: 4px 10px;
-}
-
-.cardRecipe span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .cardFooter {
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .cardVotes {
@@ -229,7 +228,7 @@
 }
 
 .cardVoteBar {
-  width: 80%;
+  width: 84%;
   height: 4px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 2px;
@@ -240,6 +239,137 @@
   height: 100%;
   background: linear-gradient(90deg, #5a9ab0, #c4a020);
   transition: width 200ms ease;
+}
+
+/* ── Detail breakdown panel ────────────────────────────────────────────── */
+
+.detailPanel {
+  background: var(--station-bg);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.detailPlaceholder {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 18px;
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: 28px 0;
+}
+
+.detailContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.detailFlag {
+  font-size: 28px;
+}
+
+.detailName {
+  font-family: 'Lilita One', cursive;
+  font-size: 24px;
+  color: var(--text-warm);
+  flex: 1;
+}
+
+.detailHint {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.recipesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.recipeRow {
+  display: flex;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.recipeEmoji {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.recipeInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.recipeName {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.recipeReward {
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  color: #c4a020;
+  margin-left: auto;
+}
+
+.recipeSteps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.stepSeparator,
+.stepArrow {
+  font-size: 14px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.stepArrow {
+  color: var(--text-secondary);
+}
+
+.stepChip {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 1px 7px;
+  white-space: nowrap;
 }
 
 /* ── Actions ───────────────────────────────────────────────────────────── */
