@@ -366,6 +366,10 @@ export function useAdventureRun(
       const goalDelta = prev.chosenPath?.goalDelta ?? 0
       const adjustedGoal = Math.round(baseGoal * (1 + goalDelta) / 5) * 5
 
+      // Veteran's Tip garnish: +$15 to the bank at the start of every shift after S1.
+      const veteransTipActive = prev.ownedGarnishes.some(g => g.garnishId === 'veterans_tip')
+      const veteransTipBonus = veteransTipActive && nextShift > 1 ? 15 * Math.max(1, nextParticipantCount) : 0
+
       const updatedRun: AdventureRun = {
         ...prev,
         currentShift: nextShift,
@@ -373,6 +377,7 @@ export function useAdventureRun(
         currentRecipes,
         currentGoal: adjustedGoal,
         participantCount: nextParticipantCount,
+        currentRunMoney: prev.currentRunMoney + veteransTipBonus,
         pendingShopOffers: undefined,
       }
 

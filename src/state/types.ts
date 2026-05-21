@@ -271,6 +271,7 @@ export interface GameState {
   cooldownMultiplier?: number          // 1 default; Understaffed boss = 1.5
   choppingCookTimeMultiplier?: number  // 1 default; Precise Cuts = 0.6 (chop-station only); Sharp Knives overrides to 0
   orderPatienceBonus?: number          // ms added to each new order's patienceMax + patienceLeft (Friendly Faces)
+  recentServes?: { dish: string; at: number }[]   // rolling log of recent serves; Combo Plate checks 3 distinct dishes in 30s
   // Triggered-garnish runtime state
   activeGarnishes?: string[]                  // garnish ids active for this shift
   firstOrderServedThisShift?: boolean         // First Bite, Big Tippers — flips after first SERVE

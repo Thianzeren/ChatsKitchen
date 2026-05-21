@@ -319,7 +319,21 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (isFirstOrder && active.includes('big_tippers')) {
         tip += 30
       }
-      const reward = Math.round(baseReward * multiplier) + tip
+
+      // Combo Plate: rolling 30s window of distinct served dishes — +$50 when 3+ unique.
+      const now = Date.now()
+      let recentServes = (state.recentServes ?? []).filter(s => now - s.at < 30_000)
+      recentServes = [...recentServes, { dish: order.dish, at: now }]
+      let comboBonus = 0
+      if (active.includes('combo_plate')) {
+        const distinct = new Set(recentServes.map(s => s.dish))
+        if (distinct.size >= 3) {
+          comboBonus = 50
+          recentServes = []  // reset the window after awarding so the next combo has to rebuild
+        }
+      }
+
+      const reward = Math.round(baseReward * multiplier) + tip + comboBonus
 
       let withStats = addStat(state, user, 'served', 1)
       withStats = addStat(withStats, user, 'moneyEarned', reward)
@@ -345,8 +359,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           money: afterPool.money + reward,
           served: afterPool.served + 1,
           firstOrderServedThisShift: true,
+          recentServes,
         },
-        'KITCHEN', `${user} served ${recipe.emoji} ${recipe.name}! +$${reward}`, 'success'
+        'KITCHEN',
+        comboBonus > 0
+          ? `${user} served ${recipe.emoji} ${recipe.name}! +$${reward} (Combo Plate +$${comboBonus}!)`
+          : `${user} served ${recipe.emoji} ${recipe.name}! +$${reward}`,
+        'success',
       )
     }
 
@@ -546,14 +565,34 @@ let matchedStep = null
 
           // Step C: Check completion (no heat addition — already applied incrementally)
           if (slot.state === 'cooking' && elapsed >= slot.cookDuration) {
+            // Doppelgänger garnish: 20% chance to produce a second copy of the ingredient
+            const doppelgangerActive = (state.activeGarnishes ?? []).includes('doppelganger')
+            const extraCopy = doppelgangerActive && Math.random() < 0.2
             if (state.teams) {
               const team = state.teams[slot.user]
-              if (team === 'red') { newRedPreparedItems.push(slot.produces); newRedPreparedItemSources.push(slot.user) }
-              else if (team === 'blue') { newBluePreparedItems.push(slot.produces); newBluePreparedItemSources.push(slot.user) }
+              if (team === 'red') {
+                newRedPreparedItems.push(slot.produces); newRedPreparedItemSources.push(slot.user)
+                if (extraCopy) { newRedPreparedItems.push(slot.produces); newRedPreparedItemSources.push(slot.user) }
+              } else if (team === 'blue') {
+                newBluePreparedItems.push(slot.produces); newBluePreparedItemSources.push(slot.user)
+                if (extraCopy) { newBluePreparedItems.push(slot.produces); newBluePreparedItemSources.push(slot.user) }
+              }
               // else: unregistered player in PvP — item dropped
             } else {
               newPreparedItems.push(slot.produces)
               newPreparedItemSources.push(slot.user)
+              if (extraCopy) {
+                newPreparedItems.push(slot.produces)
+                newPreparedItemSources.push(slot.user)
+              }
+            }
+            if (extraCopy) {
+              messages.push({
+                id: nextMsgId++,
+                username: 'KITCHEN',
+                text: `✨ Doppelgänger! Bonus ${slot.produces.replace(/_/g, ' ')}!`,
+                type: 'success',
+              })
             }
             delete newActiveUsers[slot.user]
             messages.push({
@@ -575,6 +614,7 @@ let matchedStep = null
       }
 
       // Update order patience + expire
+      const compostActive = (state.activeGarnishes ?? []).includes('compost_bin')
       let orders = [...state.orders]
       let lost = state.lost
       orders = orders.map(order => {
@@ -583,6 +623,21 @@ let matchedStep = null
         if (newPatience <= 0) {
           lost++
           messages.push({ id: nextMsgId++, username: 'CUSTOMER', text: `Order #${order.id} expired! Lost a ${RECIPES[order.dish].emoji}!`, type: 'error' })
+          // Compost Bin garnish: turn the lost order into 1 random prepped ingredient
+          if (compostActive) {
+            const expiredRecipe = RECIPES[order.dish]
+            if (expiredRecipe && expiredRecipe.steps.length > 0) {
+              const salvageStep = expiredRecipe.steps[Math.floor(Math.random() * expiredRecipe.steps.length)]
+              newPreparedItems.push(salvageStep.produces)
+              newPreparedItemSources.push('')
+              messages.push({
+                id: nextMsgId++,
+                username: 'KITCHEN',
+                text: `🌱 Compost Bin salvaged ${salvageStep.produces.replace(/_/g, ' ')}.`,
+                type: 'system',
+              })
+            }
+          }
           return { ...order, served: true, patienceLeft: 0, outcome: 'lost' as const, completedAt: now }
         }
         return { ...order, patienceLeft: newPatience }

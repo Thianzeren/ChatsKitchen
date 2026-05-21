@@ -175,6 +175,30 @@ export const GARNISHES: Record<string, GarnishDef> = {
     basePrice: 240,
     icon: '🩸',
   },
+  combo_plate: {
+    id: 'combo_plate',
+    name: 'Combo Plate',
+    description: 'Serve 3 different recipes within 30s → +$50 bonus.',
+    tier: 'rare',
+    basePrice: 250,
+    icon: '🎴',
+  },
+  compost_bin: {
+    id: 'compost_bin',
+    name: 'Compost Bin',
+    description: 'Every expired order leaves behind 1 random prepped ingredient.',
+    tier: 'rare',
+    basePrice: 220,
+    icon: '🌱',
+  },
+  veterans_tip: {
+    id: 'veterans_tip',
+    name: "Veteran's Tip",
+    description: '+$15 to the run bank at the start of every shift after Shift 1.',
+    tier: 'rare',
+    basePrice: 200,
+    icon: '🎖️',
+  },
 
   // ── Legendary ──
   sharp_knives: {
@@ -192,6 +216,24 @@ export const GARNISHES: Record<string, GarnishDef> = {
     tier: 'legendary',
     basePrice: 520,
     icon: '⛄',
+  },
+  doppelganger: {
+    id: 'doppelganger',
+    name: 'Doppelgänger',
+    description: 'Every cooked ingredient has a 20% chance to produce a second copy.',
+    tier: 'legendary',
+    basePrice: 550,
+    icon: '👯',
+  },
+  glass_kitchen: {
+    id: 'glass_kitchen',
+    name: 'Glass Kitchen',
+    description: 'Stations overheat at 60 instead of 100, but every dish pays +50%.',
+    tier: 'legendary',
+    basePrice: 460,
+    icon: '💎',
+    effects: [{ field: 'overheatThresholdDelta', value: -40, mode: 'add' }],
+    // +50% money is handled inline in SERVE via activeGarnishes check
   },
 }
 
