@@ -6,11 +6,12 @@ import {
   pickStartingRecipe, pickAutoUnlockRecipe, pickRandomCuisine, makeRunSeed,
   getAutoUnlockedRecipeCount,
   ADVENTURE_TOTAL_SHIFTS,
-  mergePlayerStats,
 } from '../data/adventureMode'
 import {
-  applyAllGarnishes, generateShopOffers, getGarnish, getGarnishPrice, addOwnedGarnish,
+  applyAllGarnishes, generateShopOffers, addOwnedGarnish,
 } from '../data/adventureGarnishes'
+import { generatePathPair } from '../data/adventurePathCards'
+import { applyBossDebuff } from '../data/adventureBosses'
 
 // ── localStorage migration ───────────────────────────────────────────────────
 
@@ -48,46 +49,50 @@ function getRerollPrice(rerollCount: number, participantCount: number = 1): numb
 
 // ── Per-shift reset composition ──────────────────────────────────────────────
 
-// Compose the RESET action payload from the run's current state.
-// Applies (in order): default options → path-card modifiers → boss debuff → owned garnishes.
+// Compose the RESET action payload. Boss debuff applies first; garnishes layer
+// on top so a Slow Burner garnish can partially counteract a Heatwave boss.
 function buildShiftReset(
   run: AdventureRun,
   pathCard: PathCard | undefined,
-  bossDebuffId: string | undefined,
 ): Extract<GameAction, { type: 'RESET' }> {
-  // Start from the per-shift baseline.
-  const baseCookingSpeed = 1
-  const baseOrderSpeed = 1
-  const baseOrderSpawn = 1
-  const shiftDuration = getAdventureShiftDuration(run.currentShift)
+  const boss = pathCard?.bossDebuffId
+    ? applyBossDebuff(pathCard)
+    : { options: {}, state: {} as const }
 
-  // (PR-2/3) path-card / boss adjustments will mutate these; for PR-1 they're no-ops.
-  void pathCard
-  void bossDebuffId
+  // Boss option adjustments fold into the baseline before garnishes stack on top.
+  const baseOrderSpeed = boss.options.orderSpeed ?? 1
+  const baseOrderSpawn = boss.options.orderSpawnRate ?? 1
 
-  // Apply owned garnishes on top of the baseline.
   const delta = applyAllGarnishes(run.ownedGarnishes, {
-    cookingSpeed: baseCookingSpeed,
+    cookingSpeed: 1,
     orderSpeed: baseOrderSpeed,
     orderSpawnRate: baseOrderSpawn,
   }, run.currentShift)
 
+  // Heat / cool: boss multiplier × garnish multiplier; boss bonus + garnish bonus.
+  const heatMul = (delta.state.heatPerCookMultiplier ?? 1) * (boss.state.heatPerCookMultiplier ?? 1)
+  const coolBonus = (delta.state.coolAmountBonus ?? 0) + (boss.state.coolAmountBonus ?? 0)
+
   return {
     type: 'RESET',
-    shiftDuration,
-    cookingSpeed: delta.options.cookingSpeed ?? baseCookingSpeed,
+    shiftDuration: getAdventureShiftDuration(),
+    cookingSpeed: delta.options.cookingSpeed ?? 1,
     orderSpeed: delta.options.orderSpeed ?? baseOrderSpeed,
     orderSpawnRate: delta.options.orderSpawnRate ?? baseOrderSpawn,
     enabledRecipes: run.currentRecipes,
     teams: undefined,
     participantCount: 0,
-    heatPerCookMultiplier: delta.state.heatPerCookMultiplier,
-    coolAmountBonus: delta.state.coolAmountBonus,
+    heatPerCookMultiplier: heatMul === 1 ? undefined : heatMul,
+    coolAmountBonus: coolBonus === 0 ? undefined : coolBonus,
     flatTipPerOrder: delta.state.flatTipPerOrder,
-    freeExtinguishes: delta.state.freeExtinguishes,
-    recipePriceModifier: delta.state.recipePriceModifier,
-    eventThresholdMultiplier: delta.state.eventThresholdMultiplier,
+    choppingCookTimeMultiplier: delta.state.choppingCookTimeMultiplier,
+    orderPatienceBonus: delta.state.orderPatienceBonus,
+    overheatThreshold: delta.state.overheatThreshold,
+    bossMoneyMultiplier: boss.state.bossMoneyMultiplier,
+    cooldownMultiplier: boss.state.cooldownMultiplier,
+    disabledStations: boss.state.disabledStations,
     activeGarnishes: run.ownedGarnishes.map(g => g.garnishId),
+    activeBossDebuff: pathCard?.bossDebuffId,
   }
 }
 
@@ -99,6 +104,30 @@ const EVENTS_OFF: ActiveEventOptions = {
   kitchenEventDuration: 12,
 }
 
+// Mid-run event mix: 2 hazards + 3 opportunities, calibrated for streamer pacing.
+// Enabled from S3 onward.
+const EVENTS_ADVENTURE: ActiveEventOptions = {
+  kitchenEventsEnabled: true,
+  enabledKitchenEvents: ['angry_chef', 'smoke_blast', 'mystery_recipe', 'dance', 'chefs_chant'],
+  kitchenEventSpawnMin: 60,
+  kitchenEventSpawnMax: 120,
+  kitchenEventDuration: 18,
+}
+
+// Chaos Mode boss: same event set, but spawn cadence tightens to 20–40s.
+const EVENTS_ADVENTURE_CHAOS: ActiveEventOptions = {
+  ...EVENTS_ADVENTURE,
+  kitchenEventSpawnMin: 20,
+  kitchenEventSpawnMax: 40,
+}
+
+// Pick the right event config for a given shift + chosen path card.
+function pickEventOptions(shift: number, bossId: string | undefined): ActiveEventOptions {
+  if (shift < 3) return EVENTS_OFF
+  if (bossId === 'chaos_mode') return EVENTS_ADVENTURE_CHAOS
+  return EVENTS_ADVENTURE
+}
+
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useAdventureRun(
@@ -107,6 +136,7 @@ export function useAdventureRun(
   setActiveEventOptions: Dispatch<SetStateAction<ActiveEventOptions | null>>,
   activeGameOptionsRef: { current: GameOptions | null },
   finalStatsRef: { current: FinalStats },
+  adventureLobbyRef: { current: string[] | null },
 ) {
   const [adventureRun, setAdventureRun] = useState<AdventureRun | null>(null)
   const adventureRunRef = useRef<AdventureRun | null>(null)
@@ -120,13 +150,21 @@ export function useAdventureRun(
 
   // ── startAdventure: begin a brand-new run ──────────────────────────────────
 
-  const startAdventure = useCallback(() => {
-    // PR-1: cuisine pick screen ships in PR-2; fall back to a random cuisine for now.
-    const startCuisine: CuisineId = pickRandomCuisine()
+  const startAdventure = useCallback((cuisine?: CuisineId) => {
+    // PR-2: the cuisine is picked via chat vote on the cuisinepick screen and
+    // passed in here. If no cuisine was supplied (e.g. legacy callers), fall back
+    // to a random one so the run still starts.
+    const startCuisine: CuisineId = cuisine ?? pickRandomCuisine()
     const startingRecipe = pickStartingRecipe(startCuisine)
     const shift = 1
     const unlockedRecipes = [startingRecipe]
     const currentRecipes = unlockedRecipes.slice(0, getAutoUnlockedRecipeCount(shift))
+
+    // participantCount is read from the live Adventure lobby roster at run start.
+    // If the lobby was never opened (e.g. legacy entry from gameover Play Again), we
+    // fall back to 1 so the run can still proceed.
+    const roster = adventureLobbyRef.current ?? []
+    const participantCount = Math.max(1, roster.length)
 
     const run: AdventureRun = {
       runSeed: makeRunSeed(),
@@ -136,19 +174,20 @@ export function useAdventureRun(
       currentRunMoney: 0,
       unlockedRecipes,
       currentRecipes,
-      currentGoal: getAdventureGoal(shift, 1),
-      participantCount: 1,    // placeholder until the Adventure lobby ships in PR 2
+      currentGoal: getAdventureGoal(shift, participantCount),
+      participantCount,
       ownedGarnishes: [],
       accumulatedPlayerStats: {},
     }
 
     setAdventureRun(run)
     setIsNewBestAdventureRun(false)
-    setActiveEventOptions(EVENTS_OFF)
+    // Shift 1 has no path-card pick yet — pass undefined for a neutral RESET.
+    setActiveEventOptions(pickEventOptions(shift, undefined))
     activeGameOptionsRef.current = null
-    dispatch(buildShiftReset(run, undefined, undefined))
+    dispatch(buildShiftReset(run, undefined))
     setScreen('adventurebriefing')
-  }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef])
+  }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, adventureLobbyRef])
 
   // ── handleShiftEndDone: called when the shift timer runs out ───────────────
 
@@ -158,6 +197,8 @@ export function useAdventureRun(
 
     const fs = finalStatsRef.current
     const passed = fs.money >= run.currentGoal
+    // Path-card cash bonus: awarded only if the shift passes. Cleared after.
+    const cashBonus = passed ? (run.chosenPath?.rewardOnPass?.cashBonus ?? 0) : 0
     const result: ShiftResult = {
       shiftNumber: run.currentShift,
       recipes: run.currentRecipes,
@@ -166,12 +207,15 @@ export function useAdventureRun(
       served: fs.served,
       lost: fs.lost,
       passed,
+      chosenPathCardId: run.chosenPath?.id,
+      bossDebuffId: run.chosenPath?.bossDebuffId,
     }
     const isFinalShift = run.currentShift >= ADVENTURE_TOTAL_SHIFTS
     const updatedRun: AdventureRun = {
       ...run,
       shiftResults: [...run.shiftResults, result],
-      currentRunMoney: passed ? run.currentRunMoney + fs.money : run.currentRunMoney,
+      currentRunMoney: passed ? run.currentRunMoney + fs.money + cashBonus : run.currentRunMoney,
+      chosenPath: undefined,   // consumed; the next path-pick generates fresh cards
       runWon: passed && isFinalShift ? true : run.runWon,
     }
 
@@ -230,14 +274,33 @@ export function useAdventureRun(
     setScreen('adventureshiftpassed')
   }, [setScreen, finalStatsRef])
 
-  // ── openPantryShop: from adventureshiftpassed → pantry ─────────────────────
+  // ── openPathPick: from adventureshiftpassed → pathpick ─────────────────────
 
-  const openPantryShop = useCallback(() => {
+  const openPathPick = useCallback(() => {
     setAdventureRun(prev => {
       if (!prev) return prev
+      const nextShift = prev.currentShift + 1
+      const pair = generatePathPair(prev.runSeed, nextShift, prev.unlockedRecipes)
+      return { ...prev, pendingPathCards: pair, chosenPath: undefined }
+    })
+    setScreen('adventurepathpick')
+  }, [setScreen])
+
+  // ── confirmPathCard: vote or click resolved the path; open shop next ───────
+
+  const confirmPathCard = useCallback((cardIdx: number) => {
+    setAdventureRun(prev => {
+      if (!prev || !prev.pendingPathCards) return prev
+      const chosen = prev.pendingPathCards[cardIdx]
+      if (!chosen) return prev
       rerollCountRef.current = 0
       const offers = generateShopOffers(prev.ownedGarnishes, prev.currentShift + 1, prev.participantCount, 4)
-      return { ...prev, pendingShopOffers: offers }
+      return {
+        ...prev,
+        chosenPath: chosen,
+        pendingPathCards: undefined,
+        pendingShopOffers: offers,
+      }
     })
     setScreen('adventurepantryshop')
   }, [setScreen])
@@ -300,64 +363,61 @@ export function useAdventureRun(
       const targetCount = Math.min(3, Math.max(getAutoUnlockedRecipeCount(nextShift), newUnlocked.length))
       const currentRecipes = newUnlocked.slice(0, targetCount)
 
-      // PR-2: recompute participantCount from the live Adventure lobby roster here so
-      // mid-run !leave / !kick changes apply at the next shift boundary. For PR-1 the
-      // lobby doesn't exist yet, so we hold the placeholder of 1.
-      const nextParticipantCount = prev.participantCount
+      // Recompute participantCount from the live Adventure lobby roster so mid-run
+      // !leave / !kick changes apply at the next shift boundary. If the lobby was
+      // cleared (e.g. legacy run with no lobby), hold the previous count.
+      const liveRoster = adventureLobbyRef.current
+      const nextParticipantCount = liveRoster && liveRoster.length > 0
+        ? liveRoster.length
+        : prev.participantCount
+
+      // Apply the chosen path card's goal delta to the next shift's goal.
+      const baseGoal = getAdventureGoal(nextShift, nextParticipantCount)
+      const goalDelta = prev.chosenPath?.goalDelta ?? 0
+      const adjustedGoal = Math.round(baseGoal * (1 + goalDelta) / 5) * 5
+
+      // Veteran's Tip garnish: +$15 to the bank at the start of every shift after S1.
+      const veteransTipActive = prev.ownedGarnishes.some(g => g.garnishId === 'veterans_tip')
+      const veteransTipBonus = veteransTipActive && nextShift > 1 ? 15 * Math.max(1, nextParticipantCount) : 0
 
       const updatedRun: AdventureRun = {
         ...prev,
         currentShift: nextShift,
         unlockedRecipes: newUnlocked,
         currentRecipes,
-        currentGoal: getAdventureGoal(nextShift, nextParticipantCount),
+        currentGoal: adjustedGoal,
         participantCount: nextParticipantCount,
+        currentRunMoney: prev.currentRunMoney + veteransTipBonus,
         pendingShopOffers: undefined,
       }
 
       // Dispatch the new shift's RESET using the updated run.
-      dispatch(buildShiftReset(updatedRun, undefined, undefined))
-      // PR-2: events kick in from S3 onward via path-card modifiers.
-      // PR-1: keep events off for the whole run.
-      setActiveEventOptions(EVENTS_OFF)
+      // Pass the chosen path card so its boss debuff (if any) is applied.
+      dispatch(buildShiftReset(updatedRun, prev.chosenPath))
+      // Events kick in from S3 onward; Chaos Mode boss tightens the cadence to 20–40s.
+      setActiveEventOptions(pickEventOptions(nextShift, prev.chosenPath?.bossDebuffId))
       activeGameOptionsRef.current = null
       return updatedRun
     })
     setScreen('adventurebriefing')
-  }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef])
-
-  // ── handleGameOverStatsMerge: called from App.tsx after each shift ─────────
-  // Wraps the existing mergePlayerStats logic in a stable hook callback so
-  // App.tsx doesn't need to reach into mergePlayerStats itself for Adventure.
-
-  // ── resetAdventureBestRun ─────────────────────────────────────────────────
+  }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, adventureLobbyRef])
 
   const resetAdventureBestRun = useCallback(() => {
     setAdventureBestRun(null)
   }, [])
 
-  // ── Back-compat alias kept for App.tsx import; routes to openPantryShop ────
-
-  const handleShiftPassedNext = openPantryShop
-
   return {
     // State
     adventureRun, setAdventureRun, adventureRunRef,
-    adventureBestRun, isNewBestAdventureRun, setIsNewBestAdventureRun,
+    adventureBestRun, isNewBestAdventureRun,
 
-    // PR-1 flow callbacks
+    // Flow callbacks (lobby → cuisine → briefing → playing → path → shop → next briefing)
     startAdventure,
     handleShiftEndDone,
-    openPantryShop, handleShiftPassedNext,
+    openPathPick, confirmPathCard,
     purchaseGarnish, rerollShopOffers, closeShop,
     getRerollPrice: () => getRerollPrice(rerollCountRef.current, adventureRunRef.current?.participantCount ?? 1),
 
-    // Lookup helpers (used by shop UI)
-    getGarnishMeta: getGarnish,
-    getOfferPrice: getGarnishPrice,
-
-    // Misc
     resetAdventureBestRun,
-    mergePlayerStats,
   }
 }

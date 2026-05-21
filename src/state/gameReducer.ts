@@ -26,10 +26,14 @@ export type GameAction =
       heatPerCookMultiplier?: number
       coolAmountBonus?: number
       flatTipPerOrder?: number
-      freeExtinguishes?: number
-      recipePriceModifier?: Record<string, number>
-      eventThresholdMultiplier?: number
+      bossMoneyMultiplier?: number
+      cooldownMultiplier?: number
+      choppingCookTimeMultiplier?: number
+      orderPatienceBonus?: number
+      overheatThreshold?: number
+      disabledStations?: string[]
       activeGarnishes?: string[]
+      activeBossDebuff?: string
     }
   | { type: 'SET_STATION_HEAT'; stationId: string; heat: number }
   | { type: 'OVERHEAT_STATION'; stationId: string }
@@ -172,11 +176,22 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         heatPerCookMultiplier: action.heatPerCookMultiplier,
         coolAmountBonus: action.coolAmountBonus,
         flatTipPerOrder: action.flatTipPerOrder,
-        freeExtinguishes: action.freeExtinguishes,
-        recipePriceModifier: action.recipePriceModifier,
-        eventThresholdMultiplier: action.eventThresholdMultiplier,
+        bossMoneyMultiplier: action.bossMoneyMultiplier,
+        cooldownMultiplier: action.cooldownMultiplier,
+        choppingCookTimeMultiplier: action.choppingCookTimeMultiplier,
+        orderPatienceBonus: action.orderPatienceBonus,
+        overheatThreshold: action.overheatThreshold,
+        disabledStations: action.disabledStations && action.disabledStations.length > 0
+          ? action.disabledStations
+          : undefined,
         activeGarnishes: active.length > 0 ? active : undefined,
+        activeBossDebuff: action.activeBossDebuff,
         firstOrderServedThisShift: false,
+        // Ticker timers are initialised lazily on the first TICK to avoid
+        // referencing Date.now() in the reducer at RESET time.
+        teaBreakNextAt: undefined,
+        patiencePausedUntil: undefined,
+        rouletteNextAt: undefined,
       }
     }
 
@@ -231,7 +246,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (isUserBusy(state, user)) return addMsg(state, 'KITCHEN', `${user} is busy cooking and can't cool right now!`, 'error')
 
       const cooldown = state.userCooldowns[user] ?? 0
-      if (Date.now() - cooldown < 1500) return addMsg(state, 'KITCHEN', `${user} is on cooldown!`, 'error')
+      const coolCooldownMs = 1500 * (state.cooldownMultiplier ?? 1)
+      if (Date.now() - cooldown < coolCooldownMs) return addMsg(state, 'KITCHEN', `${user} is on cooldown!`, 'error')
 
       const coolAmount = (40 + (state.coolAmountBonus ?? 0)) + Math.floor(Math.random() * 21)  // 40–60 + bonus
       const newHeat = Math.max(0, station.heat - coolAmount)
@@ -278,8 +294,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       )
       const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * 30))
       const baseReward = recipe.reward + timeBonus
-      const recipeMul = state.recipePriceModifier?.[order.dish] ?? 1
-      let multiplier = (state.moneyMultiplier?.multiplier ?? 1) * recipeMul
+      const bossMoneyMul = state.bossMoneyMultiplier ?? 1
+      let multiplier = (state.moneyMultiplier?.multiplier ?? 1) * bossMoneyMul
 
       // ── Triggered garnish multipliers (multiplicative with each other) ──
       const active = state.activeGarnishes ?? []
@@ -291,9 +307,33 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (active.includes('speed_demon') && elapsedSinceSpawn < 20_000) {
         multiplier *= 1.25
       }
+      const patienceFraction = order.patienceMax > 0 ? order.patienceLeft / order.patienceMax : 0
+      if (active.includes('pressure_tip') && patienceFraction < 0.15) {
+        multiplier *= 1.5
+      }
+      if (active.includes('glass_kitchen')) {
+        multiplier *= 1.5
+      }
 
-      const tip = state.flatTipPerOrder ?? 0
-      const reward = Math.round(baseReward * multiplier) + tip
+      let tip = state.flatTipPerOrder ?? 0
+      if (isFirstOrder && active.includes('big_tippers')) {
+        tip += 30
+      }
+
+      // Combo Plate: rolling 30s window of distinct served dishes — +$50 when 3+ unique.
+      const now = Date.now()
+      let recentServes = (state.recentServes ?? []).filter(s => now - s.at < 30_000)
+      recentServes = [...recentServes, { dish: order.dish, at: now }]
+      let comboBonus = 0
+      if (active.includes('combo_plate')) {
+        const distinct = new Set(recentServes.map(s => s.dish))
+        if (distinct.size >= 3) {
+          comboBonus = 50
+          recentServes = []  // reset the window after awarding so the next combo has to rebuild
+        }
+      }
+
+      const reward = Math.round(baseReward * multiplier) + tip + comboBonus
 
       let withStats = addStat(state, user, 'served', 1)
       withStats = addStat(withStats, user, 'moneyEarned', reward)
@@ -319,8 +359,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           money: afterPool.money + reward,
           served: afterPool.served + 1,
           firstOrderServedThisShift: true,
+          recentServes,
         },
-        'KITCHEN', `${user} served ${recipe.emoji} ${recipe.name}! +$${reward}`, 'success'
+        'KITCHEN',
+        comboBonus > 0
+          ? `${user} served ${recipe.emoji} ${recipe.name}! +$${reward} (Combo Plate +$${comboBonus}!)`
+          : `${user} served ${recipe.emoji} ${recipe.name}! +$${reward}`,
+        'success',
       )
     }
 
@@ -328,7 +373,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const { user, action: cookAction, target, now } = action
 
       // Cooldown check
-      if (state.userCooldowns[user] && now - state.userCooldowns[user] < 1500) return state
+      const cookCooldownMs = 1500 * (state.cooldownMultiplier ?? 1)
+      if (state.userCooldowns[user] && now - state.userCooldowns[user] < cookCooldownMs) return state
       const withCooldown = { ...state, userCooldowns: { ...state.userCooldowns, [user]: now } }
 
       // Per-user busy check (belt-and-suspenders: also scan station slots in case activeUsers is stale)
@@ -361,10 +407,14 @@ let matchedStep = null
       }
       if (!matchedStep) return addMsg(withCooldown, 'KITCHEN', `Can't ${cookAction} ${(target || '').replace(/_/g, ' ')} there!`, 'error')
 
-      // ── Triggered garnish: Sharp Knives → chopping becomes instant ──
+      // ── Chopping-station garnish modifiers ──
+      // Precise Cuts trims chopping cook time; Sharp Knives overrides to instant.
       let effectiveDuration = matchedStep.duration
-      if (cookAction === 'chop' && (state.activeGarnishes ?? []).includes('sharp_knives')) {
-        effectiveDuration = 0
+      if (cookAction === 'chop') {
+        effectiveDuration *= state.choppingCookTimeMultiplier ?? 1
+        if ((state.activeGarnishes ?? []).includes('sharp_knives')) {
+          effectiveDuration = 0
+        }
       }
 
       // Check ingredient prerequisite
@@ -429,7 +479,8 @@ let matchedStep = null
       const dish = dishKeys[Math.floor(Math.random() * dishKeys.length)]
       const recipe = RECIPES[dish]
 
-      const patience = recipe.patience / state.orderSpeed
+      // Friendly Faces garnish: +ms to every new order's patience pool.
+      const patience = (recipe.patience / state.orderSpeed) + (state.orderPatienceBonus ?? 0)
 
       const order: Order = {
         id: state.nextOrderId,
@@ -459,6 +510,49 @@ let matchedStep = null
       const newBluePreparedItemSources = state.teams ? [...(state.bluePreparedItemSources ?? [])] : []
       let newPlayerStats = { ...state.playerStats }
       let bloodhoundMoney = 0
+
+      // ── Periodic shift-timer effects (Tea Break + Recipe Roulette) ──
+      const active = state.activeGarnishes ?? []
+      let teaBreakNextAt = state.teaBreakNextAt
+      let patiencePausedUntil = state.patiencePausedUntil
+      let rouletteNextAt = state.rouletteNextAt
+
+      // Lazy-init on the first TICK that sees an active effect.
+      if (active.includes('tea_break') && !teaBreakNextAt) teaBreakNextAt = now + 60_000
+      if (state.activeBossDebuff === 'recipe_roulette' && !rouletteNextAt) rouletteNextAt = now + 45_000
+
+      // Fire Tea Break — 5s patience pause every 60s.
+      if (teaBreakNextAt && now >= teaBreakNextAt) {
+        patiencePausedUntil = now + 5_000
+        teaBreakNextAt = now + 60_000
+        messages.push({
+          id: nextMsgId++,
+          username: 'KITCHEN',
+          text: '☕ Tea Break! Order patience paused for 5 seconds.',
+          type: 'success',
+        })
+      }
+
+      // Fire Recipe Roulette — swap one active recipe with a random dish from the catalog.
+      let newEnabledRecipes = state.enabledRecipes
+      if (rouletteNextAt && now >= rouletteNextAt) {
+        const candidates = Object.keys(RECIPES).filter(r => !state.enabledRecipes.includes(r))
+        if (candidates.length > 0 && state.enabledRecipes.length > 0) {
+          const removedIdx = Math.floor(Math.random() * state.enabledRecipes.length)
+          const removed = state.enabledRecipes[removedIdx]
+          const added = candidates[Math.floor(Math.random() * candidates.length)]
+          newEnabledRecipes = state.enabledRecipes.map((r, i) => i === removedIdx ? added : r)
+          messages.push({
+            id: nextMsgId++,
+            username: 'KITCHEN',
+            text: `🎲 Recipe Roulette! ${RECIPES[removed]?.name ?? removed} → ${RECIPES[added]?.name ?? added}`,
+            type: 'system',
+          })
+        }
+        rouletteNextAt = now + 45_000
+      }
+      const patienceFrozen = patiencePausedUntil !== undefined && now < patiencePausedUntil
+
       // Update all station slots
       for (const [id, station] of Object.entries(newStations)) {
         if (station.overheated || station.slots.length === 0) continue
@@ -482,8 +576,9 @@ let matchedStep = null
           }
           const updatedSlot: StationSlot = { ...slot, elapsedMs: elapsed, heatApplied: newHeatApplied }
 
-          // Step B: Check overheat
-          if (currentHeat >= 100) {
+          // Step B: Check overheat (threshold may be raised by Insulation or lowered by Glass Kitchen)
+          const overheatLimit = state.overheatThreshold ?? 100
+          if (currentHeat >= overheatLimit) {
             // Penalise every player cooking at this station, not just the one whose slot tipped it over
             for (const s of station.slots) {
               const statSnap = addStat({ ...state, playerStats: newPlayerStats }, s.user, 'firesCaused', 1)
@@ -491,7 +586,7 @@ let matchedStep = null
             }
             // Free all users assigned to all slots on this station
             for (const s of newStations[id].slots) delete newActiveUsers[s.user]
-            newStations[id] = { ...newStations[id], slots: [], heat: 100, overheated: true, extinguishVotes: [] }
+            newStations[id] = { ...newStations[id], slots: [], heat: overheatLimit, overheated: true, extinguishVotes: [] }
             messages.push({
               id: nextMsgId++,
               username: 'KITCHEN',
@@ -513,14 +608,34 @@ let matchedStep = null
 
           // Step C: Check completion (no heat addition — already applied incrementally)
           if (slot.state === 'cooking' && elapsed >= slot.cookDuration) {
+            // Doppelgänger garnish: 20% chance to produce a second copy of the ingredient
+            const doppelgangerActive = (state.activeGarnishes ?? []).includes('doppelganger')
+            const extraCopy = doppelgangerActive && Math.random() < 0.2
             if (state.teams) {
               const team = state.teams[slot.user]
-              if (team === 'red') { newRedPreparedItems.push(slot.produces); newRedPreparedItemSources.push(slot.user) }
-              else if (team === 'blue') { newBluePreparedItems.push(slot.produces); newBluePreparedItemSources.push(slot.user) }
+              if (team === 'red') {
+                newRedPreparedItems.push(slot.produces); newRedPreparedItemSources.push(slot.user)
+                if (extraCopy) { newRedPreparedItems.push(slot.produces); newRedPreparedItemSources.push(slot.user) }
+              } else if (team === 'blue') {
+                newBluePreparedItems.push(slot.produces); newBluePreparedItemSources.push(slot.user)
+                if (extraCopy) { newBluePreparedItems.push(slot.produces); newBluePreparedItemSources.push(slot.user) }
+              }
               // else: unregistered player in PvP — item dropped
             } else {
               newPreparedItems.push(slot.produces)
               newPreparedItemSources.push(slot.user)
+              if (extraCopy) {
+                newPreparedItems.push(slot.produces)
+                newPreparedItemSources.push(slot.user)
+              }
+            }
+            if (extraCopy) {
+              messages.push({
+                id: nextMsgId++,
+                username: 'KITCHEN',
+                text: `✨ Doppelgänger! Bonus ${slot.produces.replace(/_/g, ' ')}!`,
+                type: 'success',
+              })
             }
             delete newActiveUsers[slot.user]
             messages.push({
@@ -541,15 +656,31 @@ let matchedStep = null
         }
       }
 
-      // Update order patience + expire
+      // Update order patience + expire (Tea Break can freeze patience drain temporarily)
+      const compostActive = (state.activeGarnishes ?? []).includes('compost_bin')
       let orders = [...state.orders]
       let lost = state.lost
       orders = orders.map(order => {
         if (order.served) return order
-        const newPatience = order.patienceLeft - delta
+        const newPatience = patienceFrozen ? order.patienceLeft : order.patienceLeft - delta
         if (newPatience <= 0) {
           lost++
           messages.push({ id: nextMsgId++, username: 'CUSTOMER', text: `Order #${order.id} expired! Lost a ${RECIPES[order.dish].emoji}!`, type: 'error' })
+          // Compost Bin garnish: turn the lost order into 1 random prepped ingredient
+          if (compostActive) {
+            const expiredRecipe = RECIPES[order.dish]
+            if (expiredRecipe && expiredRecipe.steps.length > 0) {
+              const salvageStep = expiredRecipe.steps[Math.floor(Math.random() * expiredRecipe.steps.length)]
+              newPreparedItems.push(salvageStep.produces)
+              newPreparedItemSources.push('')
+              messages.push({
+                id: nextMsgId++,
+                username: 'KITCHEN',
+                text: `🌱 Compost Bin salvaged ${salvageStep.produces.replace(/_/g, ' ')}.`,
+                type: 'system',
+              })
+            }
+          }
           return { ...order, served: true, patienceLeft: 0, outcome: 'lost' as const, completedAt: now }
         }
         return { ...order, patienceLeft: newPatience }
@@ -586,6 +717,10 @@ let matchedStep = null
         cookingSpeedModifier,
         moneyMultiplier,
         money: state.money + bloodhoundMoney,
+        enabledRecipes: newEnabledRecipes,
+        teaBreakNextAt,
+        patiencePausedUntil,
+        rouletteNextAt,
       }
     }
 
@@ -599,14 +734,6 @@ let matchedStep = null
     case 'OVERHEAT_STATION': {
       const station = state.stations[action.stationId]
       if (!station) return state
-      // Fire Insurance garnish: auto-resolve overheat once per shift
-      if ((state.freeExtinguishes ?? 0) > 0) {
-        const newStations = { ...state.stations, [action.stationId]: { ...station, slots: [], heat: 0, overheated: false, extinguishVotes: [] } }
-        return addMsg(
-          { ...state, stations: newStations, freeExtinguishes: (state.freeExtinguishes ?? 0) - 1 },
-          'KITCHEN', `🧯 Fire Insurance saved the ${STATION_DEFS[action.stationId]?.name}!`, 'success'
-        )
-      }
       return { ...state, stations: { ...state.stations, [action.stationId]: { ...station, slots: [], heat: 100, overheated: true, extinguishVotes: [] } } }
     }
 

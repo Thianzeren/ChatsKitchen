@@ -27,9 +27,10 @@ export type GarnishField =
   | 'orderSpawnRate'
   | 'coolAmountBonus'
   | 'heatPerCookMultiplier'
+  | 'choppingCookTimeMultiplier'    // Precise Cuts — multiplies chop-board cook time (0.6 = 40% faster)
   | 'flatTipPerOrder'
-  | 'freeExtinguishes'
   | 'orderPatienceBonus'   // Friendly Faces — +ms to each new order's patienceMax/patienceLeft
+  | 'overheatThresholdDelta'   // Insulation +10, Glass Kitchen -40 (additive to base 100)
 
 // ── Catalog ───────────────────────────────────────────────────────────────────
 // Tier shape: 5 common stat-boosts (PR-1, doubled & one-shot) + 1 new triggered
@@ -84,6 +85,43 @@ export const GARNISHES: Record<string, GarnishDef> = {
     icon: '💵',
     effects: [{ field: 'flatTipPerOrder', value: 8, mode: 'add' }],
   },
+  precise_cuts: {
+    id: 'precise_cuts',
+    name: 'Precise Cuts',
+    description: 'Chopping board recipes take 40% less time.',
+    tier: 'common',
+    basePrice: 120,
+    icon: '🔪',
+    // 0.6 multiplier (mul-mode at value -0.4 means × (1 - 0.4) = × 0.6)
+    effects: [{ field: 'choppingCookTimeMultiplier', value: -0.40, mode: 'mul' }],
+  },
+  slow_burner: {
+    id: 'slow_burner',
+    name: 'Slow Burner',
+    description: 'Cooking stations heat up 25% slower.',
+    tier: 'common',
+    basePrice: 100,
+    icon: '🌡️',
+    effects: [{ field: 'heatPerCookMultiplier', value: -0.25, mode: 'mul' }],
+  },
+  insulation: {
+    id: 'insulation',
+    name: 'Insulation',
+    description: 'Stations overheat at 110 instead of 100.',
+    tier: 'common',
+    basePrice: 100,
+    icon: '🧱',
+    effects: [{ field: 'overheatThresholdDelta', value: 10, mode: 'add' }],
+  },
+  friendly_faces: {
+    id: 'friendly_faces',
+    name: 'Friendly Faces',
+    description: 'Every new order arrives with +10s of patience.',
+    tier: 'common',
+    basePrice: 130,
+    icon: '🪑',
+    effects: [{ field: 'orderPatienceBonus', value: 10_000, mode: 'add' }],
+  },
 
   // ── Common — new triggered ──
   speed_demon: {
@@ -93,6 +131,22 @@ export const GARNISHES: Record<string, GarnishDef> = {
     tier: 'common',
     basePrice: 130,
     icon: '💨',
+  },
+  pressure_tip: {
+    id: 'pressure_tip',
+    name: 'Pressure Tip',
+    description: 'Orders served with under 15% patience left earn +50% money.',
+    tier: 'common',
+    basePrice: 140,
+    icon: '⏳',
+  },
+  big_tippers: {
+    id: 'big_tippers',
+    name: 'Big Tippers',
+    description: 'The first dish served each shift earns +$30.',
+    tier: 'common',
+    basePrice: 80,
+    icon: '🤑',
   },
 
   // ── Rare ──
@@ -120,6 +174,38 @@ export const GARNISHES: Record<string, GarnishDef> = {
     basePrice: 240,
     icon: '🩸',
   },
+  combo_plate: {
+    id: 'combo_plate',
+    name: 'Combo Plate',
+    description: 'Serve 3 different recipes within 30s → +$50 bonus.',
+    tier: 'rare',
+    basePrice: 250,
+    icon: '🎴',
+  },
+  compost_bin: {
+    id: 'compost_bin',
+    name: 'Compost Bin',
+    description: 'Every expired order leaves behind 1 random prepped ingredient.',
+    tier: 'rare',
+    basePrice: 220,
+    icon: '🌱',
+  },
+  veterans_tip: {
+    id: 'veterans_tip',
+    name: "Veteran's Tip",
+    description: '+$15 to the run bank at the start of every shift after Shift 1.',
+    tier: 'rare',
+    basePrice: 200,
+    icon: '🎖️',
+  },
+  tea_break: {
+    id: 'tea_break',
+    name: 'Tea Break',
+    description: 'Every 60 seconds, order patience pauses for 5 seconds.',
+    tier: 'rare',
+    basePrice: 280,
+    icon: '☕',
+  },
 
   // ── Legendary ──
   sharp_knives: {
@@ -137,6 +223,24 @@ export const GARNISHES: Record<string, GarnishDef> = {
     tier: 'legendary',
     basePrice: 520,
     icon: '⛄',
+  },
+  doppelganger: {
+    id: 'doppelganger',
+    name: 'Doppelgänger',
+    description: 'Every cooked ingredient has a 20% chance to produce a second copy.',
+    tier: 'legendary',
+    basePrice: 550,
+    icon: '👯',
+  },
+  glass_kitchen: {
+    id: 'glass_kitchen',
+    name: 'Glass Kitchen',
+    description: 'Stations overheat at 60 instead of 100, but every dish pays +50%.',
+    tier: 'legendary',
+    basePrice: 460,
+    icon: '💎',
+    effects: [{ field: 'overheatThresholdDelta', value: -40, mode: 'add' }],
+    // +50% money is handled inline in SERVE via activeGarnishes check
   },
 }
 
@@ -190,6 +294,8 @@ function clamp(v: number, [lo, hi]: [number, number]): number {
   return Math.max(lo, Math.min(hi, v))
 }
 
+const OVERHEAT_THRESHOLD_BASE = 100
+
 interface GarnishDelta {
   options: Partial<GameOptions>
   state: Partial<GameState>
@@ -207,9 +313,10 @@ export function applyAllGarnishes(
   let orderSpawnMul = 1
   let coolAmountBonus = 0
   let heatPerCookMul = 1
+  let choppingCookTimeMul = 1
   let flatTipPerOrder = 0
-  let freeExtinguishes = 0
   let orderPatienceBonus = 0
+  let overheatThreshold = OVERHEAT_THRESHOLD_BASE
 
   // Stat-effect aggregation
   for (const entry of owned) {
@@ -236,14 +343,18 @@ export function applyAllGarnishes(
           if (effect.mode === 'mul') heatPerCookMul *= 1 + effect.value
           else heatPerCookMul += effect.value
           break
+        case 'choppingCookTimeMultiplier':
+          if (effect.mode === 'mul') choppingCookTimeMul *= 1 + effect.value
+          else choppingCookTimeMul += effect.value
+          break
         case 'flatTipPerOrder':
           flatTipPerOrder += effect.value
           break
-        case 'freeExtinguishes':
-          freeExtinguishes += effect.value
-          break
         case 'orderPatienceBonus':
           orderPatienceBonus += effect.value
+          break
+        case 'overheatThresholdDelta':
+          overheatThreshold += effect.value
           break
       }
     }
@@ -264,10 +375,12 @@ export function applyAllGarnishes(
       orderSpawnRate: clamp(baseOptions.orderSpawnRate * orderSpawnMul, CLAMP_ORDER_SPAWN),
     },
     state: {
-      coolAmountBonus:       coolAmountBonus       === 0 ? undefined : coolAmountBonus,
-      heatPerCookMultiplier: heatPerCookMul        === 1 ? undefined : heatPerCookMul,
-      flatTipPerOrder:       flatTipPerOrder       === 0 ? undefined : flatTipPerOrder,
-      freeExtinguishes:      freeExtinguishes      === 0 ? undefined : freeExtinguishes,
+      coolAmountBonus:            coolAmountBonus       === 0 ? undefined : coolAmountBonus,
+      heatPerCookMultiplier:      heatPerCookMul        === 1 ? undefined : heatPerCookMul,
+      choppingCookTimeMultiplier: choppingCookTimeMul   === 1 ? undefined : choppingCookTimeMul,
+      flatTipPerOrder:            flatTipPerOrder       === 0 ? undefined : flatTipPerOrder,
+      orderPatienceBonus:         orderPatienceBonus    === 0 ? undefined : orderPatienceBonus,
+      overheatThreshold:          overheatThreshold     === OVERHEAT_THRESHOLD_BASE ? undefined : overheatThreshold,
     },
   }
 }

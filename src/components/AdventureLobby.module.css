@@ -1,0 +1,348 @@
+.screen {
+  display: grid;
+  grid-template-columns: 480px 1fr;
+  height: 100%;
+  background:
+    radial-gradient(ellipse at top, rgba(216, 116, 40, 0.05), transparent 65%),
+    radial-gradient(ellipse at bottom right, rgba(196, 160, 32, 0.04), transparent 60%),
+    var(--bg);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.leftCol {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+  height: 100%;
+  padding: 40px 32px 40px 48px;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  padding: 40px 48px 40px 16px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.title {
+  font-family: 'Lilita One', cursive;
+  font-size: 48px;
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.15);
+}
+
+.subtitle {
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--base-fs);
+  color: var(--text-secondary);
+  line-height: 1.4;
+  max-width: 420px;
+}
+
+.howTo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--station-bg);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.howToRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--base-fs);
+  color: var(--text-secondary);
+}
+
+.cmd {
+  font-family: 'Space Mono', monospace;
+  font-size: 18px;
+  background: rgba(196, 160, 32, 0.14);
+  border: 1px solid rgba(196, 160, 32, 0.32);
+  padding: 3px 12px;
+  border-radius: 5px;
+  color: #c4a020;
+  min-width: 140px;
+  text-align: center;
+}
+
+.modOnly {
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.headcount {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.headcountValue {
+  font-family: 'Lilita One', cursive;
+  font-size: 56px;
+  color: #c4a020;
+  text-shadow: 0 0 24px rgba(196, 160, 32, 0.25);
+}
+
+.headcountLabel {
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--base-fs);
+  color: var(--text-secondary);
+}
+
+.buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 280px;
+  margin-top: 8px;
+}
+
+.startBtn {
+  border: none;
+  border-radius: 12px;
+  padding: 16px 26px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--base-fs);
+  font-weight: 700;
+  background: #d87428;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s, box-shadow 0.15s;
+  box-shadow: 0 4px 16px rgba(216, 116, 40, 0.3);
+}
+
+.startBtn:not(:disabled):hover {
+  transform: scale(1.03);
+  filter: brightness(1.1);
+  box-shadow: 0 6px 22px rgba(216, 116, 40, 0.4);
+}
+
+.startBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.menuBtn {
+  border: none;
+  border-radius: 12px;
+  padding: 14px 26px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--base-fs);
+  font-weight: 700;
+  background: var(--border);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+}
+
+.menuBtn:hover {
+  transform: scale(1.03);
+  filter: brightness(1.2);
+}
+
+/* ── Roster panel ── */
+
+.rosterPanel {
+  background: var(--station-bg);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.rosterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rosterTitle {
+  font-family: 'Lilita One', cursive;
+  font-size: 28px;
+  color: var(--text-warm);
+}
+
+.clearBtn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: color 0.1s, background 0.1s;
+}
+
+.clearBtn:hover {
+  color: #d94f4f;
+  background: rgba(217, 79, 79, 0.08);
+}
+
+.empty {
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--base-fs);
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: 40px 0;
+}
+
+.empty code {
+  font-family: 'Space Mono', monospace;
+  background: rgba(196, 160, 32, 0.14);
+  border: 1px solid rgba(196, 160, 32, 0.32);
+  padding: 1px 8px;
+  border-radius: 5px;
+  color: #c4a020;
+  font-style: normal;
+}
+
+.rosterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  flex: 1;
+  overflow-y: auto;
+  align-content: start;
+}
+
+.crewCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.crewName {
+  font-family: 'Space Mono', monospace;
+  font-size: var(--base-fs);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.kickBtn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: color 0.1s, background 0.1s;
+  line-height: 1;
+}
+
+.kickBtn:hover {
+  color: #d94f4f;
+  background: rgba(217, 79, 79, 0.12);
+}
+
+/* ── Confirm modal ── */
+
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.confirmCard {
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 28px 32px;
+  max-width: 420px;
+}
+
+.confirmTitle {
+  font-family: 'Lilita One', cursive;
+  font-size: 24px;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.confirmBody {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 22px;
+}
+
+.confirmBody code {
+  font-family: 'Space Mono', monospace;
+  background: rgba(196, 160, 32, 0.14);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: #c4a020;
+}
+
+.confirmButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.confirmCancel,
+.confirmConfirm {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.1s;
+}
+
+.confirmCancel {
+  background: var(--border);
+  color: var(--text);
+}
+
+.confirmCancel:hover {
+  filter: brightness(1.2);
+}
+
+.confirmConfirm {
+  background: #d94f4f;
+  color: #fff;
+}
+
+.confirmConfirm:hover {
+  filter: brightness(1.1);
+}

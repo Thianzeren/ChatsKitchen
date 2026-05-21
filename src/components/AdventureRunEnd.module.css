@@ -54,7 +54,7 @@
 
 .statLabel {
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-secondary);
   margin-top: 4px;
 }
@@ -74,7 +74,7 @@
 
 .bestChip {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-muted);
 }
 
@@ -90,7 +90,7 @@
 
 .panelTitle {
   font-family: 'Lilita One', cursive;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-warm);
   text-align: center;
   margin-bottom: 10px;
@@ -106,7 +106,7 @@
 
 .historyHeader span {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-muted);
   font-weight: 700;
 }
@@ -129,7 +129,7 @@
 
 .historyShift {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-secondary);
   width: 32px;
   text-align: center;
@@ -138,7 +138,7 @@
 
 .historyRecipes {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-muted);
   flex: 1;
   overflow: hidden;
@@ -148,7 +148,7 @@
 
 .historyGoal {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-muted);
   width: 76px;
   text-align: right;
@@ -157,7 +157,7 @@
 
 .historyEarned {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: #c4a020;
   font-weight: 700;
   width: 76px;
@@ -167,7 +167,7 @@
 
 .historyResult {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   width: 52px;
   text-align: right;
@@ -177,7 +177,7 @@
 .resultPass {
   color: #5cb85c;
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   width: 52px;
   text-align: right;
@@ -187,7 +187,7 @@
 .resultFail {
   color: #d94f4f;
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   width: 52px;
   text-align: right;
@@ -208,7 +208,7 @@
   border-radius: 10px;
   padding: 14px 24px;
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   background: #d87428;
   color: #fff;
@@ -226,7 +226,7 @@
   border-radius: 10px;
   padding: 14px 24px;
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   background: var(--border);
   color: var(--text);
@@ -253,7 +253,7 @@
 
 .lbEmpty {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-muted);
   text-align: center;
   padding: 12px 0;
@@ -269,7 +269,7 @@
 
 .lbTitle {
   font-family: 'Lilita One', cursive;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-warm);
   text-align: center;
   padding-bottom: 8px;
@@ -287,7 +287,7 @@
 
 .lbHeader span {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-muted);
   font-weight: 700;
 }
@@ -311,7 +311,7 @@
 
 .lbRank {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-secondary);
   font-weight: 700;
   width: 32px;
@@ -321,7 +321,7 @@
 
 .lbName {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   flex: 1;
   overflow: hidden;
@@ -332,7 +332,7 @@
 
 .lbDetail {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-secondary);
   width: 40px;
   text-align: center;
@@ -341,7 +341,7 @@
 
 .lbTotal {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   color: #c4a020;
   width: 60px;

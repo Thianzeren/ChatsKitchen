@@ -47,7 +47,7 @@ export function getAdventureGoal(shift: number, participantCount: number = 1): n
   return PER_PLAYER_GOALS[idx] * crew
 }
 
-export function getAdventureShiftDuration(_shift: number): number {
+export function getAdventureShiftDuration(): number {
   return ADVENTURE_SHIFT_DURATION
 }
 

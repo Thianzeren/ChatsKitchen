@@ -52,7 +52,7 @@ export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, se
         </div>
 
         <div className={styles.buttons}>
-          <button className={styles.nextBtn} onClick={onNext}>Open Pantry →</button>
+          <button className={styles.nextBtn} onClick={onNext}>Choose Path →</button>
           <button className={styles.menuBtn} onClick={() => setConfirmExit(true)}>Main Menu</button>
         </div>
       </div>

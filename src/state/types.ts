@@ -1,4 +1,4 @@
-export type Screen = 'menu' | 'localplay' | 'pvplobby' | 'adventurebriefing' | 'adventurepantryshop' | 'adventurepathpick' | 'adventurecuisinepick' | 'adventurebossbriefing' | 'options' | 'playsetpicker' | 'freeplaysetup' | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'adventureshiftpassed' | 'adventurerunend' | 'credits'
+export type Screen = 'menu' | 'localplay' | 'pvplobby' | 'adventurelobby' | 'adventurebriefing' | 'adventurepantryshop' | 'adventurepathpick' | 'adventurecuisinepick' | 'adventurebossbriefing' | 'options' | 'playsetpicker' | 'freeplaysetup' | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'adventureshiftpassed' | 'adventurerunend' | 'credits'
 
 export type CuisineId = 'western' | 'chinese' | 'japanese' | 'korean' | 'sg' | 'japanese_bakery'
 
@@ -18,10 +18,12 @@ export interface ShopOffer {
 export interface PathCard {
   id: string
   label: string
-  goalDelta: number
-  modifierIds: string[]
+  archetype: 'easy' | 'risk' | 'boss'
+  goalDelta: number                       // multiplicative; -0.15 = 15% easier, +0.10 = 10% harder
+  modifierIds: string[]                   // reserved for PR 3 mini-modifiers
   rewardOnPass?: { cashBonus?: number; freeGarnishTier?: GarnishTier; freeRecipe?: boolean }
   bossDebuffId?: string
+  bossPayload?: { disabledStationId?: string }   // pre-rolled by the generator for deterministic display
 }
 export type TutorialDestination = 'menu' | 'playsetpicker' | 'freeplaysetup'
 
@@ -262,9 +264,17 @@ export interface GameState {
   heatPerCookMultiplier?: number       // 1 default; <1 = less heat, >1 = more heat
   coolAmountBonus?: number             // 0 default; added to the rolled cool amount (40–60)
   flatTipPerOrder?: number             // 0 default; flat $ added to each served reward
-  freeExtinguishes?: number            // 0 default; auto-resolves overheat & decrements
-  recipePriceModifier?: Record<string, number>   // recipe key → reward multiplier
-  eventThresholdMultiplier?: number    // 1 default; <1 = easier event resolution
+  bossMoneyMultiplier?: number         // 1 default; Picky Critic boss = 0.75
+  cooldownMultiplier?: number          // 1 default; Understaffed boss = 1.5
+  choppingCookTimeMultiplier?: number  // 1 default; Precise Cuts = 0.6 (chop-station only); Sharp Knives overrides to 0
+  orderPatienceBonus?: number          // ms added to each new order's patienceMax + patienceLeft (Friendly Faces)
+  recentServes?: { dish: string; at: number }[]   // rolling log of recent serves; Combo Plate checks 3 distinct dishes in 30s
+  // Periodic shift-timer effects (Tea Break, Recipe Roulette) — initialised lazily
+  // on the first TICK after RESET so we don't need Date.now() in the reducer.
+  activeBossDebuff?: string                        // mirrors path-card boss for TICK-side effects
+  teaBreakNextAt?: number                          // ms timestamp; when now ≥ this, fire Tea Break
+  patiencePausedUntil?: number                     // ms timestamp; while now < this, patience doesn't drain
+  rouletteNextAt?: number                          // ms timestamp; when now ≥ this, rotate enabledRecipes
   // Triggered-garnish runtime state
   activeGarnishes?: string[]                  // garnish ids active for this shift
   firstOrderServedThisShift?: boolean         // First Bite, Big Tippers — flips after first SERVE

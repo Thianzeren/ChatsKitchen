@@ -37,7 +37,7 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitc
     orderSpeed: 1,
     orderSpawnRate: 1,
   })
-  const shiftDurationMs = getAdventureShiftDuration(run.currentShift)
+  const shiftDurationMs = getAdventureShiftDuration()
   const shiftMins = Math.floor(shiftDurationMs / 60_000)
   const shiftSecs = Math.round((shiftDurationMs % 60_000) / 1000)
   const shiftDurationLabel = shiftSecs === 0
