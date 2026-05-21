@@ -16,6 +16,7 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
   const totalMoney   = run.shiftResults.reduce((sum, r) => sum + r.moneyEarned, 0)
   const totalServed  = run.shiftResults.reduce((sum, r) => sum + r.served, 0)
   const totalLost    = run.shiftResults.reduce((sum, r) => sum + r.lost, 0)
+  const totalGarnishes = run.ownedGarnishes.length
 
   const leaderboard = Object.entries(run.accumulatedPlayerStats)
     .sort(([, a], [, b]) => calcPlayerScore(b) - calcPlayerScore(a))
@@ -24,7 +25,7 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
     <div className={styles.screen}>
       {/* ── LEFT ── */}
       <div className={styles.leftCol}>
-        <h1 className={styles.title}>Run Over</h1>
+        <h1 className={styles.title}>{run.runWon ? 'Run Won!' : 'Run Over'}</h1>
 
         <div className={styles.stats}>
           <div className={styles.stat}>
@@ -43,6 +44,10 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
             <div className={styles.statValue}>{totalLost}</div>
             <div className={styles.statLabel}>Lost</div>
           </div>
+          <div className={styles.stat}>
+            <div className={styles.statValue}>{totalGarnishes}</div>
+            <div className={styles.statLabel}>Garnishes Collected</div>
+          </div>
         </div>
 
         {isNewBestRun && (
@@ -52,6 +57,7 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
         {bestRun && !isNewBestRun && (
           <div className={styles.bestChip}>
             Best run: Shift {bestRun.furthestShift} · ${bestRun.totalMoney}
+            {bestRun.wonRuns > 0 ? ` · ${bestRun.wonRuns} won` : ''}
           </div>
         )}
 

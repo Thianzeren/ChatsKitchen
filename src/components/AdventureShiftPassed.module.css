@@ -81,6 +81,14 @@
   margin-top: 4px;
 }
 
+.earnedNote {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 360px;
+}
+
 .buttons {
   display: flex;
   flex-direction: column;

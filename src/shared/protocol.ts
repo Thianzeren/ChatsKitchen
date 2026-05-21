@@ -55,7 +55,6 @@ export interface SharedSnapshot {
     heatPct: number
     overheated: boolean
     busySlots: number
-    maxSlots: number
   }>
 }
 

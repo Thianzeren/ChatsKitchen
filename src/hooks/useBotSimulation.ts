@@ -34,18 +34,13 @@ function pickBotAction(state: GameState): { name: string; command: string } | nu
     if (canServe) return { name, command: `serve ${order.id}` }
   }
 
-  // Cook something needed — check station capacity
+  // Cook something needed
   for (const order of state.orders) {
     if (order.served) continue
     const recipe = RECIPES[order.dish]
     for (const step of recipe.steps) {
       const station = state.stations[step.station]
       if (!station || station.overheated) continue
-
-      const capacity = HEAT_EXEMPT_STATIONS.has(step.station)
-        ? state.stationCapacity.chopping
-        : state.stationCapacity.cooking
-      if (station.slots.length >= capacity) continue
 
       if (state.preparedItems.includes(step.produces)) continue
       const alreadyCooking = station.slots.some(s => s.produces === step.produces)

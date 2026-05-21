@@ -32,7 +32,6 @@ function SlotRow({ slot }: { slot: StationSlot }) {
 
 interface Props {
   station: StationType
-  capacity: number
   playerCount: number
   isHighlighted?: boolean
   pvpLargerTeamSize?: number
@@ -47,7 +46,7 @@ function heatBorderColor(heat: number, overheated: boolean): string {
   return '#42a05e'
 }
 
-export default function Station({ station, capacity, playerCount, isHighlighted, pvpLargerTeamSize, isDisabled }: Props) {
+export default function Station({ station, playerCount, isHighlighted, pvpLargerTeamSize, isDisabled }: Props) {
   const [coolFlash, setCoolFlash] = useState(false)
   const [showCoolText, setShowCoolText] = useState(false)
   const [coolPlayer, setCoolPlayer] = useState<string | null>(null)
@@ -98,9 +97,6 @@ export default function Station({ station, capacity, playerCount, isHighlighted,
         <span className={styles.stationName}>{def.name}</span>
         {!station.overheated && !HEAT_EXEMPT_STATIONS.has(station.id) && (
           <span className={styles.heatBadge}>{Math.floor(station.heat)}% 🔥</span>
-        )}
-        {capacity !== Infinity && (
-          <span className={styles.capacity}>{station.slots.length}/{capacity}</span>
         )}
       </div>
 

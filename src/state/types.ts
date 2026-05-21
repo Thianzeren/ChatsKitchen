@@ -1,4 +1,28 @@
-export type Screen = 'menu' | 'localplay' | 'pvplobby' | 'adventurebriefing' | 'options' | 'playsetpicker' | 'freeplaysetup' | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'adventureshiftpassed' | 'adventurerunend' | 'credits'
+export type Screen = 'menu' | 'localplay' | 'pvplobby' | 'adventurebriefing' | 'adventurepantryshop' | 'adventurepathpick' | 'adventurecuisinepick' | 'adventurebossbriefing' | 'options' | 'playsetpicker' | 'freeplaysetup' | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'adventureshiftpassed' | 'adventurerunend' | 'credits'
+
+export type CuisineId = 'western' | 'chinese' | 'japanese' | 'korean' | 'sg' | 'japanese_bakery'
+
+export type GarnishTier = 'common' | 'rare' | 'legendary'
+
+export interface OwnedGarnish {
+  garnishId: string
+  acquiredOnShift: number
+}
+
+export interface ShopOffer {
+  garnishId: string
+  price: number
+  rarity: GarnishTier
+}
+
+export interface PathCard {
+  id: string
+  label: string
+  goalDelta: number
+  modifierIds: string[]
+  rewardOnPass?: { cashBonus?: number; freeGarnishTier?: GarnishTier; freeRecipe?: boolean }
+  bossDebuffId?: string
+}
 export type TutorialDestination = 'menu' | 'playsetpicker' | 'freeplaysetup'
 
 export interface ActiveEventOptions {
@@ -94,18 +118,11 @@ export interface FinalStats {
   blueServed?: number
 }
 
-export interface StationCapacity {
-  chopping: number    // slots for cutting_board
-  cooking: number     // slots per cooking station (grill, fryer, stove, oven)
-}
-
 export interface GameOptions {
   cookingSpeed: number
   orderSpeed: number
   orderSpawnRate: number
   shiftDuration: number
-  stationCapacity: StationCapacity
-  restrictSlots: boolean
   enabledRecipes: string[]
   allowShortformCommands: boolean
   autoRestart: boolean
@@ -139,25 +156,42 @@ export interface RecipeSet {
 
 export interface ShiftResult {
   shiftNumber: number
-  recipes: string[]       // 3 recipe keys for this shift
+  recipes: string[]                  // 1..N recipe keys active for this shift
   goalMoney: number
   moneyEarned: number
   served: number
   lost: number
   passed: boolean
+  chosenPathCardId?: string
+  bossDebuffId?: string
+  garnishesCollectedThisShift?: string[]
 }
 
 export interface AdventureRun {
+  runSeed: string
+  startCuisine: CuisineId
   currentShift: number                              // 1-based; shift being set up or played
   shiftResults: ShiftResult[]                       // completed shifts (appended after shiftend)
-  currentRecipes: string[]                          // 3 recipe keys for the current shift
+  currentRunMoney: number                           // bank — carries between shifts; spent in shop
+  unlockedRecipes: string[]                         // grows via auto-unlock + shop
+  currentRecipes: string[]                          // subset of unlockedRecipes active this shift
   currentGoal: number                               // money goal for the current shift
+  participantCount: number                          // crew size — scales goals + garnish prices; refreshed each shift from the (future) Adventure lobby roster
+  pendingPathCards?: [PathCard, PathCard]
+  chosenPath?: PathCard
+  pendingShopOffers?: ShopOffer[]
+  ownedGarnishes: OwnedGarnish[]
+  currentBossDebuff?: string
   accumulatedPlayerStats: Record<string, PlayerStats>
+  runWon?: boolean                                  // set when shift 8 is cleared
 }
 
 export interface AdventureBestRun {
   furthestShift: number   // shift number of the last (failed) shift
   totalMoney: number      // sum of moneyEarned across all shifts
+  wonRuns: number         // count of full 8-shift completions
+  bestStartCuisine?: CuisineId
+  bestEndedAt?: number    // timestamp
 }
 
 export type EventType =
@@ -208,8 +242,6 @@ export interface GameState {
   cookingSpeed: number
   orderSpeed: number
   orderSpawnRate: number
-  stationCapacity: StationCapacity
-  restrictSlots: boolean
   enabledRecipes: string[]
   stations: Record<string, Station>
   orders: Order[]
@@ -226,6 +258,17 @@ export interface GameState {
   cookingSpeedModifier?: { multiplier: number; expiresAt: number }
   moneyMultiplier?: { multiplier: number; expiresAt: number }
   disabledStations?: string[]
+  // Adventure-mode garnish/debuff knobs (undefined = neutral default)
+  heatPerCookMultiplier?: number       // 1 default; <1 = less heat, >1 = more heat
+  coolAmountBonus?: number             // 0 default; added to the rolled cool amount (40–60)
+  flatTipPerOrder?: number             // 0 default; flat $ added to each served reward
+  freeExtinguishes?: number            // 0 default; auto-resolves overheat & decrements
+  recipePriceModifier?: Record<string, number>   // recipe key → reward multiplier
+  eventThresholdMultiplier?: number    // 1 default; <1 = easier event resolution
+  // Triggered-garnish runtime state
+  activeGarnishes?: string[]                  // garnish ids active for this shift
+  firstOrderServedThisShift?: boolean         // First Bite, Big Tippers — flips after first SERVE
+  overheatThreshold?: number                  // default 100; Glass Kitchen=60, Insulation=110
   teams?: Record<string, 'red' | 'blue'>
   redPreparedItems?: string[]
   bluePreparedItems?: string[]
