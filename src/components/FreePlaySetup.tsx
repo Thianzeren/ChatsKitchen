@@ -357,8 +357,6 @@ export default function FreePlaySetup({ options, onChange, onStart, onBack, twit
                   orderSpeed:           DEFAULT_GAME_OPTIONS.orderSpeed,
                   orderSpawnRate:       DEFAULT_GAME_OPTIONS.orderSpawnRate,
                   shiftDuration:        DEFAULT_GAME_OPTIONS.shiftDuration,
-                  restrictSlots:        DEFAULT_GAME_OPTIONS.restrictSlots,
-                  stationCapacity:      { ...DEFAULT_GAME_OPTIONS.stationCapacity },
                   autoRestart:          DEFAULT_GAME_OPTIONS.autoRestart,
                   autoRestartDelay:     DEFAULT_GAME_OPTIONS.autoRestartDelay,
                   kitchenEventDuration: DEFAULT_GAME_OPTIONS.kitchenEventDuration,
@@ -481,52 +479,7 @@ export default function FreePlaySetup({ options, onChange, onStart, onBack, twit
                 )}
               </div>
 
-              <div className={styles.advancedRow}>
-                <div className={styles.advancedRowLabel}>🔧 Station Slots</div>
-                <div className={styles.slotsRow}>
-                  <span className={styles.slotsLabel}>Restrict Slots</span>
-                  <button
-                    className={`${styles.toggleBtn} ${options.restrictSlots ? styles.toggleBtnOn : ''}`}
-                    onClick={() => onChange({ ...options, restrictSlots: !options.restrictSlots })}
-                  >
-                    {options.restrictSlots ? 'ON' : 'OFF'}
-                  </button>
-                </div>
-                <div className={`${styles.capacityGrid} ${!options.restrictSlots ? styles.dimmed : ''}`}>
-                  {([
-                    { key: 'chopping' as const, label: '🔪 Chopping' },
-                    { key: 'cooking' as const, label: '🍳 Cooking' },
-                  ]).map(({ key, label }) => (
-                    <div key={key} className={styles.capacityRow}>
-                      <span className={styles.capacityLabel}>{label}</span>
-                      <div className={styles.capacityControl}>
-                        <button
-                          className={styles.capacityBtn}
-                          onClick={() => onChange({
-                            ...options,
-                            stationCapacity: { ...options.stationCapacity, [key]: Math.max(1, options.stationCapacity[key] - 1) }
-                          })}
-                        >-</button>
-                        <span className={styles.capacityValue}>{options.stationCapacity[key]}</span>
-                        <button
-                          className={styles.capacityBtn}
-                          onClick={() => onChange({
-                            ...options,
-                            stationCapacity: { ...options.stationCapacity, [key]: Math.min(8, options.stationCapacity[key] + 1) }
-                          })}
-                        >+</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className={styles.hint}>
-                  {options.restrictSlots
-                    ? 'Slots per station type (cooking applies to each: grill, fryer, stove, oven)'
-                    : 'Slot restrictions are off — stations have unlimited slots'}
-                </div>
-              </div>
-
-              <div className={styles.advancedRow}>
+<div className={styles.advancedRow}>
                 <div className={styles.advancedRowLabel}>🔄 Auto-Restart</div>
                 <div className={styles.slotsRow}>
                   <span className={styles.slotsLabel}>Restart after round ends</span>

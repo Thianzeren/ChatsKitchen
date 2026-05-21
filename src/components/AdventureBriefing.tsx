@@ -2,13 +2,12 @@ import { Fragment, useState } from 'react'
 import { AdventureRun, AdventureBestRun } from '../state/types'
 import { RECIPES } from '../data/recipes'
 import FoodIcon from './FoodIcon'
-import { ADVENTURE_SHIFT_DURATION } from '../data/adventureMode'
+import { getAdventureShiftDuration, isBossShift, ADVENTURE_TOTAL_SHIFTS } from '../data/adventureMode'
+import { GARNISHES, applyAllGarnishes } from '../data/adventureGarnishes'
 import AdventureExitConfirm from './AdventureExitConfirm'
 import { TwitchStatus } from '../hooks/useTwitchChat'
 import TwitchStatusPill from './TwitchStatusPill'
 import styles from './AdventureBriefing.module.css'
-
-const SHIFT_MINUTES = Math.round(ADVENTURE_SHIFT_DURATION / 60_000)
 
 interface Props {
   run: AdventureRun
@@ -19,6 +18,10 @@ interface Props {
   twitchChannel: string | null
 }
 
+function formatMultiplier(value: number): string {
+  return `${value.toFixed(2).replace(/\.?0+$/, '')}×`
+}
+
 export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitchStatus, twitchChannel }: Props) {
   const [confirmExit, setConfirmExit] = useState(false)
 
@@ -26,19 +29,47 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitc
     ? run.shiftResults[run.shiftResults.length - 1]
     : null
   const isFirstShift = run.currentShift === 1
+  const boss = isBossShift(run.currentShift)
+
+  // Effective options for this shift (with all owned garnishes applied).
+  const effective = applyAllGarnishes(run.ownedGarnishes, {
+    cookingSpeed: 1,
+    orderSpeed: 1,
+    orderSpawnRate: 1,
+  })
+  const shiftDurationMs = getAdventureShiftDuration(run.currentShift)
+  const shiftMins = Math.floor(shiftDurationMs / 60_000)
+  const shiftSecs = Math.round((shiftDurationMs % 60_000) / 1000)
+  const shiftDurationLabel = shiftSecs === 0
+    ? `${shiftMins} min`
+    : `${shiftMins}:${String(shiftSecs).padStart(2, '0')}`
+  const cookingSpeed = effective.options.cookingSpeed ?? 1
+  const orderSpeed = effective.options.orderSpeed ?? 1
+  const orderSpawnRate = effective.options.orderSpawnRate ?? 1
+
+  // Garnish chips: list owned garnishes.
+  const ownedGarnishes = run.ownedGarnishes
+    .map(p => GARNISHES[p.garnishId])
+    .filter((g): g is NonNullable<typeof g> => Boolean(g))
 
   return (
     <div className={styles.screen}>
       {/* ── LEFT ── */}
       <div className={styles.leftCol}>
-        <h1 className={styles.shiftTitle}>Shift {run.currentShift}</h1>
+        <h1 className={styles.shiftTitle}>
+          Shift {run.currentShift}
+          <span className={styles.shiftTotal}> / {ADVENTURE_TOTAL_SHIFTS}</span>
+        </h1>
+        {boss && <div className={styles.bossTag}>BOSS SHIFT</div>}
         <div className={styles.goalLine}>Goal: ${run.currentGoal}</div>
 
-        {isFirstShift && (
+        {isFirstShift ? (
           <p className={styles.description}>
-            Cook 3 random dishes each shift and hit the money goal to survive.
-            Miss it, and the run ends. How far can you go?
+            8 shifts. Earn enough to hit each goal — keep your earnings to buy
+            garnishes between shifts. Miss a goal and the run ends.
           </p>
+        ) : (
+          <div className={styles.cashBadge}>Run bank: <span>${run.currentRunMoney}</span></div>
         )}
 
         {lastResult && (
@@ -49,9 +80,10 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitc
           </div>
         )}
 
-        {bestRun && (
+        {bestRun && bestRun.furthestShift > 0 && (
           <div className={styles.bestChip}>
             Best run: Shift {bestRun.furthestShift} · ${bestRun.totalMoney}
+            {bestRun.wonRuns > 0 ? ` · ${bestRun.wonRuns} won` : ''}
           </div>
         )}
 
@@ -93,23 +125,37 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitc
           })}
         </div>
 
+        {ownedGarnishes.length > 0 && (
+          <div className={styles.garnishesPanel}>
+            <div className={styles.panelTitle}>Active Garnishes</div>
+            <div className={styles.garnishChips}>
+              {ownedGarnishes.map(garnish => (
+                <span key={garnish.id} className={styles.garnishChip} title={garnish.description}>
+                  <span className={styles.garnishChipIcon}>{garnish.icon}</span>
+                  {garnish.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className={styles.paramsPanel}>
           <div className={styles.panelTitle}>Parameters</div>
           <div className={styles.paramRow}>
             <span className={styles.paramLabel}>Duration</span>
-            <span className={styles.paramValue}>{SHIFT_MINUTES} min</span>
+            <span className={styles.paramValue}>{shiftDurationLabel}</span>
           </div>
           <div className={styles.paramRow}>
             <span className={styles.paramLabel}>Cooking Speed</span>
-            <span className={styles.paramValue}>1×</span>
+            <span className={styles.paramValue}>{formatMultiplier(cookingSpeed)}</span>
           </div>
           <div className={styles.paramRow}>
-            <span className={styles.paramLabel}>Order Speed</span>
-            <span className={styles.paramValue}>1×</span>
+            <span className={styles.paramLabel}>Order Patience</span>
+            <span className={styles.paramValue}>{formatMultiplier(1 / orderSpeed)}</span>
           </div>
           <div className={styles.paramRow}>
             <span className={styles.paramLabel}>Order Spawn Rate</span>
-            <span className={styles.paramValue}>1×</span>
+            <span className={styles.paramValue}>{formatMultiplier(orderSpawnRate)}</span>
           </div>
         </div>
       </div>

@@ -5,8 +5,6 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   orderSpeed: 1,
   orderSpawnRate: 1,
   shiftDuration: 180000,
-  stationCapacity: { chopping: 3, cooking: 2 },
-  restrictSlots: false,
   enabledRecipes: ['burger', 'fish_burger', 'salad', 'roasted_veggies'],
   allowShortformCommands: false,
   autoRestart: false,

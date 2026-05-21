@@ -22,6 +22,7 @@ import Countdown from './components/Countdown'
 import ShiftEnd from './components/ShiftEnd'
 import GameOver from './components/GameOver'
 import AdventureBriefing from './components/AdventureBriefing'
+import AdventurePantryShop from './components/AdventurePantryShop'
 import AdventureRunEnd from './components/AdventureRunEnd'
 import AdventureShiftPassed from './components/AdventureShiftPassed'
 import TutorialModal from './components/TutorialModal'
@@ -58,17 +59,13 @@ export default function App() {
       const saved = localStorage.getItem('chatsKitchen_gameOptions')
       if (!saved) return DEFAULT_GAME_OPTIONS
       const parsed = JSON.parse(saved) as Partial<GameOptions>
-      return {
-        ...DEFAULT_GAME_OPTIONS,
-        ...parsed,
-        stationCapacity: { ...DEFAULT_GAME_OPTIONS.stationCapacity, ...(parsed.stationCapacity ?? {}) }
-      }
+      return { ...DEFAULT_GAME_OPTIONS, ...parsed }
     } catch {
       return DEFAULT_GAME_OPTIONS
     }
   })
   const [state, dispatch] = useReducer(gameReducer, undefined, () =>
-    createInitialState(gameOptions.shiftDuration, gameOptions.cookingSpeed, gameOptions.orderSpeed, gameOptions.orderSpawnRate, gameOptions.stationCapacity)
+    createInitialState(gameOptions.shiftDuration, gameOptions.cookingSpeed, gameOptions.orderSpeed, gameOptions.orderSpawnRate)
   )
   const [botsEnabled, setBotsEnabled] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
@@ -123,8 +120,13 @@ export default function App() {
   const {
     adventureRun, setAdventureRun, adventureRunRef, adventureBestRun,
     isNewBestAdventureRun, startAdventure,
-    handleShiftPassedNext, handleShiftEndDone, resetAdventureBestRun,
+    handleShiftEndDone, resetAdventureBestRun,
+    openPantryShop, purchaseGarnish, rerollShopOffers, closeShop, getRerollPrice,
   } = useAdventureRun(dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, finalStatsRef)
+
+  // Vote-screen chat interception: the active vote-driven screen (e.g. PantryShop)
+  // registers its registerVote handler here so chat messages routing can find it.
+  const adventureVoteRef = useRef<((user: string, text: string) => boolean) | null>(null)
 
   // Keep refs in sync so stable callbacks can read current values
   screenRef.current = screen
@@ -169,8 +171,6 @@ export default function App() {
       cookingSpeed: opts.cookingSpeed,
       orderSpeed: opts.orderSpeed,
       orderSpawnRate: opts.orderSpawnRate,
-      stationCapacity: opts.stationCapacity,
-      restrictSlots: opts.restrictSlots,
       enabledRecipes: opts.enabledRecipes,
       teams,
       participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.filter(p => !p.disconnected).length : 0,
@@ -215,8 +215,6 @@ export default function App() {
       cookingSpeed:    1.0,
       orderSpeed:      preset.orderSpeed,
       orderSpawnRate:  preset.orderSpawnRate,
-      stationCapacity: DEFAULT_GAME_OPTIONS.stationCapacity,
-      restrictSlots:   false,
       enabledRecipes:  playset.recipes,
       teams: {},
       participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.filter(p => !p.disconnected).length : 0,
@@ -413,6 +411,10 @@ export default function App() {
       handleLobbyMetaCommand(user, text, isMod)
       return
     }
+    // Adventure choice-vote screens: route !1/!2/... to the active vote handler.
+    if (screenRef.current === 'adventurepantryshop') {
+      if (adventureVoteRef.current?.(user, text)) return
+    }
     handleEventCommand(user, text)
     handleTutorialEventCommand(text)
     handleMetaCommand(user, text, isMod)
@@ -450,6 +452,9 @@ export default function App() {
       if (handleLobbyJoin('You', text.trim().toLowerCase())) return
       handleLobbyMetaCommand('You', text, true)
       return
+    }
+    if (screenRef.current === 'adventurepantryshop') {
+      if (adventureVoteRef.current?.('You', text)) return
     }
     handleEventCommand('You', text)
     handleTutorialEventCommand(text)
@@ -675,8 +680,19 @@ export default function App() {
         served={finalStats.served}
         lost={finalStats.lost}
         playerStats={finalStats.playerStats}
-        onNext={handleShiftPassedNext}
+        onNext={openPantryShop}
         onMenu={() => { setAdventureRun(null); setScreen('menu') }}
+      />
+    )
+  } else if (screen === 'adventurepantryshop') {
+    content = (
+      <AdventurePantryShop
+        run={adventureRun!}
+        onPurchase={purchaseGarnish}
+        onReroll={rerollShopOffers}
+        onClose={closeShop}
+        voteRef={adventureVoteRef}
+        rerollPrice={getRerollPrice()}
       />
     )
   } else if (screen === 'adventurerunend') {

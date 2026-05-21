@@ -1,5 +1,6 @@
-import { GameState, Station, Order, ChatMessage, StationSlot, PlayerStats, StationCapacity } from './types'
+import { GameState, Station, Order, ChatMessage, StationSlot, PlayerStats } from './types'
 import { RECIPES, STATION_DEFS, HEAT_EXEMPT_STATIONS } from '../data/recipes'
+import { pickMiseEnPlaceIngredients } from '../data/adventureGarnishes'
 
 export const HEAT_PER_COOK = 20   // kept for reference; actual value is random 10–20 per slot
 export const COOL_AMOUNT   = 50   // midpoint reference only — actual value rolled randomly 40–60 on each use
@@ -12,7 +13,24 @@ export type GameAction =
   | { type: 'COOL'; user: string; stationId: string }
   | { type: 'SPAWN_ORDER'; now: number }
   | { type: 'ADD_CHAT'; username: string; text: string; msgType: ChatMessage['type'] }
-  | { type: 'RESET'; shiftDuration: number; cookingSpeed: number; orderSpeed: number; orderSpawnRate: number; stationCapacity: StationCapacity; restrictSlots: boolean; enabledRecipes: string[]; teams?: Record<string, 'red' | 'blue'>; participantCount?: number }
+  | {
+      type: 'RESET'
+      shiftDuration: number
+      cookingSpeed: number
+      orderSpeed: number
+      orderSpawnRate: number
+      enabledRecipes: string[]
+      teams?: Record<string, 'red' | 'blue'>
+      participantCount?: number
+      // Adventure-mode garnish/debuff knobs (optional; left undefined = default)
+      heatPerCookMultiplier?: number
+      coolAmountBonus?: number
+      flatTipPerOrder?: number
+      freeExtinguishes?: number
+      recipePriceModifier?: Record<string, number>
+      eventThresholdMultiplier?: number
+      activeGarnishes?: string[]
+    }
   | { type: 'SET_STATION_HEAT'; stationId: string; heat: number }
   | { type: 'OVERHEAT_STATION'; stationId: string }
   | { type: 'REMOVE_PREPARED_ITEMS'; count: number; message?: string }
@@ -29,8 +47,6 @@ export function createInitialState(
   cookingSpeed = 1,
   orderSpeed = 1,
   orderSpawnRate = 1,
-  stationCapacity: StationCapacity = { chopping: 3, cooking: 2 },
-  restrictSlots = false,
   enabledRecipes: string[] = Object.keys(RECIPES),
   teams: Record<string, 'red' | 'blue'> = {},
   participantCount = 0
@@ -49,8 +65,6 @@ export function createInitialState(
     cookingSpeed,
     orderSpeed,
     orderSpawnRate,
-    stationCapacity,
-    restrictSlots,
     enabledRecipes,
     stations,
     orders: [],
@@ -90,12 +104,6 @@ const EMPTY_STATS: PlayerStats = { cooked: 0, served: 0, moneyEarned: 0, extingu
 function addStat(state: GameState, user: string, stat: keyof PlayerStats, amount: number): GameState {
   const prev = state.playerStats[user] || { ...EMPTY_STATS }
   return { ...state, playerStats: { ...state.playerStats, [user]: { ...prev, [stat]: prev[stat] + amount } } }
-}
-
-export function getStationCapacity(stationId: string, capacity: StationCapacity, restricted: boolean): number {
-  if (!restricted) return Infinity
-  if (HEAT_EXEMPT_STATIONS.has(stationId)) return capacity.chopping
-  return capacity.cooking
 }
 
 const PAST_TENSE: Record<string, string> = {
@@ -144,8 +152,33 @@ function setTeamPrepSources(state: GameState, user: string, sources: string[]): 
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
-    case 'RESET':
-      return createInitialState(action.shiftDuration, action.cookingSpeed, action.orderSpeed, action.orderSpawnRate, action.stationCapacity, action.restrictSlots, action.enabledRecipes, action.teams ?? {}, action.participantCount ?? 0)
+    case 'RESET': {
+      const base = createInitialState(action.shiftDuration, action.cookingSpeed, action.orderSpeed, action.orderSpawnRate, action.enabledRecipes, action.teams ?? {}, action.participantCount ?? 0)
+      const active = action.activeGarnishes ?? []
+
+      // Mise en Place: seed 5 random prepped ingredients from the enabled recipes.
+      let preparedItems = base.preparedItems
+      let preparedItemSources = base.preparedItemSources
+      if (active.includes('mise_en_place')) {
+        const seeded = pickMiseEnPlaceIngredients(action.enabledRecipes, RECIPES, 5)
+        preparedItems = [...preparedItems, ...seeded]
+        preparedItemSources = [...preparedItemSources, ...seeded.map(() => '')]
+      }
+
+      return {
+        ...base,
+        preparedItems,
+        preparedItemSources,
+        heatPerCookMultiplier: action.heatPerCookMultiplier,
+        coolAmountBonus: action.coolAmountBonus,
+        flatTipPerOrder: action.flatTipPerOrder,
+        freeExtinguishes: action.freeExtinguishes,
+        recipePriceModifier: action.recipePriceModifier,
+        eventThresholdMultiplier: action.eventThresholdMultiplier,
+        activeGarnishes: active.length > 0 ? active : undefined,
+        firstOrderServedThisShift: false,
+      }
+    }
 
     case 'ADD_CHAT':
       return addMsg(state, action.username, action.text, action.msgType)
@@ -200,7 +233,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const cooldown = state.userCooldowns[user] ?? 0
       if (Date.now() - cooldown < 1500) return addMsg(state, 'KITCHEN', `${user} is on cooldown!`, 'error')
 
-      const coolAmount = 40 + Math.floor(Math.random() * 21)  // 40–60
+      const coolAmount = (40 + (state.coolAmountBonus ?? 0)) + Math.floor(Math.random() * 21)  // 40–60 + bonus
       const newHeat = Math.max(0, station.heat - coolAmount)
       const newStations = { ...state.stations, [stationId]: { ...station, heat: newHeat, lastCooledAt: Date.now(), lastCooledBy: user } }
       const withCooldown = { ...state, stations: newStations, userCooldowns: { ...state.userCooldowns, [user]: Date.now() } }
@@ -245,8 +278,22 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       )
       const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * 30))
       const baseReward = recipe.reward + timeBonus
-      const multiplier = state.moneyMultiplier?.multiplier ?? 1
-      const reward = Math.round(baseReward * multiplier)
+      const recipeMul = state.recipePriceModifier?.[order.dish] ?? 1
+      let multiplier = (state.moneyMultiplier?.multiplier ?? 1) * recipeMul
+
+      // ── Triggered garnish multipliers (multiplicative with each other) ──
+      const active = state.activeGarnishes ?? []
+      const isFirstOrder = !state.firstOrderServedThisShift
+      if (isFirstOrder && active.includes('first_bite')) {
+        multiplier *= 3
+      }
+      const elapsedSinceSpawn = Date.now() - order.spawnTime
+      if (active.includes('speed_demon') && elapsedSinceSpawn < 20_000) {
+        multiplier *= 1.25
+      }
+
+      const tip = state.flatTipPerOrder ?? 0
+      const reward = Math.round(baseReward * multiplier) + tip
 
       let withStats = addStat(state, user, 'served', 1)
       withStats = addStat(withStats, user, 'moneyEarned', reward)
@@ -266,7 +313,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       return addMsg(
-        { ...afterPool, orders: newOrders, money: afterPool.money + reward, served: afterPool.served + 1 },
+        {
+          ...afterPool,
+          orders: newOrders,
+          money: afterPool.money + reward,
+          served: afterPool.served + 1,
+          firstOrderServedThisShift: true,
+        },
         'KITCHEN', `${user} served ${recipe.emoji} ${recipe.name}! +$${reward}`, 'success'
       )
     }
@@ -299,13 +352,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return addMsg(withCooldown, 'KITCHEN', `The ${STATION_DEFS[stationId].name} is offline! Help restore power!`, 'error')
       }
 
-      // Station capacity check
-      const maxSlots = getStationCapacity(stationId, state.stationCapacity, state.restrictSlots)
-      if (station.slots.length >= maxSlots) {
-        return addMsg(withCooldown, 'KITCHEN', `The ${STATION_DEFS[stationId].name} is full! Try again later.`, 'error')
-      }
-
-      let matchedStep = null
+let matchedStep = null
       for (const recipe of Object.values(RECIPES)) {
         for (const step of recipe.steps) {
           if (step.action === cookAction && step.target === target) { matchedStep = step; break }
@@ -313,6 +360,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         if (matchedStep) break
       }
       if (!matchedStep) return addMsg(withCooldown, 'KITCHEN', `Can't ${cookAction} ${(target || '').replace(/_/g, ' ')} there!`, 'error')
+
+      // ── Triggered garnish: Sharp Knives → chopping becomes instant ──
+      let effectiveDuration = matchedStep.duration
+      if (cookAction === 'chop' && (state.activeGarnishes ?? []).includes('sharp_knives')) {
+        effectiveDuration = 0
+      }
 
       // Check ingredient prerequisite
       let afterRequire = withCooldown
@@ -334,13 +387,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         target: matchedStep.target,
         produces: matchedStep.produces,
         elapsedMs: 0,
-        cookDuration: matchedStep.duration / (speed * (state.cookingSpeedModifier?.multiplier ?? 1)),
+        cookDuration: effectiveDuration / (speed * (state.cookingSpeedModifier?.multiplier ?? 1)),
         heatApplied: 0,
-        heatPerCook: 10 + Math.floor(Math.random() * 11),  // 10–20
+        heatPerCook: (10 + Math.floor(Math.random() * 11)) * (state.heatPerCookMultiplier ?? 1),  // 10–20 × multiplier
         state: 'cooking',
       }
 
-      if (matchedStep.duration === 0) {
+      if (effectiveDuration === 0) {
         const withStat = addStat(afterRequire, user, 'cooked', 1)
         const instantItems = [...teamPrepItems(withStat, user), matchedStep.produces]
         const instantSources = [...teamPrepSources(withStat, user), user]
@@ -405,6 +458,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newRedPreparedItemSources = state.teams ? [...(state.redPreparedItemSources ?? [])] : []
       const newBluePreparedItemSources = state.teams ? [...(state.bluePreparedItemSources ?? [])] : []
       let newPlayerStats = { ...state.playerStats }
+      let bloodhoundMoney = 0
       // Update all station slots
       for (const [id, station] of Object.entries(newStations)) {
         if (station.overheated || station.slots.length === 0) continue
@@ -444,6 +498,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
               text: `🔥 ${STATION_DEFS[id].name} OVERHEATED! Type extinguish ${id} to restore it!`,
               type: 'system',
             })
+            // Bloodhound garnish: +$40 per overheat
+            if ((state.activeGarnishes ?? []).includes('bloodhound')) {
+              bloodhoundMoney += 40
+              messages.push({
+                id: nextMsgId++,
+                username: 'KITCHEN',
+                text: `🩸 Bloodhound earned $40 from the overheat!`,
+                type: 'success',
+              })
+            }
             break // station is locked, skip remaining slots
           }
 
@@ -521,6 +585,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         nextMessageId: nextMsgId,
         cookingSpeedModifier,
         moneyMultiplier,
+        money: state.money + bloodhoundMoney,
       }
     }
 
@@ -534,6 +599,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'OVERHEAT_STATION': {
       const station = state.stations[action.stationId]
       if (!station) return state
+      // Fire Insurance garnish: auto-resolve overheat once per shift
+      if ((state.freeExtinguishes ?? 0) > 0) {
+        const newStations = { ...state.stations, [action.stationId]: { ...station, slots: [], heat: 0, overheated: false, extinguishVotes: [] } }
+        return addMsg(
+          { ...state, stations: newStations, freeExtinguishes: (state.freeExtinguishes ?? 0) - 1 },
+          'KITCHEN', `🧯 Fire Insurance saved the ${STATION_DEFS[action.stationId]?.name}!`, 'success'
+        )
+      }
       return { ...state, stations: { ...state.stations, [action.stationId]: { ...station, slots: [], heat: 100, overheated: true, extinguishVotes: [] } } }
     }
 

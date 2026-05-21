@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { GameState } from '../state/types'
 import { getEnabledStations } from '../data/recipes'
-import { getStationCapacity } from '../state/gameReducer'
 import Station from './Station'
 import PreparedItems from './PreparedItems'
 import CommandsStrip from './CommandsStrip'
@@ -49,7 +48,6 @@ export default function Kitchen({ state, tutorialHighlight }: Props) {
             <Station
               key={id}
               station={state.stations[id]}
-              capacity={getStationCapacity(id, state.stationCapacity, state.restrictSlots)}
               playerCount={Object.keys(state.playerStats).length}
               isHighlighted={tutorialHighlight === id}
               pvpLargerTeamSize={pvpLargerTeamSize}
