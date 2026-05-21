@@ -128,6 +128,30 @@ const EVENTS_OFF: ActiveEventOptions = {
   kitchenEventDuration: 12,
 }
 
+// Mid-run event mix: 2 hazards + 3 opportunities, calibrated for streamer pacing.
+// Enabled from S3 onward.
+const EVENTS_ADVENTURE: ActiveEventOptions = {
+  kitchenEventsEnabled: true,
+  enabledKitchenEvents: ['angry_chef', 'smoke_blast', 'mystery_recipe', 'dance', 'chefs_chant'],
+  kitchenEventSpawnMin: 60,
+  kitchenEventSpawnMax: 120,
+  kitchenEventDuration: 18,
+}
+
+// Chaos Mode boss: same event set, but spawn cadence tightens to 20–40s.
+const EVENTS_ADVENTURE_CHAOS: ActiveEventOptions = {
+  ...EVENTS_ADVENTURE,
+  kitchenEventSpawnMin: 20,
+  kitchenEventSpawnMax: 40,
+}
+
+// Pick the right event config for a given shift + chosen path card.
+function pickEventOptions(shift: number, bossId: string | undefined): ActiveEventOptions {
+  if (shift < 3) return EVENTS_OFF
+  if (bossId === 'chaos_mode') return EVENTS_ADVENTURE_CHAOS
+  return EVENTS_ADVENTURE
+}
+
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useAdventureRun(
@@ -182,9 +206,9 @@ export function useAdventureRun(
 
     setAdventureRun(run)
     setIsNewBestAdventureRun(false)
-    setActiveEventOptions(EVENTS_OFF)
-    activeGameOptionsRef.current = null
     // Shift 1 has no path-card pick yet — pass undefined for a neutral RESET.
+    setActiveEventOptions(pickEventOptions(shift, undefined))
+    activeGameOptionsRef.current = null
     dispatch(buildShiftReset(run, undefined))
     setScreen('adventurebriefing')
   }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, adventureLobbyRef])
@@ -394,9 +418,8 @@ export function useAdventureRun(
       // Dispatch the new shift's RESET using the updated run.
       // Pass the chosen path card so its boss debuff (if any) is applied.
       dispatch(buildShiftReset(updatedRun, prev.chosenPath))
-      // PR-2: events kick in from S3 onward via path-card modifiers.
-      // PR-1: keep events off for the whole run.
-      setActiveEventOptions(EVENTS_OFF)
+      // Events kick in from S3 onward; Chaos Mode boss tightens the cadence to 20–40s.
+      setActiveEventOptions(pickEventOptions(nextShift, prev.chosenPath?.bossDebuffId))
       activeGameOptionsRef.current = null
       return updatedRun
     })

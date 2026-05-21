@@ -1,7 +1,7 @@
 import { GameOptions, GameState, PathCard } from '../state/types'
 import { RECIPES, STATION_DEFS, HEAT_EXEMPT_STATIONS } from './recipes'
 
-export type BossId = 'picky_critic' | 'rush_hour' | 'health_inspector' | 'understaffed' | 'heatwave'
+export type BossId = 'picky_critic' | 'rush_hour' | 'health_inspector' | 'understaffed' | 'heatwave' | 'chaos_mode'
 
 export interface BossDef {
   id: BossId
@@ -43,6 +43,12 @@ export const BOSSES: Record<BossId, BossDef> = {
     description: 'Heat accumulates 50% faster and cooling pulls 10 less heat. Stay frosty.',
     icon: '🥵',
   },
+  chaos_mode: {
+    id: 'chaos_mode',
+    name: 'Chaos Mode',
+    description: 'Kitchen events spawn 3× more often. Hope your chat is paying attention.',
+    icon: '🌪️',
+  },
 }
 
 export interface BossDelta {
@@ -73,6 +79,10 @@ export function applyBossDebuff(card: PathCard): BossDelta {
       return { options: {}, state: { cooldownMultiplier: 1.5 } }
     case 'heatwave':
       return { options: {}, state: { heatPerCookMultiplier: 1.5, coolAmountBonus: -10 } }
+    case 'chaos_mode':
+      // Effect lives in the activeEventOptions config (set by useAdventureRun.closeShop),
+      // not in the RESET payload — chaos doesn't touch any game-state knob directly.
+      return { options: {}, state: {} }
   }
 }
 
@@ -92,8 +102,8 @@ export function pickHealthInspectorStation(enabledRecipes: string[], rng: () => 
 }
 
 // Return the boss pool. Both boss shifts (S4 + S8) draw from this set.
-// Chaos Mode + Recipe Roulette will land in a follow-up commit alongside the
-// kitchen-event enablement they depend on.
+// Recipe Roulette will land in a follow-up commit alongside the periodic
+// recipe-cycling ticker it depends on.
 export function getBossPool(): BossId[] {
-  return ['picky_critic', 'rush_hour', 'health_inspector', 'understaffed', 'heatwave']
+  return ['picky_critic', 'rush_hour', 'health_inspector', 'understaffed', 'heatwave', 'chaos_mode']
 }
