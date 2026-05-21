@@ -68,6 +68,8 @@ function buildShiftReset(
   let bossMoneyMultiplier: number | undefined
   let cooldownMultiplier: number | undefined
   let disabledStations: string[] | undefined
+  let bossHeatMul: number | undefined
+  let bossCoolBonus: number | undefined
   if (pathCard?.bossDebuffId) {
     const bossDelta = applyBossDebuff(pathCard)
     if (bossDelta.options.orderSpeed !== undefined) baseOrderSpeed *= bossDelta.options.orderSpeed
@@ -75,6 +77,8 @@ function buildShiftReset(
     bossMoneyMultiplier = bossDelta.state.bossMoneyMultiplier
     cooldownMultiplier = bossDelta.state.cooldownMultiplier
     disabledStations = bossDelta.state.disabledStations
+    bossHeatMul = bossDelta.state.heatPerCookMultiplier
+    bossCoolBonus = bossDelta.state.coolAmountBonus
   }
   void baseCookingSpeed  // boss debuffs don't currently touch cooking speed
 
@@ -94,8 +98,14 @@ function buildShiftReset(
     enabledRecipes: run.currentRecipes,
     teams: undefined,
     participantCount: 0,
-    heatPerCookMultiplier: delta.state.heatPerCookMultiplier,
-    coolAmountBonus: delta.state.coolAmountBonus,
+    // Heatwave boss stacks on top of garnish-driven heat/cool tuning: garnishes
+    // can soften it (Slow Burner ×0.75) but not eliminate it.
+    heatPerCookMultiplier: (delta.state.heatPerCookMultiplier ?? 1) * (bossHeatMul ?? 1) === 1
+      ? undefined
+      : (delta.state.heatPerCookMultiplier ?? 1) * (bossHeatMul ?? 1),
+    coolAmountBonus: (delta.state.coolAmountBonus ?? 0) + (bossCoolBonus ?? 0) === 0
+      ? undefined
+      : (delta.state.coolAmountBonus ?? 0) + (bossCoolBonus ?? 0),
     flatTipPerOrder: delta.state.flatTipPerOrder,
     freeExtinguishes: delta.state.freeExtinguishes,
     recipePriceModifier: delta.state.recipePriceModifier,

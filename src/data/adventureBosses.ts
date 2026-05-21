@@ -1,7 +1,7 @@
 import { GameOptions, GameState, PathCard } from '../state/types'
 import { RECIPES, STATION_DEFS, HEAT_EXEMPT_STATIONS } from './recipes'
 
-export type BossId = 'picky_critic' | 'rush_hour' | 'health_inspector' | 'understaffed'
+export type BossId = 'picky_critic' | 'rush_hour' | 'health_inspector' | 'understaffed' | 'heatwave'
 
 export interface BossDef {
   id: BossId
@@ -37,11 +37,17 @@ export const BOSSES: Record<BossId, BossDef> = {
     description: 'Every chef cooks 50% slower between actions — the line is moving in slow-motion.',
     icon: '👥',
   },
+  heatwave: {
+    id: 'heatwave',
+    name: 'Heatwave',
+    description: 'Heat accumulates 50% faster and cooling pulls 10 less heat. Stay frosty.',
+    icon: '🥵',
+  },
 }
 
 export interface BossDelta {
   options: Partial<Pick<GameOptions, 'orderSpeed' | 'orderSpawnRate'>>
-  state: Partial<Pick<GameState, 'bossMoneyMultiplier' | 'cooldownMultiplier' | 'disabledStations'>>
+  state: Partial<Pick<GameState, 'bossMoneyMultiplier' | 'cooldownMultiplier' | 'disabledStations' | 'heatPerCookMultiplier' | 'coolAmountBonus'>>
 }
 
 // Compute the option/state adjustments for a given boss debuff.
@@ -65,6 +71,8 @@ export function applyBossDebuff(card: PathCard): BossDelta {
     }
     case 'understaffed':
       return { options: {}, state: { cooldownMultiplier: 1.5 } }
+    case 'heatwave':
+      return { options: {}, state: { heatPerCookMultiplier: 1.5, coolAmountBonus: -10 } }
   }
 }
 
@@ -83,8 +91,9 @@ export function pickHealthInspectorStation(enabledRecipes: string[], rng: () => 
   return candidates[Math.floor(rng() * candidates.length)]
 }
 
-// Return the boss pool. PR 2 uses the same 4 bosses for both boss shifts;
-// PR 3 will diverge S4 (mid-tier) from S8 (final-tier) and reintroduce a shift arg.
+// Return the boss pool. Both boss shifts (S4 + S8) draw from this set.
+// Chaos Mode + Recipe Roulette will land in a follow-up commit alongside the
+// kitchen-event enablement they depend on.
 export function getBossPool(): BossId[] {
-  return ['picky_critic', 'rush_hour', 'health_inspector', 'understaffed']
+  return ['picky_critic', 'rush_hour', 'health_inspector', 'understaffed', 'heatwave']
 }
