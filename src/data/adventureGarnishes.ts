@@ -29,7 +29,6 @@ export type GarnishField =
   | 'heatPerCookMultiplier'
   | 'choppingCookTimeMultiplier'    // Precise Cuts — multiplies chop-board cook time (0.6 = 40% faster)
   | 'flatTipPerOrder'
-  | 'freeExtinguishes'
   | 'orderPatienceBonus'   // Friendly Faces — +ms to each new order's patienceMax/patienceLeft
   | 'overheatThresholdDelta'   // Insulation +10, Glass Kitchen -40 (additive to base 100)
 
@@ -316,7 +315,6 @@ export function applyAllGarnishes(
   let heatPerCookMul = 1
   let choppingCookTimeMul = 1
   let flatTipPerOrder = 0
-  let freeExtinguishes = 0
   let orderPatienceBonus = 0
   let overheatThreshold = OVERHEAT_THRESHOLD_BASE
 
@@ -352,9 +350,6 @@ export function applyAllGarnishes(
         case 'flatTipPerOrder':
           flatTipPerOrder += effect.value
           break
-        case 'freeExtinguishes':
-          freeExtinguishes += effect.value
-          break
         case 'orderPatienceBonus':
           orderPatienceBonus += effect.value
           break
@@ -384,7 +379,6 @@ export function applyAllGarnishes(
       heatPerCookMultiplier:      heatPerCookMul        === 1 ? undefined : heatPerCookMul,
       choppingCookTimeMultiplier: choppingCookTimeMul   === 1 ? undefined : choppingCookTimeMul,
       flatTipPerOrder:            flatTipPerOrder       === 0 ? undefined : flatTipPerOrder,
-      freeExtinguishes:           freeExtinguishes      === 0 ? undefined : freeExtinguishes,
       orderPatienceBonus:         orderPatienceBonus    === 0 ? undefined : orderPatienceBonus,
       overheatThreshold:          overheatThreshold     === OVERHEAT_THRESHOLD_BASE ? undefined : overheatThreshold,
     },

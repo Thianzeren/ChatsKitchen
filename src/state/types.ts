@@ -264,9 +264,6 @@ export interface GameState {
   heatPerCookMultiplier?: number       // 1 default; <1 = less heat, >1 = more heat
   coolAmountBonus?: number             // 0 default; added to the rolled cool amount (40–60)
   flatTipPerOrder?: number             // 0 default; flat $ added to each served reward
-  freeExtinguishes?: number            // 0 default; auto-resolves overheat & decrements
-  recipePriceModifier?: Record<string, number>   // recipe key → reward multiplier
-  eventThresholdMultiplier?: number    // 1 default; <1 = easier event resolution
   bossMoneyMultiplier?: number         // 1 default; Picky Critic boss = 0.75
   cooldownMultiplier?: number          // 1 default; Understaffed boss = 1.5
   choppingCookTimeMultiplier?: number  // 1 default; Precise Cuts = 0.6 (chop-station only); Sharp Knives overrides to 0

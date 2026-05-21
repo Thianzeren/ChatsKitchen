@@ -26,9 +26,6 @@ export type GameAction =
       heatPerCookMultiplier?: number
       coolAmountBonus?: number
       flatTipPerOrder?: number
-      freeExtinguishes?: number
-      recipePriceModifier?: Record<string, number>
-      eventThresholdMultiplier?: number
       bossMoneyMultiplier?: number
       cooldownMultiplier?: number
       choppingCookTimeMultiplier?: number
@@ -179,9 +176,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         heatPerCookMultiplier: action.heatPerCookMultiplier,
         coolAmountBonus: action.coolAmountBonus,
         flatTipPerOrder: action.flatTipPerOrder,
-        freeExtinguishes: action.freeExtinguishes,
-        recipePriceModifier: action.recipePriceModifier,
-        eventThresholdMultiplier: action.eventThresholdMultiplier,
         bossMoneyMultiplier: action.bossMoneyMultiplier,
         cooldownMultiplier: action.cooldownMultiplier,
         choppingCookTimeMultiplier: action.choppingCookTimeMultiplier,
@@ -300,9 +294,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       )
       const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * 30))
       const baseReward = recipe.reward + timeBonus
-      const recipeMul = state.recipePriceModifier?.[order.dish] ?? 1
       const bossMoneyMul = state.bossMoneyMultiplier ?? 1
-      let multiplier = (state.moneyMultiplier?.multiplier ?? 1) * recipeMul * bossMoneyMul
+      let multiplier = (state.moneyMultiplier?.multiplier ?? 1) * bossMoneyMul
 
       // ── Triggered garnish multipliers (multiplicative with each other) ──
       const active = state.activeGarnishes ?? []
@@ -741,14 +734,6 @@ let matchedStep = null
     case 'OVERHEAT_STATION': {
       const station = state.stations[action.stationId]
       if (!station) return state
-      // Fire Insurance garnish: auto-resolve overheat once per shift
-      if ((state.freeExtinguishes ?? 0) > 0) {
-        const newStations = { ...state.stations, [action.stationId]: { ...station, slots: [], heat: 0, overheated: false, extinguishVotes: [] } }
-        return addMsg(
-          { ...state, stations: newStations, freeExtinguishes: (state.freeExtinguishes ?? 0) - 1 },
-          'KITCHEN', `🧯 Fire Insurance saved the ${STATION_DEFS[action.stationId]?.name}!`, 'success'
-        )
-      }
       return { ...state, stations: { ...state.stations, [action.stationId]: { ...station, slots: [], heat: 100, overheated: true, extinguishVotes: [] } } }
     }
 

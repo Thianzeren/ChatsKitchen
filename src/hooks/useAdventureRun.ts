@@ -6,10 +6,9 @@ import {
   pickStartingRecipe, pickAutoUnlockRecipe, pickRandomCuisine, makeRunSeed,
   getAutoUnlockedRecipeCount,
   ADVENTURE_TOTAL_SHIFTS,
-  mergePlayerStats,
 } from '../data/adventureMode'
 import {
-  applyAllGarnishes, generateShopOffers, getGarnish, getGarnishPrice, addOwnedGarnish,
+  applyAllGarnishes, generateShopOffers, addOwnedGarnish,
 } from '../data/adventureGarnishes'
 import { generatePathPair } from '../data/adventurePathCards'
 import { applyBossDebuff } from '../data/adventureBosses'
@@ -50,72 +49,48 @@ function getRerollPrice(rerollCount: number, participantCount: number = 1): numb
 
 // ── Per-shift reset composition ──────────────────────────────────────────────
 
-// Compose the RESET action payload from the run's current state.
-// Applies (in order): default options → boss debuff → owned garnishes.
-// Modifier ids on path cards are reserved for PR 3.
+// Compose the RESET action payload. Boss debuff applies first; garnishes layer
+// on top so a Slow Burner garnish can partially counteract a Heatwave boss.
 function buildShiftReset(
   run: AdventureRun,
   pathCard: PathCard | undefined,
 ): Extract<GameAction, { type: 'RESET' }> {
-  // Start from the per-shift baseline.
-  const baseCookingSpeed = 1
-  let baseOrderSpeed = 1
-  let baseOrderSpawn = 1
-  const shiftDuration = getAdventureShiftDuration()
+  const boss = pathCard?.bossDebuffId
+    ? applyBossDebuff(pathCard)
+    : { options: {}, state: {} as const }
 
-  // Boss debuff (from the path card the user picked for this shift) — applied
-  // BEFORE garnishes so garnishes can partially counteract boss effects.
-  let bossMoneyMultiplier: number | undefined
-  let cooldownMultiplier: number | undefined
-  let disabledStations: string[] | undefined
-  let bossHeatMul: number | undefined
-  let bossCoolBonus: number | undefined
-  if (pathCard?.bossDebuffId) {
-    const bossDelta = applyBossDebuff(pathCard)
-    if (bossDelta.options.orderSpeed !== undefined) baseOrderSpeed *= bossDelta.options.orderSpeed
-    if (bossDelta.options.orderSpawnRate !== undefined) baseOrderSpawn *= bossDelta.options.orderSpawnRate
-    bossMoneyMultiplier = bossDelta.state.bossMoneyMultiplier
-    cooldownMultiplier = bossDelta.state.cooldownMultiplier
-    disabledStations = bossDelta.state.disabledStations
-    bossHeatMul = bossDelta.state.heatPerCookMultiplier
-    bossCoolBonus = bossDelta.state.coolAmountBonus
-  }
-  void baseCookingSpeed  // boss debuffs don't currently touch cooking speed
+  // Boss option adjustments fold into the baseline before garnishes stack on top.
+  const baseOrderSpeed = boss.options.orderSpeed ?? 1
+  const baseOrderSpawn = boss.options.orderSpawnRate ?? 1
 
-  // Apply owned garnishes on top of the boss-adjusted baseline.
   const delta = applyAllGarnishes(run.ownedGarnishes, {
-    cookingSpeed: baseCookingSpeed,
+    cookingSpeed: 1,
     orderSpeed: baseOrderSpeed,
     orderSpawnRate: baseOrderSpawn,
   }, run.currentShift)
 
+  // Heat / cool: boss multiplier × garnish multiplier; boss bonus + garnish bonus.
+  const heatMul = (delta.state.heatPerCookMultiplier ?? 1) * (boss.state.heatPerCookMultiplier ?? 1)
+  const coolBonus = (delta.state.coolAmountBonus ?? 0) + (boss.state.coolAmountBonus ?? 0)
+
   return {
     type: 'RESET',
-    shiftDuration,
-    cookingSpeed: delta.options.cookingSpeed ?? baseCookingSpeed,
+    shiftDuration: getAdventureShiftDuration(),
+    cookingSpeed: delta.options.cookingSpeed ?? 1,
     orderSpeed: delta.options.orderSpeed ?? baseOrderSpeed,
     orderSpawnRate: delta.options.orderSpawnRate ?? baseOrderSpawn,
     enabledRecipes: run.currentRecipes,
     teams: undefined,
     participantCount: 0,
-    // Heatwave boss stacks on top of garnish-driven heat/cool tuning: garnishes
-    // can soften it (Slow Burner ×0.75) but not eliminate it.
-    heatPerCookMultiplier: (delta.state.heatPerCookMultiplier ?? 1) * (bossHeatMul ?? 1) === 1
-      ? undefined
-      : (delta.state.heatPerCookMultiplier ?? 1) * (bossHeatMul ?? 1),
-    coolAmountBonus: (delta.state.coolAmountBonus ?? 0) + (bossCoolBonus ?? 0) === 0
-      ? undefined
-      : (delta.state.coolAmountBonus ?? 0) + (bossCoolBonus ?? 0),
+    heatPerCookMultiplier: heatMul === 1 ? undefined : heatMul,
+    coolAmountBonus: coolBonus === 0 ? undefined : coolBonus,
     flatTipPerOrder: delta.state.flatTipPerOrder,
-    freeExtinguishes: delta.state.freeExtinguishes,
-    recipePriceModifier: delta.state.recipePriceModifier,
-    eventThresholdMultiplier: delta.state.eventThresholdMultiplier,
     choppingCookTimeMultiplier: delta.state.choppingCookTimeMultiplier,
     orderPatienceBonus: delta.state.orderPatienceBonus,
     overheatThreshold: delta.state.overheatThreshold,
-    bossMoneyMultiplier,
-    cooldownMultiplier,
-    disabledStations,
+    bossMoneyMultiplier: boss.state.bossMoneyMultiplier,
+    cooldownMultiplier: boss.state.cooldownMultiplier,
+    disabledStations: boss.state.disabledStations,
     activeGarnishes: run.ownedGarnishes.map(g => g.garnishId),
     activeBossDebuff: pathCard?.bossDebuffId,
   }
@@ -427,39 +402,22 @@ export function useAdventureRun(
     setScreen('adventurebriefing')
   }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, adventureLobbyRef])
 
-  // ── handleGameOverStatsMerge: called from App.tsx after each shift ─────────
-  // Wraps the existing mergePlayerStats logic in a stable hook callback so
-  // App.tsx doesn't need to reach into mergePlayerStats itself for Adventure.
-
-  // ── resetAdventureBestRun ─────────────────────────────────────────────────
-
   const resetAdventureBestRun = useCallback(() => {
     setAdventureBestRun(null)
   }, [])
 
-  // ── Shift-passed "Next" CTA routes through path pick. ─────────────────────
-
-  const handleShiftPassedNext = openPathPick
-
   return {
     // State
     adventureRun, setAdventureRun, adventureRunRef,
-    adventureBestRun, isNewBestAdventureRun, setIsNewBestAdventureRun,
+    adventureBestRun, isNewBestAdventureRun,
 
-    // PR-1 / PR-2 flow callbacks
+    // Flow callbacks (lobby → cuisine → briefing → playing → path → shop → next briefing)
     startAdventure,
     handleShiftEndDone,
     openPathPick, confirmPathCard,
-    handleShiftPassedNext,
     purchaseGarnish, rerollShopOffers, closeShop,
     getRerollPrice: () => getRerollPrice(rerollCountRef.current, adventureRunRef.current?.participantCount ?? 1),
 
-    // Lookup helpers (used by shop UI)
-    getGarnishMeta: getGarnish,
-    getOfferPrice: getGarnishPrice,
-
-    // Misc
     resetAdventureBestRun,
-    mergePlayerStats,
   }
 }
