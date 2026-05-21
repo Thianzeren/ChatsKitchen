@@ -28,42 +28,42 @@
 
 .subtitle {
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-secondary);
-  line-height: 1.45;
-  margin-top: 4px;
-  max-width: 720px;
+  line-height: 1.4;
+  margin-top: 6px;
+  max-width: 820px;
 }
 
 .subtitle code {
   font-family: 'Space Mono', monospace;
   background: rgba(196, 160, 32, 0.14);
   border: 1px solid rgba(196, 160, 32, 0.32);
-  padding: 1px 8px;
+  padding: 1px 10px;
   border-radius: 5px;
   color: #c4a020;
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .crewBadge {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 12px;
   background: rgba(196, 160, 32, 0.10);
   border: 2px solid rgba(196, 160, 32, 0.36);
-  padding: 10px 22px;
+  padding: 12px 24px;
   border-radius: 14px;
 }
 
 .crewBadgeValue {
   font-family: 'Lilita One', cursive;
-  font-size: 32px;
+  font-size: 36px;
   color: #c4a020;
 }
 
 .crewBadgeLabel {
   font-family: 'Fredoka', sans-serif;
-  font-size: 16px;
+  font-size: var(--base-fs);
   color: var(--text-secondary);
 }
 
@@ -183,34 +183,34 @@
 
 .cardKey {
   position: absolute;
-  top: 10px;
-  left: 12px;
+  top: 12px;
+  left: 14px;
   font-family: 'Space Mono', monospace;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
   color: #c4a020;
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(196, 160, 32, 0.4);
   border-radius: 8px;
-  padding: 3px 10px;
+  padding: 3px 12px;
 }
 
 .cardFlag {
-  font-size: 52px;
+  font-size: 56px;
   line-height: 1;
   filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.35));
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .cardName {
   font-family: 'Lilita One', cursive;
-  font-size: 24px;
+  font-size: 28px;
   color: var(--text);
 }
 
 .cardDescription {
   font-family: 'Fredoka', sans-serif;
-  font-size: 16px;
+  font-size: 20px;
   color: var(--text-muted);
   line-height: 1.4;
   max-width: 92%;
@@ -223,7 +223,7 @@
 
 .cardVotes {
   font-family: 'Space Mono', monospace;
-  font-size: 15px;
+  font-size: 18px;
   color: var(--text-muted);
 }
 
@@ -257,7 +257,7 @@
 
 .detailPlaceholder {
   font-family: 'Fredoka', sans-serif;
-  font-size: 20px;
+  font-size: var(--base-fs);
   color: var(--text-muted);
   font-style: italic;
   text-align: center;
@@ -282,20 +282,20 @@
 }
 
 .detailFlag {
-  font-size: 30px;
+  font-size: 36px;
 }
 
 .detailName {
   font-family: 'Lilita One', cursive;
-  font-size: 26px;
+  font-size: 32px;
   color: var(--text-warm);
   flex: 1;
 }
 
 .detailHint {
   font-family: 'Fredoka', sans-serif;
-  font-size: 14px;
-  letter-spacing: 1.2px;
+  font-size: 16px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -353,17 +353,17 @@
 .recipeName {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .recipeReward {
   font-family: 'Space Mono', monospace;
-  font-size: 16px;
+  font-size: 20px;
   color: #c4a020;
   margin-left: auto;
 }
@@ -372,12 +372,12 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .stepSeparator,
 .stepArrow {
-  font-size: 16px;
+  font-size: 18px;
   color: var(--text-muted);
   flex-shrink: 0;
 }
@@ -388,11 +388,11 @@
 
 .stepChip {
   font-family: 'Space Mono', monospace;
-  font-size: 15px;
+  font-size: 18px;
   color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
-  padding: 2px 8px;
+  padding: 2px 10px;
   white-space: nowrap;
 }
 
@@ -408,9 +408,9 @@
 .backBtn {
   border: none;
   border-radius: 12px;
-  padding: 12px 28px;
+  padding: 14px 32px;
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.1s, filter 0.1s, box-shadow 0.15s;
