@@ -21,16 +21,16 @@
 
 .title {
   font-family: 'Lilita One', cursive;
-  font-size: 40px;
+  font-size: 44px;
   color: #fff;
   text-shadow: 0 0 40px rgba(255, 255, 255, 0.15);
 }
 
 .subtitle {
   font-family: 'Fredoka', sans-serif;
-  font-size: 17px;
+  font-size: 18px;
   color: var(--text-secondary);
-  line-height: 1.4;
+  line-height: 1.45;
   margin-top: 4px;
   max-width: 720px;
 }
@@ -42,7 +42,7 @@
   padding: 1px 8px;
   border-radius: 5px;
   color: #c4a020;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .crewBadge {
@@ -51,19 +51,19 @@
   gap: 10px;
   background: rgba(196, 160, 32, 0.10);
   border: 2px solid rgba(196, 160, 32, 0.36);
-  padding: 10px 20px;
+  padding: 10px 22px;
   border-radius: 14px;
 }
 
 .crewBadgeValue {
   font-family: 'Lilita One', cursive;
-  font-size: 30px;
+  font-size: 32px;
   color: #c4a020;
 }
 
 .crewBadgeLabel {
   font-family: 'Fredoka', sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   color: var(--text-secondary);
 }
 
@@ -186,7 +186,7 @@
   top: 10px;
   left: 12px;
   font-family: 'Space Mono', monospace;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: #c4a020;
   background: rgba(0, 0, 0, 0.6);
@@ -196,21 +196,21 @@
 }
 
 .cardFlag {
-  font-size: 48px;
+  font-size: 52px;
   line-height: 1;
   filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.35));
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .cardName {
   font-family: 'Lilita One', cursive;
-  font-size: 22px;
+  font-size: 24px;
   color: var(--text);
 }
 
 .cardDescription {
   font-family: 'Fredoka', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-muted);
   line-height: 1.4;
   max-width: 92%;
@@ -218,12 +218,12 @@
 }
 
 .cardFooter {
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .cardVotes {
   font-family: 'Space Mono', monospace;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text-muted);
 }
 
@@ -247,7 +247,7 @@
   background: var(--station-bg);
   border: 2px solid var(--border);
   border-radius: 14px;
-  padding: 16px 20px;
+  padding: 18px 22px;
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -257,17 +257,17 @@
 
 .detailPlaceholder {
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: 20px;
   color: var(--text-muted);
   font-style: italic;
   text-align: center;
-  padding: 28px 0;
+  padding: 32px 0;
 }
 
 .detailContent {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   flex: 1;
   min-height: 0;
 }
@@ -276,25 +276,26 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding-bottom: 10px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .detailFlag {
-  font-size: 28px;
+  font-size: 30px;
 }
 
 .detailName {
   font-family: 'Lilita One', cursive;
-  font-size: 24px;
+  font-size: 26px;
   color: var(--text-warm);
   flex: 1;
 }
 
 .detailHint {
   font-family: 'Fredoka', sans-serif;
-  font-size: 13px;
-  letter-spacing: 1px;
+  font-size: 14px;
+  letter-spacing: 1.2px;
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -302,10 +303,33 @@
 .recipesGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 12px;
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  align-content: start;
+  /* Visible scrollbar so users know the panel scrolls when more recipes are added */
+  scrollbar-color: rgba(196, 160, 32, 0.5) rgba(255, 255, 255, 0.05);
+  scrollbar-width: thin;
+  padding-right: 6px;
+}
+
+.recipesGrid::-webkit-scrollbar {
+  width: 8px;
+}
+
+.recipesGrid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+}
+
+.recipesGrid::-webkit-scrollbar-thumb {
+  background: rgba(196, 160, 32, 0.45);
+  border-radius: 4px;
+}
+
+.recipesGrid::-webkit-scrollbar-thumb:hover {
+  background: rgba(196, 160, 32, 0.65);
 }
 
 .recipeRow {
@@ -313,7 +337,7 @@
   gap: 12px;
   background: rgba(255, 255, 255, 0.025);
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 12px 16px;
 }
 
 .recipeEmoji {
@@ -331,15 +355,15 @@
   align-items: center;
   gap: 10px;
   font-family: 'Fredoka', sans-serif;
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .recipeReward {
   font-family: 'Space Mono', monospace;
-  font-size: 14px;
+  font-size: 16px;
   color: #c4a020;
   margin-left: auto;
 }
@@ -348,12 +372,12 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 
 .stepSeparator,
 .stepArrow {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-muted);
   flex-shrink: 0;
 }
@@ -364,11 +388,11 @@
 
 .stepChip {
   font-family: 'Space Mono', monospace;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
-  padding: 1px 7px;
+  padding: 2px 8px;
   white-space: nowrap;
 }
 
