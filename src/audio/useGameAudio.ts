@@ -21,6 +21,7 @@ export function useGameAudio(screen: Screen, state: GameState, audioSettings: Au
   useEffect(() => {
     switch (screen) {
       case 'menu':
+      case 'adventurelobby':
       case 'adventurebriefing':
       case 'adventurepantryshop':
       case 'adventurepathpick':

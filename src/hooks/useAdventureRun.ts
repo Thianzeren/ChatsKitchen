@@ -121,9 +121,11 @@ export function useAdventureRun(
 
   // ── startAdventure: begin a brand-new run ──────────────────────────────────
 
-  const startAdventure = useCallback(() => {
-    // PR-1: cuisine pick screen ships in PR-2; fall back to a random cuisine for now.
-    const startCuisine: CuisineId = pickRandomCuisine()
+  const startAdventure = useCallback((cuisine?: CuisineId) => {
+    // PR-2: the cuisine is picked via chat vote on the cuisinepick screen and
+    // passed in here. If no cuisine was supplied (e.g. legacy callers), fall back
+    // to a random one so the run still starts.
+    const startCuisine: CuisineId = cuisine ?? pickRandomCuisine()
     const startingRecipe = pickStartingRecipe(startCuisine)
     const shift = 1
     const unlockedRecipes = [startingRecipe]

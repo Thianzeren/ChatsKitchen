@@ -6,7 +6,7 @@ import { useAdventureRun } from './hooks/useAdventureRun'
 import { useGameSession } from './hooks/useGameSession'
 import { gameReducer, createInitialState } from './state/gameReducer'
 import { parseCommand } from './state/commandProcessor'
-import { AudioSettings, GameOptions, Screen, TutorialDestination, ActiveEventOptions, toActiveEventOptions } from './state/types'
+import { AudioSettings, CuisineId, GameOptions, Screen, TutorialDestination, ActiveEventOptions, toActiveEventOptions } from './state/types'
 import { computeStarThresholds } from './data/starThresholds'
 import { useGameLoop } from './hooks/useGameLoop'
 import { useBotSimulation } from './hooks/useBotSimulation'
@@ -23,6 +23,7 @@ import Countdown from './components/Countdown'
 import ShiftEnd from './components/ShiftEnd'
 import GameOver from './components/GameOver'
 import AdventureBriefing from './components/AdventureBriefing'
+import AdventureCuisinePick from './components/AdventureCuisinePick'
 import AdventureLobby from './components/AdventureLobby'
 import AdventurePantryShop from './components/AdventurePantryShop'
 import AdventureRunEnd from './components/AdventureRunEnd'
@@ -272,14 +273,20 @@ export default function App() {
     checkTwitch(openAdventureLobby)
   }, [checkTwitch, openAdventureLobby])
 
-  // !start from the lobby (or the on-screen Start button) reads the live roster and
-  // begins the run. The roster is preserved through the run so mid-shift !leave /
-  // !kick can rescale goals between shifts.
+  // !start from the lobby (or the on-screen Start button) confirms the roster and
+  // advances to the cuisine pick — chat then votes on which cuisine the run uses.
+  // The roster is preserved through the run so mid-shift !leave / !kick can
+  // rescale goals between shifts.
   const handleAdventureLobbyStart = useCallback(() => {
     const roster = adventureLobbyRef.current ?? []
     if (roster.length === 0) return
-    startAdventure()
-  }, [startAdventure, adventureLobbyRef])
+    setScreen('adventurecuisinepick')
+  }, [setScreen, adventureLobbyRef])
+
+  // Resolved cuisine vote → start the run.
+  const handleCuisineConfirmed = useCallback((cuisine: CuisineId) => {
+    startAdventure(cuisine)
+  }, [startAdventure])
 
   // "Play Again" from the run-end screen reopens the lobby so the host can adjust the roster.
   const handleAdventurePlayAgain = useCallback(() => {
@@ -443,7 +450,7 @@ export default function App() {
       return
     }
     // Adventure choice-vote screens: route !1/!2/... to the active vote handler.
-    if (screenRef.current === 'adventurepantryshop') {
+    if (screenRef.current === 'adventurepantryshop' || screenRef.current === 'adventurecuisinepick') {
       if (adventureVoteRef.current?.(user, text)) return
     }
     // Adventure run is in progress: !leave / !kick still update the roster; the
@@ -498,7 +505,7 @@ export default function App() {
       if (result === 'start') handleAdventureLobbyStart()
       return
     }
-    if (screenRef.current === 'adventurepantryshop') {
+    if (screenRef.current === 'adventurepantryshop' || screenRef.current === 'adventurecuisinepick') {
       if (adventureVoteRef.current?.('You', text)) return
     }
     if (adventureRunRef.current) {
@@ -651,6 +658,15 @@ export default function App() {
         onBack={() => { clearAdventureLobby(); setScreen('menu') }}
         twitchStatus={twitchChat.status}
         twitchChannel={twitchChannel}
+      />
+    )
+  } else if (screen === 'adventurecuisinepick') {
+    content = (
+      <AdventureCuisinePick
+        rosterSize={adventureLobby?.length ?? 1}
+        onConfirm={handleCuisineConfirmed}
+        onBack={() => setScreen('adventurelobby')}
+        voteRef={adventureVoteRef}
       />
     )
   } else if (screen === 'adventurebriefing') {
