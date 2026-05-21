@@ -31,6 +31,9 @@ export type GameAction =
       eventThresholdMultiplier?: number
       bossMoneyMultiplier?: number
       cooldownMultiplier?: number
+      choppingCookTimeMultiplier?: number
+      orderPatienceBonus?: number
+      overheatThreshold?: number
       disabledStations?: string[]
       activeGarnishes?: string[]
     }
@@ -180,6 +183,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         eventThresholdMultiplier: action.eventThresholdMultiplier,
         bossMoneyMultiplier: action.bossMoneyMultiplier,
         cooldownMultiplier: action.cooldownMultiplier,
+        choppingCookTimeMultiplier: action.choppingCookTimeMultiplier,
+        orderPatienceBonus: action.orderPatienceBonus,
+        overheatThreshold: action.overheatThreshold,
         disabledStations: action.disabledStations && action.disabledStations.length > 0
           ? action.disabledStations
           : undefined,
@@ -301,8 +307,18 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (active.includes('speed_demon') && elapsedSinceSpawn < 20_000) {
         multiplier *= 1.25
       }
+      const patienceFraction = order.patienceMax > 0 ? order.patienceLeft / order.patienceMax : 0
+      if (active.includes('pressure_tip') && patienceFraction < 0.15) {
+        multiplier *= 1.5
+      }
+      if (active.includes('glass_kitchen')) {
+        multiplier *= 1.5
+      }
 
-      const tip = state.flatTipPerOrder ?? 0
+      let tip = state.flatTipPerOrder ?? 0
+      if (isFirstOrder && active.includes('big_tippers')) {
+        tip += 30
+      }
       const reward = Math.round(baseReward * multiplier) + tip
 
       let withStats = addStat(state, user, 'served', 1)
@@ -372,10 +388,14 @@ let matchedStep = null
       }
       if (!matchedStep) return addMsg(withCooldown, 'KITCHEN', `Can't ${cookAction} ${(target || '').replace(/_/g, ' ')} there!`, 'error')
 
-      // ── Triggered garnish: Sharp Knives → chopping becomes instant ──
+      // ── Chopping-station garnish modifiers ──
+      // Precise Cuts trims chopping cook time; Sharp Knives overrides to instant.
       let effectiveDuration = matchedStep.duration
-      if (cookAction === 'chop' && (state.activeGarnishes ?? []).includes('sharp_knives')) {
-        effectiveDuration = 0
+      if (cookAction === 'chop') {
+        effectiveDuration *= state.choppingCookTimeMultiplier ?? 1
+        if ((state.activeGarnishes ?? []).includes('sharp_knives')) {
+          effectiveDuration = 0
+        }
       }
 
       // Check ingredient prerequisite
@@ -440,7 +460,8 @@ let matchedStep = null
       const dish = dishKeys[Math.floor(Math.random() * dishKeys.length)]
       const recipe = RECIPES[dish]
 
-      const patience = recipe.patience / state.orderSpeed
+      // Friendly Faces garnish: +ms to every new order's patience pool.
+      const patience = (recipe.patience / state.orderSpeed) + (state.orderPatienceBonus ?? 0)
 
       const order: Order = {
         id: state.nextOrderId,
@@ -493,8 +514,9 @@ let matchedStep = null
           }
           const updatedSlot: StationSlot = { ...slot, elapsedMs: elapsed, heatApplied: newHeatApplied }
 
-          // Step B: Check overheat
-          if (currentHeat >= 100) {
+          // Step B: Check overheat (threshold may be raised by Insulation or lowered by Glass Kitchen)
+          const overheatLimit = state.overheatThreshold ?? 100
+          if (currentHeat >= overheatLimit) {
             // Penalise every player cooking at this station, not just the one whose slot tipped it over
             for (const s of station.slots) {
               const statSnap = addStat({ ...state, playerStats: newPlayerStats }, s.user, 'firesCaused', 1)
@@ -502,7 +524,7 @@ let matchedStep = null
             }
             // Free all users assigned to all slots on this station
             for (const s of newStations[id].slots) delete newActiveUsers[s.user]
-            newStations[id] = { ...newStations[id], slots: [], heat: 100, overheated: true, extinguishVotes: [] }
+            newStations[id] = { ...newStations[id], slots: [], heat: overheatLimit, overheated: true, extinguishVotes: [] }
             messages.push({
               id: nextMsgId++,
               username: 'KITCHEN',
