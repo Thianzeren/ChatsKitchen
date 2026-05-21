@@ -199,6 +199,14 @@ export const GARNISHES: Record<string, GarnishDef> = {
     basePrice: 200,
     icon: '🎖️',
   },
+  tea_break: {
+    id: 'tea_break',
+    name: 'Tea Break',
+    description: 'Every 60 seconds, order patience pauses for 5 seconds.',
+    tier: 'rare',
+    basePrice: 280,
+    icon: '☕',
+  },
 
   // ── Legendary ──
   sharp_knives: {

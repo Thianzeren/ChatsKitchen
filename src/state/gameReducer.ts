@@ -36,6 +36,7 @@ export type GameAction =
       overheatThreshold?: number
       disabledStations?: string[]
       activeGarnishes?: string[]
+      activeBossDebuff?: string
     }
   | { type: 'SET_STATION_HEAT'; stationId: string; heat: number }
   | { type: 'OVERHEAT_STATION'; stationId: string }
@@ -190,7 +191,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           ? action.disabledStations
           : undefined,
         activeGarnishes: active.length > 0 ? active : undefined,
+        activeBossDebuff: action.activeBossDebuff,
         firstOrderServedThisShift: false,
+        // Ticker timers are initialised lazily on the first TICK to avoid
+        // referencing Date.now() in the reducer at RESET time.
+        teaBreakNextAt: undefined,
+        patiencePausedUntil: undefined,
+        rouletteNextAt: undefined,
       }
     }
 
@@ -510,6 +517,49 @@ let matchedStep = null
       const newBluePreparedItemSources = state.teams ? [...(state.bluePreparedItemSources ?? [])] : []
       let newPlayerStats = { ...state.playerStats }
       let bloodhoundMoney = 0
+
+      // ── Periodic shift-timer effects (Tea Break + Recipe Roulette) ──
+      const active = state.activeGarnishes ?? []
+      let teaBreakNextAt = state.teaBreakNextAt
+      let patiencePausedUntil = state.patiencePausedUntil
+      let rouletteNextAt = state.rouletteNextAt
+
+      // Lazy-init on the first TICK that sees an active effect.
+      if (active.includes('tea_break') && !teaBreakNextAt) teaBreakNextAt = now + 60_000
+      if (state.activeBossDebuff === 'recipe_roulette' && !rouletteNextAt) rouletteNextAt = now + 45_000
+
+      // Fire Tea Break — 5s patience pause every 60s.
+      if (teaBreakNextAt && now >= teaBreakNextAt) {
+        patiencePausedUntil = now + 5_000
+        teaBreakNextAt = now + 60_000
+        messages.push({
+          id: nextMsgId++,
+          username: 'KITCHEN',
+          text: '☕ Tea Break! Order patience paused for 5 seconds.',
+          type: 'success',
+        })
+      }
+
+      // Fire Recipe Roulette — swap one active recipe with a random dish from the catalog.
+      let newEnabledRecipes = state.enabledRecipes
+      if (rouletteNextAt && now >= rouletteNextAt) {
+        const candidates = Object.keys(RECIPES).filter(r => !state.enabledRecipes.includes(r))
+        if (candidates.length > 0 && state.enabledRecipes.length > 0) {
+          const removedIdx = Math.floor(Math.random() * state.enabledRecipes.length)
+          const removed = state.enabledRecipes[removedIdx]
+          const added = candidates[Math.floor(Math.random() * candidates.length)]
+          newEnabledRecipes = state.enabledRecipes.map((r, i) => i === removedIdx ? added : r)
+          messages.push({
+            id: nextMsgId++,
+            username: 'KITCHEN',
+            text: `🎲 Recipe Roulette! ${RECIPES[removed]?.name ?? removed} → ${RECIPES[added]?.name ?? added}`,
+            type: 'system',
+          })
+        }
+        rouletteNextAt = now + 45_000
+      }
+      const patienceFrozen = patiencePausedUntil !== undefined && now < patiencePausedUntil
+
       // Update all station slots
       for (const [id, station] of Object.entries(newStations)) {
         if (station.overheated || station.slots.length === 0) continue
@@ -613,13 +663,13 @@ let matchedStep = null
         }
       }
 
-      // Update order patience + expire
+      // Update order patience + expire (Tea Break can freeze patience drain temporarily)
       const compostActive = (state.activeGarnishes ?? []).includes('compost_bin')
       let orders = [...state.orders]
       let lost = state.lost
       orders = orders.map(order => {
         if (order.served) return order
-        const newPatience = order.patienceLeft - delta
+        const newPatience = patienceFrozen ? order.patienceLeft : order.patienceLeft - delta
         if (newPatience <= 0) {
           lost++
           messages.push({ id: nextMsgId++, username: 'CUSTOMER', text: `Order #${order.id} expired! Lost a ${RECIPES[order.dish].emoji}!`, type: 'error' })
@@ -674,6 +724,10 @@ let matchedStep = null
         cookingSpeedModifier,
         moneyMultiplier,
         money: state.money + bloodhoundMoney,
+        enabledRecipes: newEnabledRecipes,
+        teaBreakNextAt,
+        patiencePausedUntil,
+        rouletteNextAt,
       }
     }
 

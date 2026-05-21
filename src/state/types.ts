@@ -272,6 +272,12 @@ export interface GameState {
   choppingCookTimeMultiplier?: number  // 1 default; Precise Cuts = 0.6 (chop-station only); Sharp Knives overrides to 0
   orderPatienceBonus?: number          // ms added to each new order's patienceMax + patienceLeft (Friendly Faces)
   recentServes?: { dish: string; at: number }[]   // rolling log of recent serves; Combo Plate checks 3 distinct dishes in 30s
+  // Periodic shift-timer effects (Tea Break, Recipe Roulette) — initialised lazily
+  // on the first TICK after RESET so we don't need Date.now() in the reducer.
+  activeBossDebuff?: string                        // mirrors path-card boss for TICK-side effects
+  teaBreakNextAt?: number                          // ms timestamp; when now ≥ this, fire Tea Break
+  patiencePausedUntil?: number                     // ms timestamp; while now < this, patience doesn't drain
+  rouletteNextAt?: number                          // ms timestamp; when now ≥ this, rotate enabledRecipes
   // Triggered-garnish runtime state
   activeGarnishes?: string[]                  // garnish ids active for this shift
   firstOrderServedThisShift?: boolean         // First Bite, Big Tippers — flips after first SERVE

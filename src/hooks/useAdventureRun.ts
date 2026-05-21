@@ -117,6 +117,7 @@ function buildShiftReset(
     cooldownMultiplier,
     disabledStations,
     activeGarnishes: run.ownedGarnishes.map(g => g.garnishId),
+    activeBossDebuff: pathCard?.bossDebuffId,
   }
 }
 
