@@ -1,4 +1,4 @@
-export type Screen = 'menu' | 'localplay' | 'pvplobby' | 'adventurebriefing' | 'adventurepantryshop' | 'adventurepathpick' | 'adventurecuisinepick' | 'adventurebossbriefing' | 'options' | 'playsetpicker' | 'freeplaysetup' | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'adventureshiftpassed' | 'adventurerunend' | 'credits'
+export type Screen = 'menu' | 'localplay' | 'pvplobby' | 'adventurelobby' | 'adventurebriefing' | 'adventurepantryshop' | 'adventurepathpick' | 'adventurecuisinepick' | 'adventurebossbriefing' | 'options' | 'playsetpicker' | 'freeplaysetup' | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'adventureshiftpassed' | 'adventurerunend' | 'credits'
 
 export type CuisineId = 'western' | 'chinese' | 'japanese' | 'korean' | 'sg' | 'japanese_bakery'
 

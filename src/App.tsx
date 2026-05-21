@@ -1,6 +1,7 @@
 import { useReducer, useCallback, useState, useEffect, useRef } from 'react'
 import { useTutorialState } from './hooks/useTutorialState'
 import { usePvpLobby } from './hooks/usePvpLobby'
+import { useAdventureLobby } from './hooks/useAdventureLobby'
 import { useAdventureRun } from './hooks/useAdventureRun'
 import { useGameSession } from './hooks/useGameSession'
 import { gameReducer, createInitialState } from './state/gameReducer'
@@ -22,6 +23,7 @@ import Countdown from './components/Countdown'
 import ShiftEnd from './components/ShiftEnd'
 import GameOver from './components/GameOver'
 import AdventureBriefing from './components/AdventureBriefing'
+import AdventureLobby from './components/AdventureLobby'
 import AdventurePantryShop from './components/AdventurePantryShop'
 import AdventureRunEnd from './components/AdventureRunEnd'
 import AdventureShiftPassed from './components/AdventureShiftPassed'
@@ -117,17 +119,6 @@ export default function App() {
     resetSession,
   } = useGameSession()
 
-  const {
-    adventureRun, setAdventureRun, adventureRunRef, adventureBestRun,
-    isNewBestAdventureRun, startAdventure,
-    handleShiftEndDone, resetAdventureBestRun,
-    openPantryShop, purchaseGarnish, rerollShopOffers, closeShop, getRerollPrice,
-  } = useAdventureRun(dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, finalStatsRef)
-
-  // Vote-screen chat interception: the active vote-driven screen (e.g. PantryShop)
-  // registers its registerVote handler here so chat messages routing can find it.
-  const adventureVoteRef = useRef<((user: string, text: string) => boolean) | null>(null)
-
   // Keep refs in sync so stable callbacks can read current values
   screenRef.current = screen
   gameOptionsRef.current = gameOptions
@@ -137,6 +128,24 @@ export default function App() {
     setToast(message)
     toastTimerRef.current = setTimeout(() => setToast(null), 2500)
   }, [])
+
+  const {
+    adventureLobby, setAdventureLobby, adventureLobbyRef,
+    openAdventureLobby, clearAdventureLobby, kickPlayer: kickAdventurePlayer,
+    handleLobbyJoin: handleAdventureLobbyJoin,
+    handleLobbyMetaCommand: handleAdventureLobbyMetaCommand,
+  } = useAdventureLobby(setScreen, showToast)
+
+  const {
+    adventureRun, setAdventureRun, adventureRunRef, adventureBestRun,
+    isNewBestAdventureRun, startAdventure,
+    handleShiftEndDone, resetAdventureBestRun,
+    openPantryShop, purchaseGarnish, rerollShopOffers, closeShop, getRerollPrice,
+  } = useAdventureRun(dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, finalStatsRef, adventureLobbyRef)
+
+  // Vote-screen chat interception: the active vote-driven screen (e.g. PantryShop)
+  // registers its registerVote handler here so chat messages routing can find it.
+  const adventureVoteRef = useRef<((user: string, text: string) => boolean) | null>(null)
 
   const { pvpLobby, setPvpLobby, pvpLobbyRef, startPvp, startPvpGame, balanceLobby, handleLobbyMetaCommand, handleLobbyJoin } = usePvpLobby(setScreen, showToast)
 
@@ -260,8 +269,23 @@ export default function App() {
   }, [checkTwitch])
 
   const handleMenuAdventure = useCallback(() => {
-    checkTwitch(startAdventure)
-  }, [checkTwitch, startAdventure])
+    checkTwitch(openAdventureLobby)
+  }, [checkTwitch, openAdventureLobby])
+
+  // !start from the lobby (or the on-screen Start button) reads the live roster and
+  // begins the run. The roster is preserved through the run so mid-shift !leave /
+  // !kick can rescale goals between shifts.
+  const handleAdventureLobbyStart = useCallback(() => {
+    const roster = adventureLobbyRef.current ?? []
+    if (roster.length === 0) return
+    startAdventure()
+  }, [startAdventure, adventureLobbyRef])
+
+  // "Play Again" from the run-end screen reopens the lobby so the host can adjust the roster.
+  const handleAdventurePlayAgain = useCallback(() => {
+    setAdventureRun(null)
+    openAdventureLobby()
+  }, [openAdventureLobby, setAdventureRun])
 
   const handleMenuPvp = useCallback(() => {
     checkTwitch(startPvp)
@@ -411,15 +435,30 @@ export default function App() {
       handleLobbyMetaCommand(user, text, isMod)
       return
     }
+    // Adventure lobby: !join / !leave for everyone, !kick / !start for mods + broadcaster.
+    if (screenRef.current === 'adventurelobby') {
+      if (handleAdventureLobbyJoin(user, text.trim().toLowerCase())) return
+      const result = handleAdventureLobbyMetaCommand(user, text, isMod)
+      if (result === 'start') handleAdventureLobbyStart()
+      return
+    }
     // Adventure choice-vote screens: route !1/!2/... to the active vote handler.
     if (screenRef.current === 'adventurepantryshop') {
       if (adventureVoteRef.current?.(user, text)) return
+    }
+    // Adventure run is in progress: !leave / !kick still update the roster; the
+    // shrunken count applies at the next shift boundary inside closeShop.
+    if (adventureRunRef.current) {
+      if (handleAdventureLobbyJoin(user, text.trim().toLowerCase())) {
+        // Allow the command to fall through so it doesn't block any in-game side-effects
+      }
+      handleAdventureLobbyMetaCommand(user, text, isMod)
     }
     handleEventCommand(user, text)
     handleTutorialEventCommand(text)
     handleMetaCommand(user, text, isMod)
     if (!isTutorialRef.current) handleCommand(user, text)
-  }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin])
+  }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin, handleAdventureLobbyJoin, handleAdventureLobbyMetaCommand, handleAdventureLobbyStart, adventureRunRef])
 
   // Keep Twitch connected regardless of chatMode so streamers can still see chat while using Local Play
   const effectiveTwitchChannel = twitchChannel
@@ -453,14 +492,24 @@ export default function App() {
       handleLobbyMetaCommand('You', text, true)
       return
     }
+    if (screenRef.current === 'adventurelobby') {
+      if (handleAdventureLobbyJoin('You', text.trim().toLowerCase())) return
+      const result = handleAdventureLobbyMetaCommand('You', text, true)
+      if (result === 'start') handleAdventureLobbyStart()
+      return
+    }
     if (screenRef.current === 'adventurepantryshop') {
       if (adventureVoteRef.current?.('You', text)) return
+    }
+    if (adventureRunRef.current) {
+      handleAdventureLobbyJoin('You', text.trim().toLowerCase())
+      handleAdventureLobbyMetaCommand('You', text, true)
     }
     handleEventCommand('You', text)
     handleTutorialEventCommand(text)
     handleMetaCommand('You', text, true)
     handleCommand('You', text)
-  }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin])
+  }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin, handleAdventureLobbyJoin, handleAdventureLobbyMetaCommand, handleAdventureLobbyStart, adventureRunRef])
 
 
   useEffect(() => {
@@ -592,13 +641,25 @@ export default function App() {
         onNext={startPvpGame}
       />
     )
+  } else if (screen === 'adventurelobby') {
+    content = (
+      <AdventureLobby
+        roster={adventureLobby ?? []}
+        onKick={kickAdventurePlayer}
+        onClear={() => setAdventureLobby([])}
+        onStart={handleAdventureLobbyStart}
+        onBack={() => { clearAdventureLobby(); setScreen('menu') }}
+        twitchStatus={twitchChat.status}
+        twitchChannel={twitchChannel}
+      />
+    )
   } else if (screen === 'adventurebriefing') {
     content = (
       <AdventureBriefing
         run={adventureRun!}
         bestRun={adventureBestRun}
         onStart={() => setScreen('countdown')}
-        onMenu={() => { setAdventureRun(null); setScreen('menu') }}
+        onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('menu') }}
         twitchStatus={twitchChat.status}
         twitchChannel={twitchChannel}
       />
@@ -681,7 +742,7 @@ export default function App() {
         lost={finalStats.lost}
         playerStats={finalStats.playerStats}
         onNext={openPantryShop}
-        onMenu={() => { setAdventureRun(null); setScreen('menu') }}
+        onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('menu') }}
       />
     )
   } else if (screen === 'adventurepantryshop') {
@@ -701,8 +762,8 @@ export default function App() {
         run={adventureRun!}
         bestRun={adventureBestRun}
         isNewBestRun={isNewBestAdventureRun}
-        onPlayAgain={startAdventure}
-        onMenu={() => { setAdventureRun(null); setScreen('menu') }}
+        onPlayAgain={handleAdventurePlayAgain}
+        onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('menu') }}
       />
     )
   } else {

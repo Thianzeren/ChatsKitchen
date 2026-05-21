@@ -59,7 +59,7 @@ function buildShiftReset(
   const baseCookingSpeed = 1
   const baseOrderSpeed = 1
   const baseOrderSpawn = 1
-  const shiftDuration = getAdventureShiftDuration(run.currentShift)
+  const shiftDuration = getAdventureShiftDuration()
 
   // (PR-2/3) path-card / boss adjustments will mutate these; for PR-1 they're no-ops.
   void pathCard
@@ -107,6 +107,7 @@ export function useAdventureRun(
   setActiveEventOptions: Dispatch<SetStateAction<ActiveEventOptions | null>>,
   activeGameOptionsRef: { current: GameOptions | null },
   finalStatsRef: { current: FinalStats },
+  adventureLobbyRef: { current: string[] | null },
 ) {
   const [adventureRun, setAdventureRun] = useState<AdventureRun | null>(null)
   const adventureRunRef = useRef<AdventureRun | null>(null)
@@ -128,6 +129,12 @@ export function useAdventureRun(
     const unlockedRecipes = [startingRecipe]
     const currentRecipes = unlockedRecipes.slice(0, getAutoUnlockedRecipeCount(shift))
 
+    // participantCount is read from the live Adventure lobby roster at run start.
+    // If the lobby was never opened (e.g. legacy entry from gameover Play Again), we
+    // fall back to 1 so the run can still proceed.
+    const roster = adventureLobbyRef.current ?? []
+    const participantCount = Math.max(1, roster.length)
+
     const run: AdventureRun = {
       runSeed: makeRunSeed(),
       startCuisine,
@@ -136,8 +143,8 @@ export function useAdventureRun(
       currentRunMoney: 0,
       unlockedRecipes,
       currentRecipes,
-      currentGoal: getAdventureGoal(shift, 1),
-      participantCount: 1,    // placeholder until the Adventure lobby ships in PR 2
+      currentGoal: getAdventureGoal(shift, participantCount),
+      participantCount,
       ownedGarnishes: [],
       accumulatedPlayerStats: {},
     }
@@ -148,7 +155,7 @@ export function useAdventureRun(
     activeGameOptionsRef.current = null
     dispatch(buildShiftReset(run, undefined, undefined))
     setScreen('adventurebriefing')
-  }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef])
+  }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, adventureLobbyRef])
 
   // ── handleShiftEndDone: called when the shift timer runs out ───────────────
 
@@ -300,10 +307,13 @@ export function useAdventureRun(
       const targetCount = Math.min(3, Math.max(getAutoUnlockedRecipeCount(nextShift), newUnlocked.length))
       const currentRecipes = newUnlocked.slice(0, targetCount)
 
-      // PR-2: recompute participantCount from the live Adventure lobby roster here so
-      // mid-run !leave / !kick changes apply at the next shift boundary. For PR-1 the
-      // lobby doesn't exist yet, so we hold the placeholder of 1.
-      const nextParticipantCount = prev.participantCount
+      // Recompute participantCount from the live Adventure lobby roster so mid-run
+      // !leave / !kick changes apply at the next shift boundary. If the lobby was
+      // cleared (e.g. legacy run with no lobby), hold the previous count.
+      const liveRoster = adventureLobbyRef.current
+      const nextParticipantCount = liveRoster && liveRoster.length > 0
+        ? liveRoster.length
+        : prev.participantCount
 
       const updatedRun: AdventureRun = {
         ...prev,
@@ -324,7 +334,7 @@ export function useAdventureRun(
       return updatedRun
     })
     setScreen('adventurebriefing')
-  }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef])
+  }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, adventureLobbyRef])
 
   // ── handleGameOverStatsMerge: called from App.tsx after each shift ─────────
   // Wraps the existing mergePlayerStats logic in a stable hook callback so
