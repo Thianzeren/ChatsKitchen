@@ -11,6 +11,8 @@ import {
 import {
   applyAllGarnishes, generateShopOffers, getGarnish, getGarnishPrice, addOwnedGarnish,
 } from '../data/adventureGarnishes'
+import { generatePathPair } from '../data/adventurePathCards'
+import { applyBossDebuff } from '../data/adventureBosses'
 
 // ── localStorage migration ───────────────────────────────────────────────────
 
@@ -49,23 +51,34 @@ function getRerollPrice(rerollCount: number, participantCount: number = 1): numb
 // ── Per-shift reset composition ──────────────────────────────────────────────
 
 // Compose the RESET action payload from the run's current state.
-// Applies (in order): default options → path-card modifiers → boss debuff → owned garnishes.
+// Applies (in order): default options → boss debuff → owned garnishes.
+// Modifier ids on path cards are reserved for PR 3.
 function buildShiftReset(
   run: AdventureRun,
   pathCard: PathCard | undefined,
-  bossDebuffId: string | undefined,
 ): Extract<GameAction, { type: 'RESET' }> {
   // Start from the per-shift baseline.
   const baseCookingSpeed = 1
-  const baseOrderSpeed = 1
-  const baseOrderSpawn = 1
+  let baseOrderSpeed = 1
+  let baseOrderSpawn = 1
   const shiftDuration = getAdventureShiftDuration()
 
-  // (PR-2/3) path-card / boss adjustments will mutate these; for PR-1 they're no-ops.
-  void pathCard
-  void bossDebuffId
+  // Boss debuff (from the path card the user picked for this shift) — applied
+  // BEFORE garnishes so garnishes can partially counteract boss effects.
+  let bossMoneyMultiplier: number | undefined
+  let cooldownMultiplier: number | undefined
+  let disabledStations: string[] | undefined
+  if (pathCard?.bossDebuffId) {
+    const bossDelta = applyBossDebuff(pathCard)
+    if (bossDelta.options.orderSpeed !== undefined) baseOrderSpeed *= bossDelta.options.orderSpeed
+    if (bossDelta.options.orderSpawnRate !== undefined) baseOrderSpawn *= bossDelta.options.orderSpawnRate
+    bossMoneyMultiplier = bossDelta.state.bossMoneyMultiplier
+    cooldownMultiplier = bossDelta.state.cooldownMultiplier
+    disabledStations = bossDelta.state.disabledStations
+  }
+  void baseCookingSpeed  // boss debuffs don't currently touch cooking speed
 
-  // Apply owned garnishes on top of the baseline.
+  // Apply owned garnishes on top of the boss-adjusted baseline.
   const delta = applyAllGarnishes(run.ownedGarnishes, {
     cookingSpeed: baseCookingSpeed,
     orderSpeed: baseOrderSpeed,
@@ -87,6 +100,9 @@ function buildShiftReset(
     freeExtinguishes: delta.state.freeExtinguishes,
     recipePriceModifier: delta.state.recipePriceModifier,
     eventThresholdMultiplier: delta.state.eventThresholdMultiplier,
+    bossMoneyMultiplier,
+    cooldownMultiplier,
+    disabledStations,
     activeGarnishes: run.ownedGarnishes.map(g => g.garnishId),
   }
 }
@@ -155,7 +171,8 @@ export function useAdventureRun(
     setIsNewBestAdventureRun(false)
     setActiveEventOptions(EVENTS_OFF)
     activeGameOptionsRef.current = null
-    dispatch(buildShiftReset(run, undefined, undefined))
+    // Shift 1 has no path-card pick yet — pass undefined for a neutral RESET.
+    dispatch(buildShiftReset(run, undefined))
     setScreen('adventurebriefing')
   }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, adventureLobbyRef])
 
@@ -167,6 +184,8 @@ export function useAdventureRun(
 
     const fs = finalStatsRef.current
     const passed = fs.money >= run.currentGoal
+    // Path-card cash bonus: awarded only if the shift passes. Cleared after.
+    const cashBonus = passed ? (run.chosenPath?.rewardOnPass?.cashBonus ?? 0) : 0
     const result: ShiftResult = {
       shiftNumber: run.currentShift,
       recipes: run.currentRecipes,
@@ -175,12 +194,15 @@ export function useAdventureRun(
       served: fs.served,
       lost: fs.lost,
       passed,
+      chosenPathCardId: run.chosenPath?.id,
+      bossDebuffId: run.chosenPath?.bossDebuffId,
     }
     const isFinalShift = run.currentShift >= ADVENTURE_TOTAL_SHIFTS
     const updatedRun: AdventureRun = {
       ...run,
       shiftResults: [...run.shiftResults, result],
-      currentRunMoney: passed ? run.currentRunMoney + fs.money : run.currentRunMoney,
+      currentRunMoney: passed ? run.currentRunMoney + fs.money + cashBonus : run.currentRunMoney,
+      chosenPath: undefined,   // consumed; the next path-pick generates fresh cards
       runWon: passed && isFinalShift ? true : run.runWon,
     }
 
@@ -239,14 +261,33 @@ export function useAdventureRun(
     setScreen('adventureshiftpassed')
   }, [setScreen, finalStatsRef])
 
-  // ── openPantryShop: from adventureshiftpassed → pantry ─────────────────────
+  // ── openPathPick: from adventureshiftpassed → pathpick ─────────────────────
 
-  const openPantryShop = useCallback(() => {
+  const openPathPick = useCallback(() => {
     setAdventureRun(prev => {
       if (!prev) return prev
+      const nextShift = prev.currentShift + 1
+      const pair = generatePathPair(prev.runSeed, nextShift, prev.unlockedRecipes)
+      return { ...prev, pendingPathCards: pair, chosenPath: undefined }
+    })
+    setScreen('adventurepathpick')
+  }, [setScreen])
+
+  // ── confirmPathCard: vote or click resolved the path; open shop next ───────
+
+  const confirmPathCard = useCallback((cardIdx: number) => {
+    setAdventureRun(prev => {
+      if (!prev || !prev.pendingPathCards) return prev
+      const chosen = prev.pendingPathCards[cardIdx]
+      if (!chosen) return prev
       rerollCountRef.current = 0
       const offers = generateShopOffers(prev.ownedGarnishes, prev.currentShift + 1, prev.participantCount, 4)
-      return { ...prev, pendingShopOffers: offers }
+      return {
+        ...prev,
+        chosenPath: chosen,
+        pendingPathCards: undefined,
+        pendingShopOffers: offers,
+      }
     })
     setScreen('adventurepantryshop')
   }, [setScreen])
@@ -317,18 +358,24 @@ export function useAdventureRun(
         ? liveRoster.length
         : prev.participantCount
 
+      // Apply the chosen path card's goal delta to the next shift's goal.
+      const baseGoal = getAdventureGoal(nextShift, nextParticipantCount)
+      const goalDelta = prev.chosenPath?.goalDelta ?? 0
+      const adjustedGoal = Math.round(baseGoal * (1 + goalDelta) / 5) * 5
+
       const updatedRun: AdventureRun = {
         ...prev,
         currentShift: nextShift,
         unlockedRecipes: newUnlocked,
         currentRecipes,
-        currentGoal: getAdventureGoal(nextShift, nextParticipantCount),
+        currentGoal: adjustedGoal,
         participantCount: nextParticipantCount,
         pendingShopOffers: undefined,
       }
 
       // Dispatch the new shift's RESET using the updated run.
-      dispatch(buildShiftReset(updatedRun, undefined, undefined))
+      // Pass the chosen path card so its boss debuff (if any) is applied.
+      dispatch(buildShiftReset(updatedRun, prev.chosenPath))
       // PR-2: events kick in from S3 onward via path-card modifiers.
       // PR-1: keep events off for the whole run.
       setActiveEventOptions(EVENTS_OFF)
@@ -348,19 +395,20 @@ export function useAdventureRun(
     setAdventureBestRun(null)
   }, [])
 
-  // ── Back-compat alias kept for App.tsx import; routes to openPantryShop ────
+  // ── Shift-passed "Next" CTA routes through path pick. ─────────────────────
 
-  const handleShiftPassedNext = openPantryShop
+  const handleShiftPassedNext = openPathPick
 
   return {
     // State
     adventureRun, setAdventureRun, adventureRunRef,
     adventureBestRun, isNewBestAdventureRun, setIsNewBestAdventureRun,
 
-    // PR-1 flow callbacks
+    // PR-1 / PR-2 flow callbacks
     startAdventure,
     handleShiftEndDone,
-    openPantryShop, handleShiftPassedNext,
+    openPathPick, confirmPathCard,
+    handleShiftPassedNext,
     purchaseGarnish, rerollShopOffers, closeShop,
     getRerollPrice: () => getRerollPrice(rerollCountRef.current, adventureRunRef.current?.participantCount ?? 1),
 

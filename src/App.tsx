@@ -26,6 +26,7 @@ import AdventureBriefing from './components/AdventureBriefing'
 import AdventureCuisinePick from './components/AdventureCuisinePick'
 import AdventureLobby from './components/AdventureLobby'
 import AdventurePantryShop from './components/AdventurePantryShop'
+import AdventurePathPick from './components/AdventurePathPick'
 import AdventureRunEnd from './components/AdventureRunEnd'
 import AdventureShiftPassed from './components/AdventureShiftPassed'
 import TutorialModal from './components/TutorialModal'
@@ -38,7 +39,7 @@ import CreditsScreen from './components/CreditsScreen'
 import Toast from './components/Toast'
 import PlaysetPicker from './components/PlaysetPicker'
 import { DIFFICULTY_PRESETS, type Playset, type Difficulty } from './data/playsets'
-import { mergePlayerStats } from './data/adventureMode'
+import { getAdventureGoal, mergePlayerStats } from './data/adventureMode'
 import GameplayScreen from './components/GameplayScreen'
 import LocalPlayScreen from './components/LocalPlayScreen'
 import { DEFAULT_GAME_OPTIONS } from './state/defaultOptions'
@@ -141,7 +142,7 @@ export default function App() {
     adventureRun, setAdventureRun, adventureRunRef, adventureBestRun,
     isNewBestAdventureRun, startAdventure,
     handleShiftEndDone, resetAdventureBestRun,
-    openPantryShop, purchaseGarnish, rerollShopOffers, closeShop, getRerollPrice,
+    openPathPick, confirmPathCard, purchaseGarnish, rerollShopOffers, closeShop, getRerollPrice,
   } = useAdventureRun(dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, finalStatsRef, adventureLobbyRef)
 
   // Vote-screen chat interception: the active vote-driven screen (e.g. PantryShop)
@@ -450,7 +451,11 @@ export default function App() {
       return
     }
     // Adventure choice-vote screens: route !1/!2/... to the active vote handler.
-    if (screenRef.current === 'adventurepantryshop' || screenRef.current === 'adventurecuisinepick') {
+    if (
+      screenRef.current === 'adventurepantryshop'
+      || screenRef.current === 'adventurecuisinepick'
+      || screenRef.current === 'adventurepathpick'
+    ) {
       if (adventureVoteRef.current?.(user, text)) return
     }
     // Adventure run is in progress: !leave / !kick still update the roster; the
@@ -505,7 +510,11 @@ export default function App() {
       if (result === 'start') handleAdventureLobbyStart()
       return
     }
-    if (screenRef.current === 'adventurepantryshop' || screenRef.current === 'adventurecuisinepick') {
+    if (
+      screenRef.current === 'adventurepantryshop'
+      || screenRef.current === 'adventurecuisinepick'
+      || screenRef.current === 'adventurepathpick'
+    ) {
       if (adventureVoteRef.current?.('You', text)) return
     }
     if (adventureRunRef.current) {
@@ -669,6 +678,16 @@ export default function App() {
         voteRef={adventureVoteRef}
       />
     )
+  } else if (screen === 'adventurepathpick' && adventureRun?.pendingPathCards) {
+    content = (
+      <AdventurePathPick
+        cards={adventureRun.pendingPathCards}
+        shiftNumber={adventureRun.currentShift + 1}
+        baseGoal={getAdventureGoal(adventureRun.currentShift + 1, adventureRun.participantCount)}
+        onConfirm={confirmPathCard}
+        voteRef={adventureVoteRef}
+      />
+    )
   } else if (screen === 'adventurebriefing') {
     content = (
       <AdventureBriefing
@@ -757,7 +776,7 @@ export default function App() {
         served={finalStats.served}
         lost={finalStats.lost}
         playerStats={finalStats.playerStats}
-        onNext={openPantryShop}
+        onNext={openPathPick}
         onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('menu') }}
       />
     )

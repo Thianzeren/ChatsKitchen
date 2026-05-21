@@ -29,6 +29,9 @@ export type GameAction =
       freeExtinguishes?: number
       recipePriceModifier?: Record<string, number>
       eventThresholdMultiplier?: number
+      bossMoneyMultiplier?: number
+      cooldownMultiplier?: number
+      disabledStations?: string[]
       activeGarnishes?: string[]
     }
   | { type: 'SET_STATION_HEAT'; stationId: string; heat: number }
@@ -175,6 +178,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         freeExtinguishes: action.freeExtinguishes,
         recipePriceModifier: action.recipePriceModifier,
         eventThresholdMultiplier: action.eventThresholdMultiplier,
+        bossMoneyMultiplier: action.bossMoneyMultiplier,
+        cooldownMultiplier: action.cooldownMultiplier,
+        disabledStations: action.disabledStations && action.disabledStations.length > 0
+          ? action.disabledStations
+          : undefined,
         activeGarnishes: active.length > 0 ? active : undefined,
         firstOrderServedThisShift: false,
       }
@@ -231,7 +239,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (isUserBusy(state, user)) return addMsg(state, 'KITCHEN', `${user} is busy cooking and can't cool right now!`, 'error')
 
       const cooldown = state.userCooldowns[user] ?? 0
-      if (Date.now() - cooldown < 1500) return addMsg(state, 'KITCHEN', `${user} is on cooldown!`, 'error')
+      const coolCooldownMs = 1500 * (state.cooldownMultiplier ?? 1)
+      if (Date.now() - cooldown < coolCooldownMs) return addMsg(state, 'KITCHEN', `${user} is on cooldown!`, 'error')
 
       const coolAmount = (40 + (state.coolAmountBonus ?? 0)) + Math.floor(Math.random() * 21)  // 40–60 + bonus
       const newHeat = Math.max(0, station.heat - coolAmount)
@@ -279,7 +288,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * 30))
       const baseReward = recipe.reward + timeBonus
       const recipeMul = state.recipePriceModifier?.[order.dish] ?? 1
-      let multiplier = (state.moneyMultiplier?.multiplier ?? 1) * recipeMul
+      const bossMoneyMul = state.bossMoneyMultiplier ?? 1
+      let multiplier = (state.moneyMultiplier?.multiplier ?? 1) * recipeMul * bossMoneyMul
 
       // ── Triggered garnish multipliers (multiplicative with each other) ──
       const active = state.activeGarnishes ?? []
@@ -328,7 +338,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const { user, action: cookAction, target, now } = action
 
       // Cooldown check
-      if (state.userCooldowns[user] && now - state.userCooldowns[user] < 1500) return state
+      const cookCooldownMs = 1500 * (state.cooldownMultiplier ?? 1)
+      if (state.userCooldowns[user] && now - state.userCooldowns[user] < cookCooldownMs) return state
       const withCooldown = { ...state, userCooldowns: { ...state.userCooldowns, [user]: now } }
 
       // Per-user busy check (belt-and-suspenders: also scan station slots in case activeUsers is stale)

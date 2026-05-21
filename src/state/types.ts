@@ -18,10 +18,12 @@ export interface ShopOffer {
 export interface PathCard {
   id: string
   label: string
-  goalDelta: number
-  modifierIds: string[]
+  archetype: 'easy' | 'risk' | 'boss'
+  goalDelta: number                       // multiplicative; -0.15 = 15% easier, +0.10 = 10% harder
+  modifierIds: string[]                   // reserved for PR 3 mini-modifiers
   rewardOnPass?: { cashBonus?: number; freeGarnishTier?: GarnishTier; freeRecipe?: boolean }
   bossDebuffId?: string
+  bossPayload?: { disabledStationId?: string }   // pre-rolled by the generator for deterministic display
 }
 export type TutorialDestination = 'menu' | 'playsetpicker' | 'freeplaysetup'
 
@@ -265,6 +267,8 @@ export interface GameState {
   freeExtinguishes?: number            // 0 default; auto-resolves overheat & decrements
   recipePriceModifier?: Record<string, number>   // recipe key → reward multiplier
   eventThresholdMultiplier?: number    // 1 default; <1 = easier event resolution
+  bossMoneyMultiplier?: number         // 1 default; Picky Critic boss = 0.75
+  cooldownMultiplier?: number          // 1 default; Understaffed boss = 1.5
   // Triggered-garnish runtime state
   activeGarnishes?: string[]                  // garnish ids active for this shift
   firstOrderServedThisShift?: boolean         // First Bite, Big Tippers — flips after first SERVE
