@@ -1,5 +1,7 @@
 import { AdventureRun, AdventureBestRun, calcPlayerScore } from '../state/types'
 import { RECIPES, NAME_COLORS, hashStr } from '../data/recipes'
+import { GARNISHES } from '../data/adventureGarnishes'
+import { BOSSES, BossId } from '../data/adventureBosses'
 import FoodIcon from './FoodIcon'
 import styles from './AdventureRunEnd.module.css'
 
@@ -16,7 +18,10 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
   const totalMoney   = run.shiftResults.reduce((sum, r) => sum + r.moneyEarned, 0)
   const totalServed  = run.shiftResults.reduce((sum, r) => sum + r.served, 0)
   const totalLost    = run.shiftResults.reduce((sum, r) => sum + r.lost, 0)
-  const totalGarnishes = run.ownedGarnishes.length
+
+  const ownedGarnishes = run.ownedGarnishes
+    .map(p => GARNISHES[p.garnishId])
+    .filter((g): g is NonNullable<typeof g> => Boolean(g))
 
   const leaderboard = Object.entries(run.accumulatedPlayerStats)
     .sort(([, a], [, b]) => calcPlayerScore(b) - calcPlayerScore(a))
@@ -44,11 +49,21 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
             <div className={styles.statValue}>{totalLost}</div>
             <div className={styles.statLabel}>Lost</div>
           </div>
-          <div className={styles.stat}>
-            <div className={styles.statValue}>{totalGarnishes}</div>
-            <div className={styles.statLabel}>Garnishes Collected</div>
-          </div>
         </div>
+
+        {ownedGarnishes.length > 0 && (
+          <div className={styles.garnishesPanel}>
+            <div className={styles.garnishesTitle}>Garnishes Collected · {ownedGarnishes.length}</div>
+            <div className={styles.garnishChips}>
+              {ownedGarnishes.map(g => (
+                <span key={g.id} className={`${styles.garnishChip} ${styles[`tier_${g.tier}`]}`} title={g.description}>
+                  <span className={styles.garnishChipIcon}>{g.icon}</span>
+                  {g.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {isNewBestRun && (
           <div className={styles.newBest}>New Best Run!</div>
@@ -78,22 +93,28 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
             <span className={styles.historyEarned}>Earned</span>
             <span className={styles.historyResult}>Result</span>
           </div>
-          {run.shiftResults.map(r => (
-            <div
-              key={r.shiftNumber}
-              className={`${styles.historyRow} ${!r.passed ? styles.historyRowFail : ''}`}
-            >
-              <span className={styles.historyShift}>{r.shiftNumber}</span>
-              <span className={styles.historyRecipes}>
-                {r.recipes.map(k => <FoodIcon key={k} icon={RECIPES[k]?.emoji ?? '?'} size={18} />)}
-              </span>
-              <span className={styles.historyGoal}>${r.goalMoney}</span>
-              <span className={styles.historyEarned}>${r.moneyEarned}</span>
-              <span className={r.passed ? styles.resultPass : styles.resultFail}>
-                {r.passed ? 'PASS' : 'FAIL'}
-              </span>
-            </div>
-          ))}
+          {run.shiftResults.map(r => {
+            const boss = r.bossDebuffId ? BOSSES[r.bossDebuffId as BossId] : null
+            return (
+              <div
+                key={r.shiftNumber}
+                className={`${styles.historyRow} ${!r.passed ? styles.historyRowFail : ''}`}
+              >
+                <span className={styles.historyShift}>{r.shiftNumber}</span>
+                <span className={styles.historyRecipes}>
+                  {boss && (
+                    <span className={styles.historyBoss} title={`${boss.name} — ${boss.description}`}>{boss.icon}</span>
+                  )}
+                  {r.recipes.map(k => <FoodIcon key={k} icon={RECIPES[k]?.emoji ?? '?'} size={18} />)}
+                </span>
+                <span className={styles.historyGoal}>${r.goalMoney}</span>
+                <span className={styles.historyEarned}>${r.moneyEarned}</span>
+                <span className={r.passed ? styles.resultPass : styles.resultFail}>
+                  {r.passed ? 'PASS' : 'FAIL'}
+                </span>
+              </div>
+            )
+          })}
         </div>
 
         <div className={styles.leaderboard}>

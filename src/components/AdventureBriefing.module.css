@@ -54,6 +54,83 @@
   width: max-content;
 }
 
+/* ── Active boss panel (shown when chosenPath.bossDebuffId is set) ──────── */
+
+.bossPanel {
+  background: linear-gradient(180deg, rgba(217, 79, 79, 0.10) 0%, rgba(217, 79, 79, 0.04) 100%);
+  border: 2px solid rgba(217, 79, 79, 0.5);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 28px rgba(217, 79, 79, 0.18);
+  animation: bossPulse 3s ease-in-out infinite;
+}
+
+@keyframes bossPulse {
+  0%, 100% { box-shadow: 0 0 28px rgba(217, 79, 79, 0.18); }
+  50%      { box-shadow: 0 0 38px rgba(217, 79, 79, 0.30); }
+}
+
+.bossPanelHeader {
+  background: linear-gradient(90deg, #8a2828, #d94f4f, #8a2828);
+  background-size: 220% 100%;
+  animation: bossHeaderShimmer 4s linear infinite;
+  color: #fff;
+  text-align: center;
+  font-family: 'Lilita One', cursive;
+  font-size: 18px;
+  letter-spacing: 3px;
+  padding: 8px 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes bossHeaderShimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 220% 50%; }
+}
+
+.bossPanelBody {
+  display: flex;
+  gap: 16px;
+  padding: 16px 18px 18px;
+}
+
+.bossPanelIcon {
+  font-size: 56px;
+  line-height: 1;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.4));
+  flex-shrink: 0;
+}
+
+.bossPanelText {
+  flex: 1;
+  min-width: 0;
+}
+
+.bossPanelName {
+  font-family: 'Lilita One', cursive;
+  font-size: 28px;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.bossPanelDesc {
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--base-fs);
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.bossPanelExtra {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 18px;
+  color: #e07030;
+  margin-top: 10px;
+}
+
+.bossPanelExtra strong {
+  color: #fff;
+}
+
 .cashBadge {
   font-family: 'Fredoka', sans-serif;
   font-size: var(--base-fs);
