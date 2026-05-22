@@ -3,6 +3,7 @@ import { PathCard } from '../state/types'
 import { useChoiceVote } from '../hooks/useChoiceVote'
 import { BOSSES, BossId } from '../data/adventureBosses'
 import { STATION_DEFS } from '../data/recipes'
+import AdventureProgressDots from './AdventureProgressDots'
 import styles from './AdventurePathPick.module.css'
 
 const VOTE_DURATION_MS = 30_000
@@ -44,6 +45,7 @@ export default function AdventurePathPick({ cards, shiftNumber, baseGoal, onConf
               : <>Two ways to play the next shift. Type <code>!1</code> or <code>!2</code> to vote.</>}
           </div>
         </div>
+        <AdventureProgressDots currentShift={shiftNumber} />
       </div>
 
       <div className={`${styles.timerBar} ${voteState.paused ? styles.timerBarPaused : ''}`}>
