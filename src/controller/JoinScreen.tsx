@@ -14,7 +14,8 @@ export default function JoinScreen({ onCredentials, error, loading }: Props) {
   const [nickname, setNickname] = useState('')
   const [localError, setLocalError] = useState<string | null>(null)
 
-  // Auto-rejoin from sessionStorage on mount
+  // Auto-rejoin from sessionStorage on mount — intentionally runs once.
+  // Re-running on urlRoom/onCredentials changes would loop the rejoin attempt.
   useEffect(() => {
     const stored = sessionStorage.getItem(SESSION_KEY)
     if (!stored) return
@@ -26,6 +27,7 @@ export default function JoinScreen({ onCredentials, error, loading }: Props) {
     } catch {
       sessionStorage.removeItem(SESSION_KEY)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleJoin = () => {

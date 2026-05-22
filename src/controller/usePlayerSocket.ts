@@ -55,6 +55,8 @@ export function usePlayerSocket({ credentials, onJoined, onSnapshot, onRoomClose
     s.on('room:closed', () => onRoomClosedRef.current())
 
     return () => { s.disconnect(); socketRef.current = null; roomRef.current = null; setConnected(false) }
+    // Intentionally narrow deps: a new credentials object reference shouldn't force a reconnect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [credentials?.code, credentials?.nickname])
 
   const send = (command: string) => {

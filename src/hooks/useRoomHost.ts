@@ -68,9 +68,10 @@ export function useRoomHost({ enabled, onPlayerCommand, onPlayerJoined, onPlayer
       onPlayerCommandRef.current(e.nickname, e.command)
     })
 
+    const timers = gracePeriodTimers.current
     return () => {
-      gracePeriodTimers.current.forEach(t => clearTimeout(t))
-      gracePeriodTimers.current.clear()
+      timers.forEach(t => clearTimeout(t))
+      timers.clear()
       s.disconnect()
       socketRef.current = null
       codeRef.current = null
