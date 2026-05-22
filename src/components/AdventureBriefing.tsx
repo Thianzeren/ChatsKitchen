@@ -6,6 +6,7 @@ import { getAdventureShiftDuration, isBossShift, ADVENTURE_TOTAL_SHIFTS } from '
 import { GARNISHES, applyAllGarnishes } from '../data/adventureGarnishes'
 import { BOSSES, BossId } from '../data/adventureBosses'
 import AdventureExitConfirm from './AdventureExitConfirm'
+import AdventureProgressDots from './AdventureProgressDots'
 import { TwitchStatus } from '../hooks/useTwitchChat'
 import TwitchStatusPill from './TwitchStatusPill'
 import styles from './AdventureBriefing.module.css'
@@ -68,25 +69,7 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitc
           <span className={styles.shiftTotal}> / {ADVENTURE_TOTAL_SHIFTS}</span>
         </h1>
 
-        <div className={styles.progressDots}>
-          {Array.from({ length: ADVENTURE_TOTAL_SHIFTS }, (_, i) => {
-            const shiftNum = i + 1
-            const isPast = shiftNum < run.currentShift
-            const isCurrent = shiftNum === run.currentShift
-            const isBossDot = isBossShift(shiftNum)
-            const cls = [
-              styles.progressDot,
-              isPast && styles.progressDotDone,
-              isCurrent && styles.progressDotCurrent,
-              isBossDot && styles.progressDotBoss,
-            ].filter(Boolean).join(' ')
-            return (
-              <span key={shiftNum} className={cls} title={`Shift ${shiftNum}${isBossDot ? ' (Boss)' : ''}`}>
-                {isBossDot ? '★' : shiftNum}
-              </span>
-            )
-          })}
-        </div>
+        <AdventureProgressDots currentShift={run.currentShift} />
 
         {isBoss && !chosenBoss && <div className={styles.bossTag}>BOSS SHIFT</div>}
         <div className={styles.goalLine}>Goal: ${run.currentGoal}</div>

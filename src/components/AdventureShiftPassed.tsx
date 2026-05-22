@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { PlayerStats, calcPlayerScore } from '../state/types'
 import { NAME_COLORS, hashStr } from '../data/recipes'
 import AdventureExitConfirm from './AdventureExitConfirm'
+import AdventureProgressDots from './AdventureProgressDots'
 import styles from './AdventureShiftPassed.module.css'
 
 interface Props {
@@ -27,6 +28,8 @@ export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, se
       {/* ── LEFT ── */}
       <div className={styles.leftCol}>
         <h1 className={styles.title}>Shift {shiftNumber} Passed!</h1>
+
+        <AdventureProgressDots currentShift={shiftNumber} />
 
         <div className={styles.goalLine}>
           <span className={styles.goalPassed}>✓ PASSED</span>
