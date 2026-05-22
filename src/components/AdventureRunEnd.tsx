@@ -18,6 +18,7 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
   const totalMoney   = run.shiftResults.reduce((sum, r) => sum + r.moneyEarned, 0)
   const totalServed  = run.shiftResults.reduce((sum, r) => sum + r.served, 0)
   const totalLost    = run.shiftResults.reduce((sum, r) => sum + r.lost, 0)
+  const totalBonuses = run.shiftResults.reduce((sum, r) => sum + (r.cashBonusEarned ?? 0), 0)
 
   const ownedGarnishes = run.ownedGarnishes
     .map(p => GARNISHES[p.garnishId])
@@ -49,6 +50,12 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
             <div className={styles.statValue}>{totalLost}</div>
             <div className={styles.statLabel}>Lost</div>
           </div>
+          {totalBonuses > 0 && (
+            <div className={styles.stat}>
+              <div className={styles.statValue}>+${totalBonuses}</div>
+              <div className={styles.statLabel}>Path Bonuses</div>
+            </div>
+          )}
         </div>
 
         {ownedGarnishes.length > 0 && (
