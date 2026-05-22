@@ -168,6 +168,7 @@ export interface ShiftResult {
   chosenPathCardId?: string
   bossDebuffId?: string
   garnishesCollectedThisShift?: string[]
+  cashBonusEarned?: number             // path-card cashBonus added on pass (0 if none)
 }
 
 export interface AdventureRun {

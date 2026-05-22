@@ -106,6 +106,9 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
                     <span className={styles.historyBoss} title={`${boss.name} — ${boss.description}`}>{boss.icon}</span>
                   )}
                   {r.recipes.map(k => <FoodIcon key={k} icon={RECIPES[k]?.emoji ?? '?'} size={18} />)}
+                  {r.cashBonusEarned && r.cashBonusEarned > 0 && (
+                    <span className={styles.historyBonus} title="Path-card cash bonus">+${r.cashBonusEarned}</span>
+                  )}
                 </span>
                 <span className={styles.historyGoal}>${r.goalMoney}</span>
                 <span className={styles.historyEarned}>${r.moneyEarned}</span>

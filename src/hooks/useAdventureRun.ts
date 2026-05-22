@@ -209,6 +209,7 @@ export function useAdventureRun(
       passed,
       chosenPathCardId: run.chosenPath?.id,
       bossDebuffId: run.chosenPath?.bossDebuffId,
+      cashBonusEarned: cashBonus > 0 ? cashBonus : undefined,
     }
     const isFinalShift = run.currentShift >= ADVENTURE_TOTAL_SHIFTS
     const updatedRun: AdventureRun = {

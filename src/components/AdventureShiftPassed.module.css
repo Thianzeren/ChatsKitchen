@@ -89,6 +89,35 @@
   max-width: 360px;
 }
 
+.bonusChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(196, 160, 32, 0.15) 0%, rgba(216, 116, 40, 0.10) 100%);
+  border: 1px solid rgba(196, 160, 32, 0.45);
+  border-radius: 10px;
+  padding: 10px 16px;
+  width: max-content;
+  box-shadow: 0 0 16px rgba(196, 160, 32, 0.18);
+}
+
+.bonusIcon {
+  font-size: 22px;
+}
+
+.bonusText {
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--base-fs);
+  color: var(--text);
+}
+
+.bonusText strong {
+  color: #c4a020;
+  font-family: 'Lilita One', cursive;
+  font-size: 26px;
+  margin-left: 4px;
+}
+
 .buttons {
   display: flex;
   flex-direction: column;

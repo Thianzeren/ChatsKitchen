@@ -107,6 +107,18 @@
   filter: drop-shadow(0 2px 4px rgba(217, 79, 79, 0.4));
 }
 
+.historyBonus {
+  font-family: 'Space Mono', monospace;
+  font-size: 16px;
+  color: #c4a020;
+  font-weight: 700;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid rgba(196, 160, 32, 0.45);
+  border-radius: 6px;
+  background: rgba(196, 160, 32, 0.08);
+}
+
 .statValue {
   font-family: 'Lilita One', cursive;
   font-size: 36px;

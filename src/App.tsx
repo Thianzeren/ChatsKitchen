@@ -775,6 +775,7 @@ export default function App() {
         goalMoney={adventureRun!.currentGoal}
         served={finalStats.served}
         lost={finalStats.lost}
+        cashBonus={adventureRun!.shiftResults[adventureRun!.shiftResults.length - 1]?.cashBonusEarned ?? 0}
         playerStats={finalStats.playerStats}
         onNext={openPathPick}
         onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('menu') }}
