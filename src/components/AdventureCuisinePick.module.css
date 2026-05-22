@@ -195,12 +195,55 @@
   padding: 3px 12px;
 }
 
-.cardFlag {
-  font-size: 56px;
+.cardFlagChip {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 24px;
   line-height: 1;
-  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.35));
-  margin-top: 8px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
+
+.cardHero {
+  font-size: 72px;
+  line-height: 1;
+  margin-top: 14px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
+}
+
+.cardRecipes {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+/* ── Per-cuisine accent ringing (subtle border + glow tint) ─────────────── */
+
+.cuisine_western     { border-color: rgba(216, 116, 40, 0.55); }
+.cuisine_western:hover, .cuisine_western.cardHovered { box-shadow: 0 8px 22px rgba(216, 116, 40, 0.30); }
+
+.cuisine_chinese     { border-color: rgba(217, 79, 79, 0.55); }
+.cuisine_chinese:hover, .cuisine_chinese.cardHovered { box-shadow: 0 8px 22px rgba(217, 79, 79, 0.30); }
+
+.cuisine_korean      { border-color: rgba(232, 88, 96, 0.55); }
+.cuisine_korean:hover, .cuisine_korean.cardHovered { box-shadow: 0 8px 22px rgba(232, 88, 96, 0.30); }
+
+.cuisine_japanese    { border-color: rgba(120, 168, 220, 0.55); }
+.cuisine_japanese:hover, .cuisine_japanese.cardHovered { box-shadow: 0 8px 22px rgba(120, 168, 220, 0.30); }
+
+.cuisine_japanese_bakery { border-color: rgba(232, 192, 160, 0.6); }
+.cuisine_japanese_bakery:hover, .cuisine_japanese_bakery.cardHovered { box-shadow: 0 8px 22px rgba(232, 192, 160, 0.30); }
+
+.cuisine_sg          { border-color: rgba(106, 170, 94, 0.55); }
+.cuisine_sg:hover, .cuisine_sg.cardHovered { box-shadow: 0 8px 22px rgba(106, 170, 94, 0.30); }
 
 .cardName {
   font-family: 'Lilita One', cursive;

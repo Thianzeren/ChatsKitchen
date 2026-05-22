@@ -3,6 +3,8 @@ import { PathCard } from '../state/types'
 import { useChoiceVote } from '../hooks/useChoiceVote'
 import { BOSSES, BossId } from '../data/adventureBosses'
 import { STATION_DEFS } from '../data/recipes'
+import { getAudioManager } from '../audio/AudioManager'
+import AdventureProgressDots from './AdventureProgressDots'
 import styles from './AdventurePathPick.module.css'
 
 const VOTE_DURATION_MS = 30_000
@@ -20,6 +22,10 @@ export default function AdventurePathPick({ cards, shiftNumber, baseGoal, onConf
     { numOptions: 2, durationMs: VOTE_DURATION_MS, allowDoneCommand: false },
     (res) => {
       const winnerIdx = res.winnerIdx >= 0 ? res.winnerIdx : 0
+      // Use error-buzzer for boss-card selection (you just locked in a debuff),
+      // serve-success for the safer easy/risk picks.
+      const isBoss = cards[winnerIdx]?.archetype === 'boss'
+      getAudioManager().playSfx(isBoss ? 'error-buzzer' : 'serve-success')
       onConfirm(winnerIdx)
     },
   )
@@ -44,6 +50,7 @@ export default function AdventurePathPick({ cards, shiftNumber, baseGoal, onConf
               : <>Two ways to play the next shift. Type <code>!1</code> or <code>!2</code> to vote.</>}
           </div>
         </div>
+        <AdventureProgressDots currentShift={shiftNumber} />
       </div>
 
       <div className={`${styles.timerBar} ${voteState.paused ? styles.timerBarPaused : ''}`}>
@@ -138,11 +145,10 @@ function PathCardView({ card, idx, baseGoal, votes, totalVotes, votePct, onClick
       )}
 
       {!boss && (
-        <div className={styles.flavor}>
-          {card.archetype === 'easy'
-            ? 'A breather shift. Lower goal, no extras.'
-            : 'Same goal, cash bonus on pass.'}
-        </div>
+        <>
+          {card.icon && <div className={styles.variantIcon}>{card.icon}</div>}
+          <div className={styles.flavor}>{card.flavor}</div>
+        </>
       )}
 
       <div className={styles.statsRow}>

@@ -84,7 +84,7 @@ export function usePvpLobby(
       })
       showToast(`↔️ ${target} → ${team}`)
     }
-  }, [showToast])
+  }, [showToast, balanceLobby])
 
   // Handles !red / !blue / !join / !leave from chat. Returns true if the command was consumed.
   const handleLobbyJoin = useCallback((user: string, cmd: string) => {

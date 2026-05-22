@@ -89,7 +89,7 @@ io.on('connection', (socket: Socket) => {
     room.locked = false
   })
 
-  socket.on('player:join', (msg: PlayerJoinMsg, ack: (r: any) => void) => {
+  socket.on('player:join', (msg: PlayerJoinMsg, ack: (r: { playerId?: string; nickname?: string; error?: string }) => void) => {
     const room = rooms.get(msg.code)
     if (!room) return ack({ error: 'Room not found' })
 

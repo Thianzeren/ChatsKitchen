@@ -46,6 +46,79 @@
   text-align: center;
 }
 
+/* ── Garnishes-collected panel ─────────────────────────────────────────── */
+
+.garnishesPanel {
+  background: var(--station-bg);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  max-width: 460px;
+}
+
+.garnishesTitle {
+  font-family: 'Lilita One', cursive;
+  font-size: 22px;
+  color: var(--text-warm);
+  margin-bottom: 10px;
+}
+
+.garnishChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.garnishChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.garnishChipIcon {
+  font-size: 18px;
+}
+
+.tier_common {
+  border-color: rgba(106, 170, 94, 0.5);
+}
+
+.tier_rare {
+  border-color: rgba(200, 133, 216, 0.5);
+}
+
+.tier_legendary {
+  border-color: rgba(232, 160, 42, 0.6);
+  box-shadow: 0 0 12px rgba(232, 160, 42, 0.18);
+}
+
+/* Boss icon in shift history ─────────────────────────────────────────── */
+
+.historyBoss {
+  font-size: 22px;
+  margin-right: 4px;
+  filter: drop-shadow(0 2px 4px rgba(217, 79, 79, 0.4));
+}
+
+.historyBonus {
+  font-family: 'Space Mono', monospace;
+  font-size: 16px;
+  color: #c4a020;
+  font-weight: 700;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid rgba(196, 160, 32, 0.45);
+  border-radius: 6px;
+  background: rgba(196, 160, 32, 0.08);
+}
+
 .statValue {
   font-family: 'Lilita One', cursive;
   font-size: 36px;

@@ -20,10 +20,11 @@ export interface PathCard {
   label: string
   archetype: 'easy' | 'risk' | 'boss'
   goalDelta: number                       // multiplicative; -0.15 = 15% easier, +0.10 = 10% harder
-  modifierIds: string[]                   // reserved for PR 3 mini-modifiers
   rewardOnPass?: { cashBonus?: number; freeGarnishTier?: GarnishTier; freeRecipe?: boolean }
   bossDebuffId?: string
   bossPayload?: { disabledStationId?: string }   // pre-rolled by the generator for deterministic display
+  flavor?: string                          // one-line subtitle shown on the card
+  icon?: string                            // emoji shown on the card (set for easy/risk variants; bosses use their own icon)
 }
 export type TutorialDestination = 'menu' | 'playsetpicker' | 'freeplaysetup'
 
@@ -166,7 +167,7 @@ export interface ShiftResult {
   passed: boolean
   chosenPathCardId?: string
   bossDebuffId?: string
-  garnishesCollectedThisShift?: string[]
+  cashBonusEarned?: number             // path-card cashBonus added on pass (0 if none)
 }
 
 export interface AdventureRun {

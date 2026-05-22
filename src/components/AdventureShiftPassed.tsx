@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { PlayerStats, calcPlayerScore } from '../state/types'
 import { NAME_COLORS, hashStr } from '../data/recipes'
 import AdventureExitConfirm from './AdventureExitConfirm'
+import AdventureProgressDots from './AdventureProgressDots'
 import styles from './AdventureShiftPassed.module.css'
 
 interface Props {
@@ -10,12 +11,13 @@ interface Props {
   goalMoney: number
   served: number
   lost: number
+  cashBonus: number
   playerStats: Record<string, PlayerStats>
   onNext: () => void
   onMenu: () => void
 }
 
-export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, served, lost, playerStats, onNext, onMenu }: Props) {
+export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, served, lost, cashBonus, playerStats, onNext, onMenu }: Props) {
   const [confirmExit, setConfirmExit] = useState(false)
 
   const leaderboard = Object.entries(playerStats)
@@ -26,6 +28,8 @@ export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, se
       {/* ── LEFT ── */}
       <div className={styles.leftCol}>
         <h1 className={styles.title}>Shift {shiftNumber} Passed!</h1>
+
+        <AdventureProgressDots currentShift={shiftNumber} />
 
         <div className={styles.goalLine}>
           <span className={styles.goalPassed}>✓ PASSED</span>
@@ -46,6 +50,13 @@ export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, se
             <div className={styles.statLabel}>Orders Lost</div>
           </div>
         </div>
+
+        {cashBonus > 0 && (
+          <div className={styles.bonusChip}>
+            <span className={styles.bonusIcon}>💰</span>
+            <span className={styles.bonusText}>Path bonus: <strong>+${cashBonus}</strong></span>
+          </div>
+        )}
 
         <div className={styles.earnedNote}>
           Earnings carry into the run bank — spend them in the Pantry next.

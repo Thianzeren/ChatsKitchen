@@ -2,6 +2,7 @@ import { useEffect, useState, Fragment } from 'react'
 import { CuisineId } from '../state/types'
 import { useChoiceVote } from '../hooks/useChoiceVote'
 import { RECIPES, RECIPE_SETS } from '../data/recipes'
+import { getAudioManager } from '../audio/AudioManager'
 import FoodIcon from './FoodIcon'
 import styles from './AdventureCuisinePick.module.css'
 
@@ -33,6 +34,7 @@ export default function AdventureCuisinePick({ rosterSize, onConfirm, onBack, vo
     { numOptions: CUISINE_ORDER.length, durationMs: VOTE_DURATION_MS, allowDoneCommand: false },
     (res) => {
       const winnerIdx = res.winnerIdx >= 0 ? res.winnerIdx : 0
+      getAudioManager().playSfx('serve-success')
       onConfirm(CUISINE_ORDER[winnerIdx].id)
     },
   )
@@ -88,9 +90,9 @@ export default function AdventureCuisinePick({ rosterSize, onConfirm, onBack, vo
         >‹</button>
 
         <div className={styles.cardsViewport}>
-          {CUISINE_ORDER.slice(carouselStart, carouselStart + VISIBLE).map((entry) => {
-            // Resolve the absolute idx so !N keys and tallies match the static order
-            const absoluteIdx = CUISINE_ORDER.findIndex(e => e.id === entry.id)
+          {CUISINE_ORDER.slice(carouselStart, carouselStart + VISIBLE).map((entry, relativeIdx) => {
+            // Absolute idx is what !N keys and vote tallies use; the slice is just for what's visible.
+            const absoluteIdx = carouselStart + relativeIdx
             const set = RECIPE_SETS.find(s => s.id === entry.setId)
             if (!set) return null
             const votes = voteState.tallies[absoluteIdx] ?? 0
@@ -100,15 +102,22 @@ export default function AdventureCuisinePick({ rosterSize, onConfirm, onBack, vo
               <button
                 key={entry.id}
                 type="button"
-                className={`${styles.card} ${isHovered ? styles.cardHovered : ''}`}
+                className={`${styles.card} ${styles[`cuisine_${entry.id}`]} ${isHovered ? styles.cardHovered : ''}`}
                 onClick={() => { if (!voteState.resolved) forceResolve(absoluteIdx) }}
                 onMouseEnter={() => setHoveredIdx(absoluteIdx)}
                 onMouseLeave={() => setHoveredIdx(null)}
                 disabled={voteState.resolved}
               >
                 <div className={styles.cardKey}>!{absoluteIdx + 1}</div>
-                <div className={styles.cardFlag}>{set.flag}</div>
+                <div className={styles.cardFlagChip}>{set.flag}</div>
+                <div className={styles.cardHero}>{set.emoji}</div>
                 <div className={styles.cardName}>{set.name}</div>
+                <div className={styles.cardRecipes}>
+                  {set.recipeKeys.slice(0, 4).map(key => {
+                    const r = RECIPES[key]
+                    return r ? <FoodIcon key={key} icon={r.emoji} size={22} /> : null
+                  })}
+                </div>
                 <div className={styles.cardDescription}>{set.description}</div>
                 <div className={styles.cardFooter}>
                   <span className={styles.cardVotes}>{votes} {votes === 1 ? 'vote' : 'votes'}{totalVotes > 0 ? ` · ${pct}%` : ''}</span>

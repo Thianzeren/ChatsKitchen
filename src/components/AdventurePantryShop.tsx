@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { AdventureRun, ShopOffer } from '../state/types'
 import { useChoiceVote } from '../hooks/useChoiceVote'
 import { GARNISHES } from '../data/adventureGarnishes'
+import { getAudioManager } from '../audio/AudioManager'
 import styles from './AdventurePantryShop.module.css'
 
 const VOTE_DURATION_MS = 60_000
@@ -38,6 +39,9 @@ export default function AdventurePantryShop({ run, onPurchase, onReroll, onClose
         onClose()
         return
       }
+      // Tier-aware purchase sound: serve-success for legendary so chat hears the "win"
+      const sfx = winner.rarity === 'legendary' ? 'serve-success' : 'take-item'
+      getAudioManager().playSfx(sfx)
       onPurchase(res.winnerIdx)
       // Vote round auto-resets on the offers-changed effect below.
     },
@@ -78,7 +82,8 @@ export default function AdventurePantryShop({ run, onPurchase, onReroll, onClose
 
   const handleReroll = () => {
     if (!canAffordReroll) return
-    onReroll()
+    const ok = onReroll()
+    if (ok) getAudioManager().playSfx('cook-start')
   }
 
   const handleDone = () => {

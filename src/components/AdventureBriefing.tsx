@@ -1,10 +1,12 @@
 import { Fragment, useState } from 'react'
 import { AdventureRun, AdventureBestRun } from '../state/types'
-import { RECIPES } from '../data/recipes'
+import { RECIPES, STATION_DEFS } from '../data/recipes'
 import FoodIcon from './FoodIcon'
-import { getAdventureShiftDuration, isBossShift, ADVENTURE_TOTAL_SHIFTS } from '../data/adventureMode'
+import { ADVENTURE_SHIFT_DURATION, isBossShift, ADVENTURE_TOTAL_SHIFTS } from '../data/adventureMode'
 import { GARNISHES, applyAllGarnishes } from '../data/adventureGarnishes'
+import { BOSSES, BossId } from '../data/adventureBosses'
 import AdventureExitConfirm from './AdventureExitConfirm'
+import AdventureProgressDots from './AdventureProgressDots'
 import { TwitchStatus } from '../hooks/useTwitchChat'
 import TwitchStatusPill from './TwitchStatusPill'
 import styles from './AdventureBriefing.module.css'
@@ -29,7 +31,13 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitc
     ? run.shiftResults[run.shiftResults.length - 1]
     : null
   const isFirstShift = run.currentShift === 1
-  const boss = isBossShift(run.currentShift)
+  const isBoss = isBossShift(run.currentShift)
+  const chosenBoss = run.chosenPath?.bossDebuffId
+    ? BOSSES[run.chosenPath.bossDebuffId as BossId]
+    : null
+  const bossDisabledStation = run.chosenPath?.bossPayload?.disabledStationId
+    ? STATION_DEFS[run.chosenPath.bossPayload.disabledStationId]?.name
+    : null
 
   // Effective options for this shift (with all owned garnishes applied).
   const effective = applyAllGarnishes(run.ownedGarnishes, {
@@ -37,7 +45,7 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitc
     orderSpeed: 1,
     orderSpawnRate: 1,
   })
-  const shiftDurationMs = getAdventureShiftDuration()
+  const shiftDurationMs = ADVENTURE_SHIFT_DURATION
   const shiftMins = Math.floor(shiftDurationMs / 60_000)
   const shiftSecs = Math.round((shiftDurationMs % 60_000) / 1000)
   const shiftDurationLabel = shiftSecs === 0
@@ -60,8 +68,27 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitc
           Shift {run.currentShift}
           <span className={styles.shiftTotal}> / {ADVENTURE_TOTAL_SHIFTS}</span>
         </h1>
-        {boss && <div className={styles.bossTag}>BOSS SHIFT</div>}
+
+        <AdventureProgressDots currentShift={run.currentShift} />
+
+        {isBoss && !chosenBoss && <div className={styles.bossTag}>BOSS SHIFT</div>}
         <div className={styles.goalLine}>Goal: ${run.currentGoal}</div>
+
+        {chosenBoss && (
+          <div className={styles.bossPanel}>
+            <div className={styles.bossPanelHeader}>⚠ BOSS SHIFT</div>
+            <div className={styles.bossPanelBody}>
+              <span className={styles.bossPanelIcon}>{chosenBoss.icon}</span>
+              <div className={styles.bossPanelText}>
+                <div className={styles.bossPanelName}>{chosenBoss.name}</div>
+                <div className={styles.bossPanelDesc}>{chosenBoss.description}</div>
+                {bossDisabledStation && (
+                  <div className={styles.bossPanelExtra}>📋 Closed: <strong>{bossDisabledStation}</strong></div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {isFirstShift ? (
           <p className={styles.description}>
@@ -130,7 +157,11 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitc
             <div className={styles.panelTitle}>Active Garnishes</div>
             <div className={styles.garnishChips}>
               {ownedGarnishes.map(garnish => (
-                <span key={garnish.id} className={styles.garnishChip} title={garnish.description}>
+                <span
+                  key={garnish.id}
+                  className={`${styles.garnishChip} ${styles[`tier_${garnish.tier}`]}`}
+                  title={garnish.description}
+                >
                   <span className={styles.garnishChipIcon}>{garnish.icon}</span>
                   {garnish.name}
                 </span>
