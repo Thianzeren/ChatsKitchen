@@ -259,6 +259,7 @@ All keys use the `chatsKitchen_` prefix + camelCase. The UI preference keys (`Sh
 | `chatsKitchen_adventureBestRun` | `useAdventureRun.ts` | JSON — `AdventureBestRun` |
 | `chatsKitchen_hideTutorialPrompt` | `useTutorialState.ts` | `'true'` |
 | `chatsKitchen_adventureIntroSeen` | `App.tsx` | `'true'` (one-time Adventure overview popup dismissal) |
+| `chatsKitchen_savedAdventureRun` | `useAdventureRun.ts` | JSON — `{ version: 1, run, lobby, savedAt }`. Auto-saved at every shift boundary; cleared on run end (fail / S8 win). Resumed via MainMenu pill. |
 | `chatsKitchen_preparedItemsShowNames` | `PreparedItems.tsx` | `'true'` / `'false'` |
 | `chatsKitchen_diningRoomSimpleTickets` | `DiningRoom.tsx` | `'true'` / `'false'` |
 | `chatsKitchen_kitchenShowCommands` | `Kitchen.tsx` | `'true'` / `'false'` |

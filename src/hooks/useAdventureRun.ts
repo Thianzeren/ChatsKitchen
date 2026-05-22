@@ -36,6 +36,41 @@ function persistAdventureBestRun(run: AdventureBestRun): void {
   try { localStorage.setItem(BEST_RUN_KEY, JSON.stringify(run)) } catch { /* ignore */ }
 }
 
+// ── Saved-run persistence (resume between sessions) ─────────────────────────
+// We save the whole AdventureRun + lobby roster at shift boundaries (after a
+// new briefing is set up). Mid-shift game state is not persisted — resuming
+// always drops the player back into the upcoming shift's briefing.
+
+const SAVED_RUN_KEY = 'chatsKitchen_savedAdventureRun'
+
+export interface SavedAdventureRun {
+  version: 1
+  run: AdventureRun
+  lobby: string[]
+  savedAt: number
+}
+
+export function loadSavedAdventureRun(): SavedAdventureRun | null {
+  try {
+    const raw = localStorage.getItem(SAVED_RUN_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<SavedAdventureRun>
+    if (parsed.version !== 1 || !parsed.run || !Array.isArray(parsed.lobby)) return null
+    return parsed as SavedAdventureRun
+  } catch { return null }
+}
+
+function persistSavedAdventureRun(run: AdventureRun, lobby: string[]): void {
+  try {
+    const payload: SavedAdventureRun = { version: 1, run, lobby, savedAt: Date.now() }
+    localStorage.setItem(SAVED_RUN_KEY, JSON.stringify(payload))
+  } catch { /* ignore */ }
+}
+
+function clearSavedAdventureRun(): void {
+  try { localStorage.removeItem(SAVED_RUN_KEY) } catch { /* ignore */ }
+}
+
 // ── Shop reroll pricing ──────────────────────────────────────────────────────
 
 const REROLL_BASE_PRICE = 100
@@ -186,6 +221,8 @@ export function useAdventureRun(
     setActiveEventOptions(pickEventOptions(shift, undefined))
     activeGameOptionsRef.current = null
     dispatch(buildShiftReset(run, undefined))
+    // Persist the new run so the user can resume after closing the browser.
+    persistSavedAdventureRun(run, roster)
     setScreen('adventurebriefing')
   }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, adventureLobbyRef])
 
@@ -221,7 +258,9 @@ export function useAdventureRun(
     }
 
     if (!passed) {
-      // Failed: persist best run and end the run.
+      // Failed: persist best run and end the run. Clear any saved-run state
+      // so the menu's Resume pill no longer surfaces this dead run.
+      clearSavedAdventureRun()
       setAdventureRun(updatedRun)
       const totalMoney = updatedRun.shiftResults.reduce((sum, r) => sum + r.moneyEarned, 0)
       setAdventureBestRun(prev => {
@@ -247,7 +286,9 @@ export function useAdventureRun(
     }
 
     if (isFinalShift) {
-      // Run won — record win and end on the run-end screen.
+      // Run won — record win and end on the run-end screen. Clear save: there's
+      // nothing left to resume.
+      clearSavedAdventureRun()
       setAdventureRun(updatedRun)
       const totalMoney = updatedRun.shiftResults.reduce((sum, r) => sum + r.moneyEarned, 0)
       setAdventureBestRun(prev => {
@@ -398,6 +439,8 @@ export function useAdventureRun(
       // Events kick in from S3 onward; Chaos Mode boss tightens the cadence to 20–40s.
       setActiveEventOptions(pickEventOptions(nextShift, prev.chosenPath?.bossDebuffId))
       activeGameOptionsRef.current = null
+      // Snapshot the new briefing-ready state for resume-after-close.
+      persistSavedAdventureRun(updatedRun, liveRoster ?? [])
       return updatedRun
     })
     setScreen('adventurebriefing')
@@ -406,6 +449,19 @@ export function useAdventureRun(
   const resetAdventureBestRun = useCallback(() => {
     setAdventureBestRun(null)
   }, [])
+
+  // ── hydrateAdventureRun: restore from a saved snapshot ─────────────────────
+  // Caller is responsible for restoring the lobby roster (owned by useAdventureLobby).
+  // This sets up the run state, dispatches RESET so the GameState matches the
+  // briefing, and navigates to the briefing screen.
+  const hydrateAdventureRun = useCallback((saved: SavedAdventureRun) => {
+    setAdventureRun(saved.run)
+    setIsNewBestAdventureRun(false)
+    dispatch(buildShiftReset(saved.run, saved.run.chosenPath))
+    setActiveEventOptions(pickEventOptions(saved.run.currentShift, saved.run.chosenPath?.bossDebuffId))
+    activeGameOptionsRef.current = null
+    setScreen('adventurebriefing')
+  }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef])
 
   // ── resumeAdventureRun: re-enter the briefing after lobby management ───────
   // Recomputes participantCount + currentGoal from the live lobby roster and
@@ -430,6 +486,8 @@ export function useAdventureRun(
       dispatch(buildShiftReset(updatedRun, prev.chosenPath))
       setActiveEventOptions(pickEventOptions(prev.currentShift, prev.chosenPath?.bossDebuffId))
       activeGameOptionsRef.current = null
+      // Refresh the saved-run snapshot — participantCount + goal may have shifted.
+      persistSavedAdventureRun(updatedRun, liveRoster)
       return updatedRun
     })
     setScreen('adventurebriefing')
@@ -446,6 +504,8 @@ export function useAdventureRun(
     openPathPick, confirmPathCard,
     purchaseGarnish, rerollShopOffers, closeShop,
     resumeAdventureRun,
+    hydrateAdventureRun,
+    clearSavedAdventureRun,
     getRerollPrice: () => getRerollPrice(rerollCountRef.current, adventureRunRef.current?.participantCount ?? 1),
 
     resetAdventureBestRun,
