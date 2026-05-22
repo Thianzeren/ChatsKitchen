@@ -67,6 +67,27 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitc
           Shift {run.currentShift}
           <span className={styles.shiftTotal}> / {ADVENTURE_TOTAL_SHIFTS}</span>
         </h1>
+
+        <div className={styles.progressDots}>
+          {Array.from({ length: ADVENTURE_TOTAL_SHIFTS }, (_, i) => {
+            const shiftNum = i + 1
+            const isPast = shiftNum < run.currentShift
+            const isCurrent = shiftNum === run.currentShift
+            const isBossDot = isBossShift(shiftNum)
+            const cls = [
+              styles.progressDot,
+              isPast && styles.progressDotDone,
+              isCurrent && styles.progressDotCurrent,
+              isBossDot && styles.progressDotBoss,
+            ].filter(Boolean).join(' ')
+            return (
+              <span key={shiftNum} className={cls} title={`Shift ${shiftNum}${isBossDot ? ' (Boss)' : ''}`}>
+                {isBossDot ? '★' : shiftNum}
+              </span>
+            )
+          })}
+        </div>
+
         {isBoss && !chosenBoss && <div className={styles.bossTag}>BOSS SHIFT</div>}
         <div className={styles.goalLine}>Goal: ${run.currentGoal}</div>
 
