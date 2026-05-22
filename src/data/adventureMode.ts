@@ -47,10 +47,6 @@ export function getAdventureGoal(shift: number, participantCount: number = 1): n
   return PER_PLAYER_GOALS[idx] * crew
 }
 
-export function getAdventureShiftDuration(): number {
-  return ADVENTURE_SHIFT_DURATION
-}
-
 export function isBossShift(shift: number): boolean {
   return ADVENTURE_BOSS_SHIFTS.includes(shift)
 }

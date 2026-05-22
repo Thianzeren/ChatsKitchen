@@ -20,7 +20,6 @@ export interface PathCard {
   label: string
   archetype: 'easy' | 'risk' | 'boss'
   goalDelta: number                       // multiplicative; -0.15 = 15% easier, +0.10 = 10% harder
-  modifierIds: string[]                   // reserved for PR 3 mini-modifiers
   rewardOnPass?: { cashBonus?: number; freeGarnishTier?: GarnishTier; freeRecipe?: boolean }
   bossDebuffId?: string
   bossPayload?: { disabledStationId?: string }   // pre-rolled by the generator for deterministic display
@@ -168,7 +167,6 @@ export interface ShiftResult {
   passed: boolean
   chosenPathCardId?: string
   bossDebuffId?: string
-  garnishesCollectedThisShift?: string[]
   cashBonusEarned?: number             // path-card cashBonus added on pass (0 if none)
 }
 

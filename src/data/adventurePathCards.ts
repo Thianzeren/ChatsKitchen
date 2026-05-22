@@ -60,7 +60,6 @@ function makeVariantCard(id: string, archetype: 'easy' | 'risk', variant: CardVa
     icon: variant.icon,
     archetype,
     goalDelta: variant.goalDelta,
-    modifierIds: [],
     flavor: variant.flavor,
     rewardOnPass: variant.cashBonus > 0 ? { cashBonus: variant.cashBonus } : undefined,
   }
@@ -73,7 +72,6 @@ function makeBossCard(id: string, bossId: BossId, payload?: PathCard['bossPayloa
     label: boss.name,
     archetype: 'boss',
     goalDelta: 0,    // boss multiplier (×1.5) is already baked into PER_PLAYER_GOALS[S4|S8]
-    modifierIds: [],
     bossDebuffId: bossId,
     bossPayload: payload,
   }

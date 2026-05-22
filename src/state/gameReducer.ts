@@ -216,7 +216,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         const totalPlayers = Math.max(state.participantCount, Object.keys(state.playerStats).length, 1)
         needed = Math.max(1, Math.ceil(totalPlayers * 0.5))
       }
-      let withStat = addStat(state, user, 'extinguished', 1)
+      const withStat = addStat(state, user, 'extinguished', 1)
 
       if (newVotes.length >= needed) {
         // extinguish base stat (×2 in calcScore) already rewards coordination — no extra bonus needed

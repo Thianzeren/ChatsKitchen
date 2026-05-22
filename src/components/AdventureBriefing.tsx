@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react'
 import { AdventureRun, AdventureBestRun } from '../state/types'
 import { RECIPES, STATION_DEFS } from '../data/recipes'
 import FoodIcon from './FoodIcon'
-import { getAdventureShiftDuration, isBossShift, ADVENTURE_TOTAL_SHIFTS } from '../data/adventureMode'
+import { ADVENTURE_SHIFT_DURATION, isBossShift, ADVENTURE_TOTAL_SHIFTS } from '../data/adventureMode'
 import { GARNISHES, applyAllGarnishes } from '../data/adventureGarnishes'
 import { BOSSES, BossId } from '../data/adventureBosses'
 import AdventureExitConfirm from './AdventureExitConfirm'
@@ -45,7 +45,7 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitc
     orderSpeed: 1,
     orderSpawnRate: 1,
   })
-  const shiftDurationMs = getAdventureShiftDuration()
+  const shiftDurationMs = ADVENTURE_SHIFT_DURATION
   const shiftMins = Math.floor(shiftDurationMs / 60_000)
   const shiftSecs = Math.round((shiftDurationMs % 60_000) / 1000)
   const shiftDurationLabel = shiftSecs === 0

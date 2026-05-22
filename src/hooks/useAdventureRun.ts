@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, Dispatch, SetStateAction } from 'react'
 import { GameOptions, AdventureRun, AdventureBestRun, ShiftResult, Screen, ActiveEventOptions, FinalStats, CuisineId, PathCard } from '../state/types'
 import { GameAction } from '../state/gameReducer'
 import {
-  getAdventureGoal, getAdventureShiftDuration,
+  getAdventureGoal, ADVENTURE_SHIFT_DURATION,
   pickStartingRecipe, pickAutoUnlockRecipe, pickRandomCuisine, makeRunSeed,
   getAutoUnlockedRecipeCount,
   ADVENTURE_TOTAL_SHIFTS,
@@ -75,7 +75,7 @@ function buildShiftReset(
 
   return {
     type: 'RESET',
-    shiftDuration: getAdventureShiftDuration(),
+    shiftDuration: ADVENTURE_SHIFT_DURATION,
     cookingSpeed: delta.options.cookingSpeed ?? 1,
     orderSpeed: delta.options.orderSpeed ?? baseOrderSpeed,
     orderSpawnRate: delta.options.orderSpawnRate ?? baseOrderSpawn,

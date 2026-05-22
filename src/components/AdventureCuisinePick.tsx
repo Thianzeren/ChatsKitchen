@@ -90,9 +90,9 @@ export default function AdventureCuisinePick({ rosterSize, onConfirm, onBack, vo
         >‹</button>
 
         <div className={styles.cardsViewport}>
-          {CUISINE_ORDER.slice(carouselStart, carouselStart + VISIBLE).map((entry) => {
-            // Resolve the absolute idx so !N keys and tallies match the static order
-            const absoluteIdx = CUISINE_ORDER.findIndex(e => e.id === entry.id)
+          {CUISINE_ORDER.slice(carouselStart, carouselStart + VISIBLE).map((entry, relativeIdx) => {
+            // Absolute idx is what !N keys and vote tallies use; the slice is just for what's visible.
+            const absoluteIdx = carouselStart + relativeIdx
             const set = RECIPE_SETS.find(s => s.id === entry.setId)
             if (!set) return null
             const votes = voteState.tallies[absoluteIdx] ?? 0
