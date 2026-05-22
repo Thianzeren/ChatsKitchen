@@ -64,7 +64,11 @@ ChatsKitchen/
 
 `App.tsx` owns top-level screen state as a union type:
 ```
-'menu' | 'pvplobby' | 'adventurebriefing' | 'options' | 'playsetpicker' | 'freeplaysetup' | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'adventureshiftpassed' | 'adventurerunend' | 'credits'
+'menu' | 'localplay' | 'pvplobby' | 'adventurelobby' | 'adventurecuisinepick'
+| 'adventurebriefing' | 'adventurepathpick' | 'adventurepantryshop' | 'adventurebossbriefing'
+| 'adventureshiftpassed' | 'adventurerunend'
+| 'options' | 'playsetpicker' | 'freeplaysetup'
+| 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'credits'
 ```
 No router library — screens are conditionally rendered components.
 
@@ -103,6 +107,30 @@ When the game starts, the roster is merged into the reducer's initial state via 
 The balance shuffle logic lives in `balanceLobby` (a `useCallback` exported from `usePvpLobby`). Both the `!balance` chat command and the "Balance Teams" UI button call this same function — do not duplicate the shuffle logic inline.
 
 Drag-and-drop is also available in the `PvPLobby` component UI — players can be dragged between team cards.
+
+### Adventure Mode (Roguelike)
+
+A Balatro-inspired 8-shift run. Chat builds up a kitchen via cuisine pick, between-shift path picks, and a Pantry shop. Any failed shift ends the run; the goal is to clear shift 8.
+
+**Screen flow:** `menu` → `adventurelobby` → `adventurecuisinepick` → `adventurebriefing` → `countdown` → `playing` → `shiftend` → `adventureshiftpassed` → `adventurepathpick` → `adventurepantryshop` → next `adventurebriefing` (loop) → `adventurerunend`
+
+Most run-level state lives in `useAdventureRun.ts` (`AdventureRun` shape in `types.ts`); the lobby roster is owned by `useAdventureLobby.ts`. Path-card and shop voting screens use the shared `useChoiceVote.ts` hook (plurality `!1`..`!N` with timer + pause). Both `pvpLobbyRef` and `adventureLobbyRef` mirror their respective rosters into refs for stale-closure-safe chat command handling.
+
+**Run structure**
+- 8 shifts, constant 3-minute shift duration (`ADVENTURE_SHIFT_DURATION` in `data/adventureMode.ts`)
+- S1 = 1 recipe, S2 = 2 recipes auto-unlocked, S3+ = 3 recipes (further variety comes from shop unlocks)
+- Bosses on shifts 4 & 8 — the `adventurepathpick` for those shifts offers 2 distinct bosses from `getBossPool()`
+- Goal = `PER_PLAYER_GOALS[shift-1] × participantCount` (per-player scaling). S4 & S8 baselines already bake in the ×1.5 boss multiplier.
+
+**Lobby** — Only the local "You" auto-joins; broadcaster and viewers must `!join` themselves. `!leave`, `!kick @name`, and `!clear` (mod only) for roster management. Mid-run `!leave` / `!kick` re-counts participants at the next shift boundary in `closeShop`.
+
+**Garnishes (Pantry shop)** — `data/adventureGarnishes.ts` defines a tier-graded catalog (common / rare / legendary). Each garnish is **one-shot** (cannot be bought twice); the shop offers 4 garnishes per visit, no replenish on purchase. Reroll cost is `$100 × 2^rerollCount × participantCount`. Effects compose in `applyAllGarnishes` and layer on top of the boss debuff in `buildShiftReset`.
+
+**Bosses** — `data/adventureBosses.ts`. Some bosses set GameState knobs (`heatPerCookMultiplier`, `coolAmountBonus`, `cooldownMultiplier`, `disabledStations`, `bossMoneyMultiplier`); Chaos Mode tightens kitchen-event cadence; Recipe Roulette is implemented as a lazy-init TICK timer in the reducer.
+
+**Path cards** — `data/adventurePathCards.ts` generates 2 cards seeded by `runSeed + shift`. Non-boss shifts pick 1 easy variant + 1 risk variant from the variant pools (Slow Day / Steady Service / Prep Day vs Big Tab / High Roller / Chef's Gambit). Boss shifts pick 2 distinct bosses from `getBossPool()`. Cards carry `goalDelta` (applied multiplicatively) and `rewardOnPass.cashBonus` (added to bank on pass).
+
+**Chat command routing** — When in any Adventure choice-vote screen (`adventurelobby`, `adventurecuisinepick`, `adventurepathpick`, `adventurepantryshop`), `handleTwitchMessage` intercepts the message and routes it to `adventureVoteRef.current(...)` before any game-command processing. This mirrors the PvP lobby intercept pattern.
 
 ### Component Hierarchy (during gameplay)
 
@@ -435,7 +463,13 @@ In PvP mode, `redPreparedItemSources` and `bluePreparedItemSources` mirror the p
 | `src/hooks/useTwitchChat.ts` | tmi.js client lifecycle, connect/disconnect; passes `isMod` (mod/broadcaster) to message handler |
 | `src/hooks/useKitchenEvents.ts` | Kitchen events lifecycle — spawn timer, command matching, resolve/fail dispatch, audio triggers |
 | `src/hooks/usePvpLobby.ts` | PvP lobby state, `balanceLobby`, `handleLobbyJoin`, `handleLobbyMetaCommand` |
-| `src/hooks/useAdventureRun.ts` | Adventure run state, shift progression, best-run persistence |
+| `src/hooks/useAdventureLobby.ts` | Adventure lobby roster, `!join`/`!leave`/`!kick`/`!clear`, ref mirror |
+| `src/hooks/useAdventureRun.ts` | Adventure run state machine — `buildShiftReset`, path/shop callbacks, best-run persistence |
+| `src/hooks/useChoiceVote.ts` | Shared plurality-vote hook (`!1`..`!N`) — used by cuisine pick, path pick, pantry shop |
+| `src/data/adventureMode.ts` | `PER_PLAYER_GOALS`, `getAdventureGoal`, `getAdventureShiftDuration`, cuisine/recipe pickers |
+| `src/data/adventureGarnishes.ts` | Garnish catalog, `applyAllGarnishes`, `generateShopOffers`, tier pricing |
+| `src/data/adventureBosses.ts` | Boss catalog, `applyBossDebuff`, `getBossPool`, `pickHealthInspectorStation` |
+| `src/data/adventurePathCards.ts` | `generatePathPair` — seeded easy/risk variant + boss-shift card generation |
 | `src/hooks/useGameSession.ts` | Free Play result state — finalStats, high score, history, star thresholds |
 | `src/hooks/useBotSimulation.ts` | AI player logic, action priority, cooldown awareness |
 | `src/components/EventCardOverlay.tsx` | Receipt-ticket overlay for active kitchen events; dance memorise/type phases |
