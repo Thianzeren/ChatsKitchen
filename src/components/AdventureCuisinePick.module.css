@@ -118,6 +118,8 @@
   grid-template-columns: auto 1fr auto;
   align-items: stretch;
   gap: 14px;
+  flex: 1;
+  min-height: 0;
 }
 
 .navArrow {
@@ -148,6 +150,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 18px;
+  min-height: 0;
 }
 
 .card {
@@ -166,10 +169,10 @@
   font: inherit;
   color: inherit;
   outline-offset: 4px;
+  min-height: 0;
 }
 
-.card:not(:disabled):hover,
-.cardHovered {
+.card:not(:disabled):hover {
   transform: translateY(-4px);
   filter: brightness(1.06);
   border-color: rgba(196, 160, 32, 0.5);
@@ -214,36 +217,100 @@
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
 }
 
-.cardRecipes {
+/* ── Per-card scrollable recipe list ────────────────────────────────────── */
+
+.cardRecipeList {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
-  gap: 6px;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 10px;
-  background: rgba(0, 0, 0, 0.25);
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 6px;
+  text-align: left;
+  background: rgba(0, 0, 0, 0.18);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 10px;
+  /* Visible scrollbar so viewers know the panel scrolls */
+  scrollbar-color: rgba(196, 160, 32, 0.5) rgba(255, 255, 255, 0.05);
+  scrollbar-width: thin;
+}
+
+.cardRecipeList::-webkit-scrollbar           { width: 6px; }
+.cardRecipeList::-webkit-scrollbar-track     { background: rgba(255, 255, 255, 0.04); border-radius: 3px; }
+.cardRecipeList::-webkit-scrollbar-thumb     { background: rgba(196, 160, 32, 0.45); border-radius: 3px; }
+.cardRecipeList::-webkit-scrollbar-thumb:hover { background: rgba(196, 160, 32, 0.65); }
+
+.cardRecipeRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 8px;
+  padding: 8px 10px;
+  flex-shrink: 0;
+}
+
+.cardRecipeEmoji {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.cardRecipeBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardRecipeHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.cardRecipeName {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+  text-align: left;
+}
+
+.cardRecipeReward {
+  font-family: 'Space Mono', monospace;
+  font-size: 16px;
+  color: #c4a020;
+  font-weight: 700;
+}
+
+.cardRecipeSteps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
 }
 
 /* ── Per-cuisine accent ringing (subtle border + glow tint) ─────────────── */
 
 .cuisine_western     { border-color: rgba(216, 116, 40, 0.55); }
-.cuisine_western:hover, .cuisine_western.cardHovered { box-shadow: 0 8px 22px rgba(216, 116, 40, 0.30); }
+.cuisine_western:hover { box-shadow: 0 8px 22px rgba(216, 116, 40, 0.30); }
 
 .cuisine_chinese     { border-color: rgba(217, 79, 79, 0.55); }
-.cuisine_chinese:hover, .cuisine_chinese.cardHovered { box-shadow: 0 8px 22px rgba(217, 79, 79, 0.30); }
+.cuisine_chinese:hover { box-shadow: 0 8px 22px rgba(217, 79, 79, 0.30); }
 
 .cuisine_korean      { border-color: rgba(232, 88, 96, 0.55); }
-.cuisine_korean:hover, .cuisine_korean.cardHovered { box-shadow: 0 8px 22px rgba(232, 88, 96, 0.30); }
+.cuisine_korean:hover { box-shadow: 0 8px 22px rgba(232, 88, 96, 0.30); }
 
 .cuisine_japanese    { border-color: rgba(120, 168, 220, 0.55); }
-.cuisine_japanese:hover, .cuisine_japanese.cardHovered { box-shadow: 0 8px 22px rgba(120, 168, 220, 0.30); }
+.cuisine_japanese:hover { box-shadow: 0 8px 22px rgba(120, 168, 220, 0.30); }
 
 .cuisine_japanese_bakery { border-color: rgba(232, 192, 160, 0.6); }
-.cuisine_japanese_bakery:hover, .cuisine_japanese_bakery.cardHovered { box-shadow: 0 8px 22px rgba(232, 192, 160, 0.30); }
+.cuisine_japanese_bakery:hover { box-shadow: 0 8px 22px rgba(232, 192, 160, 0.30); }
 
 .cuisine_sg          { border-color: rgba(106, 170, 94, 0.55); }
-.cuisine_sg:hover, .cuisine_sg.cardHovered { box-shadow: 0 8px 22px rgba(106, 170, 94, 0.30); }
+.cuisine_sg:hover { box-shadow: 0 8px 22px rgba(106, 170, 94, 0.30); }
 
 .cardName {
   font-family: 'Lilita One', cursive;
@@ -253,11 +320,11 @@
 
 .cardDescription {
   font-family: 'Fredoka', sans-serif;
-  font-size: 20px;
+  font-size: 18px;
   color: var(--text-muted);
   line-height: 1.4;
   max-width: 92%;
-  flex: 1;
+  flex-shrink: 0;
 }
 
 .cardFooter {
@@ -284,143 +351,11 @@
   transition: width 200ms ease;
 }
 
-/* ── Detail breakdown panel ────────────────────────────────────────────── */
-
-.detailPanel {
-  background: var(--station-bg);
-  border: 2px solid var(--border);
-  border-radius: 14px;
-  padding: 18px 22px;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.detailPlaceholder {
-  font-family: 'Fredoka', sans-serif;
-  font-size: var(--base-fs);
-  color: var(--text-muted);
-  font-style: italic;
-  text-align: center;
-  padding: 32px 0;
-}
-
-.detailContent {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  flex: 1;
-  min-height: 0;
-}
-
-.detailHeader {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.detailFlag {
-  font-size: 36px;
-}
-
-.detailName {
-  font-family: 'Lilita One', cursive;
-  font-size: 32px;
-  color: var(--text-warm);
-  flex: 1;
-}
-
-.detailHint {
-  font-family: 'Fredoka', sans-serif;
-  font-size: 16px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.recipesGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-  align-content: start;
-  /* Visible scrollbar so users know the panel scrolls when more recipes are added */
-  scrollbar-color: rgba(196, 160, 32, 0.5) rgba(255, 255, 255, 0.05);
-  scrollbar-width: thin;
-  padding-right: 6px;
-}
-
-.recipesGrid::-webkit-scrollbar {
-  width: 8px;
-}
-
-.recipesGrid::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 4px;
-}
-
-.recipesGrid::-webkit-scrollbar-thumb {
-  background: rgba(196, 160, 32, 0.45);
-  border-radius: 4px;
-}
-
-.recipesGrid::-webkit-scrollbar-thumb:hover {
-  background: rgba(196, 160, 32, 0.65);
-}
-
-.recipeRow {
-  display: flex;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.025);
-  border-radius: 10px;
-  padding: 12px 16px;
-}
-
-.recipeEmoji {
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.recipeInfo {
-  flex: 1;
-  min-width: 0;
-}
-
-.recipeName {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-family: 'Fredoka', sans-serif;
-  font-size: var(--base-fs);
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 8px;
-}
-
-.recipeReward {
-  font-family: 'Space Mono', monospace;
-  font-size: 20px;
-  color: #c4a020;
-  margin-left: auto;
-}
-
-.recipeSteps {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
+/* ── Step chips (used inline within each card's recipe rows) ─────────────── */
 
 .stepSeparator,
 .stepArrow {
-  font-size: 18px;
+  font-size: 14px;
   color: var(--text-muted);
   flex-shrink: 0;
 }
@@ -431,11 +366,11 @@
 
 .stepChip {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: 14px;
   color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
-  padding: 2px 10px;
+  padding: 1px 6px;
   white-space: nowrap;
 }
 
