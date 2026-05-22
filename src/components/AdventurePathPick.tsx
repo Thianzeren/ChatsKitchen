@@ -138,11 +138,14 @@ function PathCardView({ card, idx, baseGoal, votes, totalVotes, votePct, onClick
       )}
 
       {!boss && (
-        <div className={styles.flavor}>
-          {card.flavor ?? (card.archetype === 'easy'
-            ? 'A breather shift. Lower goal, no extras.'
-            : 'Same goal, cash bonus on pass.')}
-        </div>
+        <>
+          {card.icon && <div className={styles.variantIcon}>{card.icon}</div>}
+          <div className={styles.flavor}>
+            {card.flavor ?? (card.archetype === 'easy'
+              ? 'A breather shift. Lower goal, no extras.'
+              : 'Same goal, cash bonus on pass.')}
+          </div>
+        </>
       )}
 
       <div className={styles.statsRow}>

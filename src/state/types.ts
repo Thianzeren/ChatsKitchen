@@ -25,6 +25,7 @@ export interface PathCard {
   bossDebuffId?: string
   bossPayload?: { disabledStationId?: string }   // pre-rolled by the generator for deterministic display
   flavor?: string                          // one-line subtitle shown on the card
+  icon?: string                            // emoji shown on the card (set for easy/risk variants; bosses use their own icon)
 }
 export type TutorialDestination = 'menu' | 'playsetpicker' | 'freeplaysetup'
 
