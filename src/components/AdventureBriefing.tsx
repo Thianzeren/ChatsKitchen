@@ -153,7 +153,11 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitc
             <div className={styles.panelTitle}>Active Garnishes</div>
             <div className={styles.garnishChips}>
               {ownedGarnishes.map(garnish => (
-                <span key={garnish.id} className={styles.garnishChip} title={garnish.description}>
+                <span
+                  key={garnish.id}
+                  className={`${styles.garnishChip} ${styles[`tier_${garnish.tier}`]}`}
+                  title={garnish.description}
+                >
                   <span className={styles.garnishChipIcon}>{garnish.icon}</span>
                   {garnish.name}
                 </span>

@@ -324,18 +324,34 @@
 .garnishChip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: rgba(196, 160, 32, 0.10);
   border: 1px solid rgba(196, 160, 32, 0.35);
   border-radius: 999px;
-  padding: 4px 12px;
+  padding: 6px 16px;
   font-family: 'Fredoka', sans-serif;
-  font-size: 14px;
+  font-size: 18px;
   color: var(--text);
 }
 
 .garnishChipIcon {
-  font-size: 14px;
+  font-size: 20px;
+}
+
+.tier_common {
+  border-color: rgba(106, 170, 94, 0.5);
+  background: rgba(106, 170, 94, 0.08);
+}
+
+.tier_rare {
+  border-color: rgba(200, 133, 216, 0.5);
+  background: rgba(200, 133, 216, 0.08);
+}
+
+.tier_legendary {
+  border-color: rgba(232, 160, 42, 0.6);
+  background: rgba(232, 160, 42, 0.10);
+  box-shadow: 0 0 12px rgba(232, 160, 42, 0.18);
 }
 
 /* ── Parameters panel ── */
