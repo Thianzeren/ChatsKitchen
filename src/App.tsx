@@ -145,6 +145,7 @@ export default function App() {
     isNewBestAdventureRun, startAdventure,
     handleShiftEndDone, resetAdventureBestRun,
     openPathPick, confirmPathCard, purchaseGarnish, rerollShopOffers, closeShop, getRerollPrice,
+    resumeAdventureRun,
   } = useAdventureRun(dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, finalStatsRef, adventureLobbyRef)
 
   // Vote-screen chat interception: the active vote-driven screen (e.g. PantryShop)
@@ -276,15 +277,24 @@ export default function App() {
     checkTwitch(openAdventureLobby)
   }, [checkTwitch, openAdventureLobby])
 
-  // !start from the lobby (or the on-screen Start button) confirms the roster and
-  // advances to the cuisine pick — chat then votes on which cuisine the run uses.
-  // The roster is preserved through the run so mid-shift !leave / !kick can
-  // rescale goals between shifts.
+  // !start from the lobby (or the on-screen Start button) either starts a new
+  // run (cuisine pick) or resumes an existing one if the host had stepped back
+  // to the lobby mid-run via the briefing's "Manage Lobby" button.
   const handleAdventureLobbyStart = useCallback(() => {
     const roster = adventureLobbyRef.current ?? []
     if (roster.length === 0) return
+    if (adventureRunRef.current) {
+      resumeAdventureRun()
+      return
+    }
     setScreen('adventurecuisinepick')
-  }, [setScreen, adventureLobbyRef])
+  }, [setScreen, adventureLobbyRef, adventureRunRef, resumeAdventureRun])
+
+  // Briefing → lobby (preserves the active run; lobby's "Resume" button calls
+  // resumeAdventureRun to return).
+  const handleManageLobby = useCallback(() => {
+    setScreen('adventurelobby')
+  }, [setScreen])
 
   // Resolved cuisine vote → start the run.
   const handleCuisineConfirmed = useCallback((cuisine: CuisineId) => {
@@ -684,8 +694,11 @@ export default function App() {
         onKick={kickAdventurePlayer}
         onClear={() => setAdventureLobby([])}
         onStart={handleAdventureLobbyStart}
-        onBack={() => { clearAdventureLobby(); setScreen('menu') }}
+        onBack={adventureRun
+          ? () => setScreen('adventurebriefing')
+          : () => { clearAdventureLobby(); setScreen('menu') }}
         onShowIntro={() => setAdventureIntroOpen(true)}
+        activeShift={adventureRun?.currentShift}
         twitchStatus={twitchChat.status}
         twitchChannel={twitchChannel}
       />
@@ -716,6 +729,7 @@ export default function App() {
         bestRun={adventureBestRun}
         onStart={() => setScreen('countdown')}
         onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('menu') }}
+        onManageLobby={handleManageLobby}
         twitchStatus={twitchChat.status}
         twitchChannel={twitchChannel}
       />

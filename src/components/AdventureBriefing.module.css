@@ -222,6 +222,25 @@
   filter: brightness(1.2);
 }
 
+.lobbyBtn {
+  border: 2px solid rgba(90, 154, 176, 0.4);
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--base-fs);
+  font-weight: 700;
+  background: rgba(90, 154, 176, 0.15);
+  color: #7ab8c8;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s, box-shadow 0.15s;
+}
+
+.lobbyBtn:hover {
+  transform: scale(1.03);
+  filter: brightness(1.18);
+  box-shadow: 0 4px 16px rgba(90, 154, 176, 0.25);
+}
+
 /* ── Recipe panel ── */
 
 .menuPanel {

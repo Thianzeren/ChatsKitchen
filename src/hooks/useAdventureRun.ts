@@ -407,6 +407,34 @@ export function useAdventureRun(
     setAdventureBestRun(null)
   }, [])
 
+  // ── resumeAdventureRun: re-enter the briefing after lobby management ───────
+  // Recomputes participantCount + currentGoal from the live lobby roster and
+  // re-dispatches RESET (idempotent on briefing — no in-flight cooking state
+  // can exist here). Then navigates back to adventurebriefing.
+  const resumeAdventureRun = useCallback(() => {
+    setAdventureRun(prev => {
+      if (!prev) return prev
+      const liveRoster = adventureLobbyRef.current ?? []
+      const nextParticipantCount = Math.max(1, liveRoster.length)
+
+      const baseGoal = getAdventureGoal(prev.currentShift, nextParticipantCount)
+      const goalDelta = prev.chosenPath?.goalDelta ?? 0
+      const adjustedGoal = Math.round(baseGoal * (1 + goalDelta) / 5) * 5
+
+      const updatedRun: AdventureRun = {
+        ...prev,
+        participantCount: nextParticipantCount,
+        currentGoal: adjustedGoal,
+      }
+
+      dispatch(buildShiftReset(updatedRun, prev.chosenPath))
+      setActiveEventOptions(pickEventOptions(prev.currentShift, prev.chosenPath?.bossDebuffId))
+      activeGameOptionsRef.current = null
+      return updatedRun
+    })
+    setScreen('adventurebriefing')
+  }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, adventureLobbyRef])
+
   return {
     // State
     adventureRun, setAdventureRun, adventureRunRef,
@@ -417,6 +445,7 @@ export function useAdventureRun(
     handleShiftEndDone,
     openPathPick, confirmPathCard,
     purchaseGarnish, rerollShopOffers, closeShop,
+    resumeAdventureRun,
     getRerollPrice: () => getRerollPrice(rerollCountRef.current, adventureRunRef.current?.participantCount ?? 1),
 
     resetAdventureBestRun,
