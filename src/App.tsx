@@ -24,6 +24,7 @@ import ShiftEnd from './components/ShiftEnd'
 import GameOver from './components/GameOver'
 import AdventureBriefing from './components/AdventureBriefing'
 import AdventureCuisinePick from './components/AdventureCuisinePick'
+import AdventureIntroModal from './components/AdventureIntroModal'
 import AdventureLobby from './components/AdventureLobby'
 import AdventurePantryShop from './components/AdventurePantryShop'
 import AdventurePathPick from './components/AdventurePathPick'
@@ -104,6 +105,9 @@ export default function App() {
   const screenRef = useRef<Screen>('menu')
   const gameOptionsRef = useRef(gameOptions)
   const [showNoTwitchPrompt, setShowNoTwitchPrompt] = useState(false)
+  const [hasSeenAdventureIntro, setHasSeenAdventureIntro] = useState(() => {
+    try { return localStorage.getItem('chatsKitchen_adventureIntroSeen') === 'true' } catch { return false }
+  })
   const pendingActionRef = useRef<(() => void) | null>(null)
   const [chatMode, setChatMode] = useState<'local' | 'twitch' | 'room'>('local')
   const [roomPlayers, setRoomPlayers] = useState<Array<{ id: string; nickname: string; disconnected?: boolean }>>([])
@@ -554,12 +558,14 @@ export default function App() {
     resetSession()
     handleTwitchChannelChange(null)
     resetTutorial()
+    setHasSeenAdventureIntro(false)
 
     try {
       localStorage.setItem('chatsKitchen_audioSettings', JSON.stringify(DEFAULT_AUDIO_SETTINGS))
       localStorage.removeItem('chatsKitchen_adventureBestRun')
       localStorage.removeItem('chatsKitchen_gameOptions')
       localStorage.removeItem('chatsKitchen_hideTutorialPrompt')
+      localStorage.removeItem('chatsKitchen_adventureIntroSeen')
       localStorage.removeItem('chatsKitchen_preparedItemsShowNames')
       localStorage.removeItem('chatsKitchen_diningRoomSimpleTickets')
       localStorage.removeItem('chatsKitchen_kitchenShowCommands')
@@ -856,6 +862,14 @@ export default function App() {
         <TutorialModal
           onClose={() => setTutorialOpen(false)}
           onStartCooking={handleTutorialStartCooking}
+        />
+      )}
+      {screen === 'adventurelobby' && !hasSeenAdventureIntro && (
+        <AdventureIntroModal
+          onClose={() => {
+            setHasSeenAdventureIntro(true)
+            try { localStorage.setItem('chatsKitchen_adventureIntroSeen', 'true') } catch { /* ignore */ }
+          }}
         />
       )}
     </>
