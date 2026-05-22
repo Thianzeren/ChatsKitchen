@@ -100,15 +100,22 @@ export default function AdventureCuisinePick({ rosterSize, onConfirm, onBack, vo
               <button
                 key={entry.id}
                 type="button"
-                className={`${styles.card} ${isHovered ? styles.cardHovered : ''}`}
+                className={`${styles.card} ${styles[`cuisine_${entry.id}`]} ${isHovered ? styles.cardHovered : ''}`}
                 onClick={() => { if (!voteState.resolved) forceResolve(absoluteIdx) }}
                 onMouseEnter={() => setHoveredIdx(absoluteIdx)}
                 onMouseLeave={() => setHoveredIdx(null)}
                 disabled={voteState.resolved}
               >
                 <div className={styles.cardKey}>!{absoluteIdx + 1}</div>
-                <div className={styles.cardFlag}>{set.flag}</div>
+                <div className={styles.cardFlagChip}>{set.flag}</div>
+                <div className={styles.cardHero}>{set.emoji}</div>
                 <div className={styles.cardName}>{set.name}</div>
+                <div className={styles.cardRecipes}>
+                  {set.recipeKeys.slice(0, 4).map(key => {
+                    const r = RECIPES[key]
+                    return r ? <FoodIcon key={key} icon={r.emoji} size={22} /> : null
+                  })}
+                </div>
                 <div className={styles.cardDescription}>{set.description}</div>
                 <div className={styles.cardFooter}>
                   <span className={styles.cardVotes}>{votes} {votes === 1 ? 'vote' : 'votes'}{totalVotes > 0 ? ` · ${pct}%` : ''}</span>
