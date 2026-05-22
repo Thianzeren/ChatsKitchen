@@ -24,6 +24,7 @@ export interface PathCard {
   rewardOnPass?: { cashBonus?: number; freeGarnishTier?: GarnishTier; freeRecipe?: boolean }
   bossDebuffId?: string
   bossPayload?: { disabledStationId?: string }   // pre-rolled by the generator for deterministic display
+  flavor?: string                          // one-line subtitle shown on the card
 }
 export type TutorialDestination = 'menu' | 'playsetpicker' | 'freeplaysetup'
 

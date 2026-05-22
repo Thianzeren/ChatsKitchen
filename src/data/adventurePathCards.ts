@@ -26,26 +26,61 @@ function mulberry32(seed: number): () => number {
   }
 }
 
+// ── Card variants ────────────────────────────────────────────────────────────
+// Each non-boss shift offers 1 easy variant + 1 risk variant, picked
+// deterministically from these pools so different runs get different choices.
+
+interface EasyVariant {
+  key: string
+  label: string
+  goalDelta: number
+  cashBonus: number
+  flavor: string
+}
+
+interface RiskVariant {
+  key: string
+  label: string
+  goalDelta: number
+  cashBonus: number
+  flavor: string
+}
+
+const EASY_VARIANTS: readonly EasyVariant[] = [
+  { key: 'slow_day',  label: 'Slow Day',        goalDelta: -0.15, cashBonus: 0,  flavor: 'A breather shift. Lower goal, no reward.' },
+  { key: 'steady',    label: 'Steady Service',  goalDelta: -0.08, cashBonus: 20, flavor: 'Smaller break on goal — but a small tip on pass.' },
+  { key: 'prep_day',  label: 'Prep Day',        goalDelta: -0.20, cashBonus: 0,  flavor: 'Big goal cut. Save your cash for the Pantry.' },
+]
+
+const RISK_VARIANTS: readonly RiskVariant[] = [
+  { key: 'big_tab',     label: 'Big Tab',     goalDelta: 0,    cashBonus: 60,  flavor: 'Same goal, cash bonus on pass.' },
+  { key: 'high_roller', label: 'High Roller', goalDelta: 0.10, cashBonus: 120, flavor: 'Harder goal — bigger payday on pass.' },
+  { key: 'gambit',      label: 'Chef’s Gambit', goalDelta: 0.05, cashBonus: 90, flavor: 'Modest goal hike for a sizeable tip.' },
+]
+
 // ── Card generators ──────────────────────────────────────────────────────────
 
-function makeEasyCard(id: string): PathCard {
+function makeEasyCard(id: string, variant: EasyVariant): PathCard {
   return {
     id,
-    label: 'Slow Day',
+    label: variant.label,
     archetype: 'easy',
-    goalDelta: -0.15,
+    goalDelta: variant.goalDelta,
     modifierIds: [],
+    flavor: variant.flavor,
+    rewardOnPass: variant.cashBonus > 0 ? { cashBonus: variant.cashBonus } : undefined,
   }
 }
 
-function makeRiskCard(id: string): PathCard {
+function makeRiskCard(id: string, variant: RiskVariant): PathCard {
   return {
     id,
-    label: 'Big Tab',
+    label: variant.label,
     archetype: 'risk',
-    goalDelta: 0,
+    goalDelta: variant.goalDelta,
     modifierIds: [],
-    rewardOnPass: { cashBonus: 60 },
+    flavor: variant.flavor,
+    rewardOnPass: { cashBonus: variant.cashBonus },
   }
 }
 
@@ -88,10 +123,12 @@ export function generatePathPair(
     ]
   }
 
-  // Non-boss: always offer Easy vs Risk for a clear "play safe vs gamble" choice.
-  // Swap order half the time so the user can't memorise card positions.
+  // Non-boss: pick 1 easy variant + 1 risk variant from the pools, then maybe
+  // swap their slot positions so users can't memorise "always !1 = easy".
+  const easyVariant = EASY_VARIANTS[Math.floor(rng() * EASY_VARIANTS.length)]
+  const riskVariant = RISK_VARIANTS[Math.floor(rng() * RISK_VARIANTS.length)]
+  const easy = makeEasyCard(`s${shift}_easy_${easyVariant.key}`, easyVariant)
+  const risk = makeRiskCard(`s${shift}_risk_${riskVariant.key}`, riskVariant)
   const swap = rng() < 0.5
-  const easy = makeEasyCard(`s${shift}_easy`)
-  const risk = makeRiskCard(`s${shift}_risk`)
   return swap ? [risk, easy] : [easy, risk]
 }

@@ -139,9 +139,9 @@ function PathCardView({ card, idx, baseGoal, votes, totalVotes, votePct, onClick
 
       {!boss && (
         <div className={styles.flavor}>
-          {card.archetype === 'easy'
+          {card.flavor ?? (card.archetype === 'easy'
             ? 'A breather shift. Lower goal, no extras.'
-            : 'Same goal, cash bonus on pass.'}
+            : 'Same goal, cash bonus on pass.')}
         </div>
       )}
 
