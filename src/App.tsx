@@ -105,9 +105,7 @@ export default function App() {
   const screenRef = useRef<Screen>('menu')
   const gameOptionsRef = useRef(gameOptions)
   const [showNoTwitchPrompt, setShowNoTwitchPrompt] = useState(false)
-  const [hasSeenAdventureIntro, setHasSeenAdventureIntro] = useState(() => {
-    try { return localStorage.getItem('chatsKitchen_adventureIntroSeen') === 'true' } catch { return false }
-  })
+  const [adventureIntroOpen, setAdventureIntroOpen] = useState(false)
   const pendingActionRef = useRef<(() => void) | null>(null)
   const [chatMode, setChatMode] = useState<'local' | 'twitch' | 'room'>('local')
   const [roomPlayers, setRoomPlayers] = useState<Array<{ id: string; nickname: string; disconnected?: boolean }>>([])
@@ -536,6 +534,22 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', audioSettings.darkMode ? 'dark' : 'light')
   }, [audioSettings.darkMode])
 
+  // Auto-open the Adventure intro the first time the user lands on the lobby.
+  // Returning visitors (or those who already dismissed) won't see it.
+  useEffect(() => {
+    if (screen !== 'adventurelobby') return
+    try {
+      if (localStorage.getItem('chatsKitchen_adventureIntroSeen') !== 'true') {
+        setAdventureIntroOpen(true)
+      }
+    } catch { /* ignore storage failures */ }
+  }, [screen])
+
+  const closeAdventureIntro = useCallback(() => {
+    setAdventureIntroOpen(false)
+    try { localStorage.setItem('chatsKitchen_adventureIntroSeen', 'true') } catch { /* ignore */ }
+  }, [])
+
   const handleAudioChange = useCallback((settings: AudioSettings) => {
     setAudioSettings(settings)
     localStorage.setItem('chatsKitchen_audioSettings', JSON.stringify(settings))
@@ -558,7 +572,7 @@ export default function App() {
     resetSession()
     handleTwitchChannelChange(null)
     resetTutorial()
-    setHasSeenAdventureIntro(false)
+    setAdventureIntroOpen(false)
 
     try {
       localStorage.setItem('chatsKitchen_audioSettings', JSON.stringify(DEFAULT_AUDIO_SETTINGS))
@@ -671,6 +685,7 @@ export default function App() {
         onClear={() => setAdventureLobby([])}
         onStart={handleAdventureLobbyStart}
         onBack={() => { clearAdventureLobby(); setScreen('menu') }}
+        onShowIntro={() => setAdventureIntroOpen(true)}
         twitchStatus={twitchChat.status}
         twitchChannel={twitchChannel}
       />
@@ -864,13 +879,8 @@ export default function App() {
           onStartCooking={handleTutorialStartCooking}
         />
       )}
-      {screen === 'adventurelobby' && !hasSeenAdventureIntro && (
-        <AdventureIntroModal
-          onClose={() => {
-            setHasSeenAdventureIntro(true)
-            try { localStorage.setItem('chatsKitchen_adventureIntroSeen', 'true') } catch { /* ignore */ }
-          }}
-        />
+      {adventureIntroOpen && screen === 'adventurelobby' && (
+        <AdventureIntroModal onClose={closeAdventureIntro} />
       )}
     </>
   )

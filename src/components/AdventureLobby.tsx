@@ -10,12 +10,13 @@ interface Props {
   onClear: () => void
   onStart: () => void
   onBack: () => void
+  onShowIntro: () => void
   twitchStatus: TwitchStatus
   twitchChannel: string | null
 }
 
 export default function AdventureLobby({
-  roster, onKick, onClear, onStart, onBack, twitchStatus, twitchChannel,
+  roster, onKick, onClear, onStart, onBack, onShowIntro, twitchStatus, twitchChannel,
 }: Props) {
   const [confirmClear, setConfirmClear] = useState(false)
   const playerCount = roster.length
@@ -23,6 +24,14 @@ export default function AdventureLobby({
 
   return (
     <div className={styles.screen}>
+      <button
+        type="button"
+        className={styles.helpBtn}
+        onClick={onShowIntro}
+        title="How does Adventure mode work?"
+        aria-label="How does Adventure mode work?"
+      >?</button>
+
       {/* ── LEFT ── */}
       <div className={styles.leftCol}>
         <h1 className={styles.title}>Adventure Lobby</h1>
