@@ -3,6 +3,7 @@ import { PathCard } from '../state/types'
 import { useChoiceVote } from '../hooks/useChoiceVote'
 import { BOSSES, BossId } from '../data/adventureBosses'
 import { STATION_DEFS } from '../data/recipes'
+import { getAudioManager } from '../audio/AudioManager'
 import AdventureProgressDots from './AdventureProgressDots'
 import styles from './AdventurePathPick.module.css'
 
@@ -21,6 +22,10 @@ export default function AdventurePathPick({ cards, shiftNumber, baseGoal, onConf
     { numOptions: 2, durationMs: VOTE_DURATION_MS, allowDoneCommand: false },
     (res) => {
       const winnerIdx = res.winnerIdx >= 0 ? res.winnerIdx : 0
+      // Use error-buzzer for boss-card selection (you just locked in a debuff),
+      // serve-success for the safer easy/risk picks.
+      const isBoss = cards[winnerIdx]?.archetype === 'boss'
+      getAudioManager().playSfx(isBoss ? 'error-buzzer' : 'serve-success')
       onConfirm(winnerIdx)
     },
   )

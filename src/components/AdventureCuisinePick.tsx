@@ -2,6 +2,7 @@ import { useEffect, useState, Fragment } from 'react'
 import { CuisineId } from '../state/types'
 import { useChoiceVote } from '../hooks/useChoiceVote'
 import { RECIPES, RECIPE_SETS } from '../data/recipes'
+import { getAudioManager } from '../audio/AudioManager'
 import FoodIcon from './FoodIcon'
 import styles from './AdventureCuisinePick.module.css'
 
@@ -33,6 +34,7 @@ export default function AdventureCuisinePick({ rosterSize, onConfirm, onBack, vo
     { numOptions: CUISINE_ORDER.length, durationMs: VOTE_DURATION_MS, allowDoneCommand: false },
     (res) => {
       const winnerIdx = res.winnerIdx >= 0 ? res.winnerIdx : 0
+      getAudioManager().playSfx('serve-success')
       onConfirm(CUISINE_ORDER[winnerIdx].id)
     },
   )
