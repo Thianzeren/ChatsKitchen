@@ -36,7 +36,7 @@
 }
 
 .warning strong {
-  color: #d94f4f;
+  color: #c4a020;
   font-weight: 700;
 }
 
@@ -71,7 +71,7 @@
   font-family: 'Fredoka', sans-serif;
   font-size: 18px;
   font-weight: 700;
-  background: #d94f4f;
+  background: #d87428;
   color: #fff;
   cursor: pointer;
   transition: filter 0.1s;

@@ -10,13 +10,20 @@
 .leftCol {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: safe center;
   gap: 20px;
   height: 100%;
   padding: 40px 32px 40px 48px;
   border-right: 1px solid var(--border);
-  overflow: hidden;
+  overflow-y: auto;
+  scrollbar-color: rgba(196, 160, 32, 0.4) rgba(255, 255, 255, 0.04);
+  scrollbar-width: thin;
 }
+
+.leftCol::-webkit-scrollbar           { width: 6px; }
+.leftCol::-webkit-scrollbar-track     { background: rgba(255, 255, 255, 0.04); border-radius: 3px; }
+.leftCol::-webkit-scrollbar-thumb     { background: rgba(196, 160, 32, 0.4); border-radius: 3px; }
+.leftCol::-webkit-scrollbar-thumb:hover { background: rgba(196, 160, 32, 0.6); }
 
 .rightCol {
   display: flex;
@@ -90,12 +97,13 @@
 
 .bossPanelBody {
   display: flex;
-  gap: 16px;
-  padding: 16px 18px 18px;
+  gap: 14px;
+  padding: 12px 16px 14px;
+  align-items: center;
 }
 
 .bossPanelIcon {
-  font-size: 56px;
+  font-size: 44px;
   line-height: 1;
   filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.4));
   flex-shrink: 0;
@@ -108,23 +116,23 @@
 
 .bossPanelName {
   font-family: 'Lilita One', cursive;
-  font-size: 28px;
+  font-size: 24px;
   color: #fff;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .bossPanelDesc {
   font-family: 'Fredoka', sans-serif;
-  font-size: var(--base-fs);
+  font-size: 18px;
   color: var(--text-secondary);
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 .bossPanelExtra {
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: 16px;
   color: #e07030;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .bossPanelExtra strong {
@@ -212,6 +220,25 @@
 .menuBtn:hover {
   transform: scale(1.03);
   filter: brightness(1.2);
+}
+
+.lobbyBtn {
+  border: 2px solid rgba(90, 154, 176, 0.4);
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--base-fs);
+  font-weight: 700;
+  background: rgba(90, 154, 176, 0.15);
+  color: #7ab8c8;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s, box-shadow 0.15s;
+}
+
+.lobbyBtn:hover {
+  transform: scale(1.03);
+  filter: brightness(1.18);
+  box-shadow: 0 4px 16px rgba(90, 154, 176, 0.25);
 }
 
 /* ── Recipe panel ── */

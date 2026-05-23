@@ -10,25 +10,41 @@ interface Props {
   onClear: () => void
   onStart: () => void
   onBack: () => void
+  onShowIntro: () => void
+  /** When set, the lobby is being visited mid-run; affects button labels & nav. */
+  activeShift?: number
   twitchStatus: TwitchStatus
   twitchChannel: string | null
 }
 
 export default function AdventureLobby({
-  roster, onKick, onClear, onStart, onBack, twitchStatus, twitchChannel,
+  roster, onKick, onClear, onStart, onBack, onShowIntro, activeShift,
+  twitchStatus, twitchChannel,
 }: Props) {
   const [confirmClear, setConfirmClear] = useState(false)
   const playerCount = roster.length
   const canStart = playerCount >= 1
+  const isMidRun = activeShift !== undefined
 
   return (
     <div className={styles.screen}>
+      <button
+        type="button"
+        className={styles.helpBtn}
+        onClick={onShowIntro}
+        title="How does Adventure mode work?"
+        aria-label="How does Adventure mode work?"
+      >?</button>
+
       {/* ── LEFT ── */}
       <div className={styles.leftCol}>
-        <h1 className={styles.title}>Adventure Lobby</h1>
+        <h1 className={styles.title}>
+          {isMidRun ? 'Manage the Crew' : 'Adventure Lobby'}
+        </h1>
         <div className={styles.subtitle}>
-          Your chat becomes the kitchen crew. Bigger crews face bigger goals —
-          but earn more along the way.
+          {isMidRun
+            ? <>Run paused on <strong>Shift {activeShift}</strong>. Add or remove chefs, then resume.</>
+            : 'Your chat becomes the kitchen crew. Bigger crews face bigger goals — but earn more along the way.'}
         </div>
 
         <div className={styles.howTo}>
@@ -61,9 +77,11 @@ export default function AdventureLobby({
             onClick={onStart}
             disabled={!canStart}
           >
-            START RUN →
+            {isMidRun ? `RESUME · SHIFT ${activeShift} →` : 'START RUN →'}
           </button>
-          <button className={styles.menuBtn} onClick={onBack}>Main Menu</button>
+          <button className={styles.menuBtn} onClick={onBack}>
+            {isMidRun ? '← Back to Briefing' : 'Main Menu'}
+          </button>
           <TwitchStatusPill status={twitchStatus} channel={twitchChannel} />
         </div>
       </div>

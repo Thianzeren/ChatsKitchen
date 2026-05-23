@@ -28,7 +28,6 @@ interface Props {
 
 export default function AdventureCuisinePick({ rosterSize, onConfirm, onBack, voteRef }: Props) {
   const [carouselStart, setCarouselStart] = useState(0)
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
 
   const { state: voteState, registerVote, forceResolve, togglePause } = useChoiceVote(
     { numOptions: CUISINE_ORDER.length, durationMs: VOTE_DURATION_MS, allowDoneCommand: false },
@@ -48,15 +47,6 @@ export default function AdventureCuisinePick({ rosterSize, onConfirm, onBack, vo
   const timerPct = voteState.timeLeftMs !== null ? (voteState.timeLeftMs / VOTE_DURATION_MS) * 100 : 100
   const canShiftLeft = carouselStart > 0
   const canShiftRight = carouselStart < CUISINE_ORDER.length - VISIBLE
-
-  // Pick the cuisine to show in the detail panel: hovered card if any, otherwise
-  // the leading vote (or the first visible card when no votes are in yet).
-  const leadingIdx = totalVotes > 0
-    ? voteState.tallies.reduce((best, t, i) => t > voteState.tallies[best] ? i : best, 0)
-    : carouselStart
-  const detailIdx = hoveredIdx ?? leadingIdx
-  const detailEntry = CUISINE_ORDER[detailIdx]
-  const detailSet = detailEntry ? RECIPE_SETS.find(s => s.id === detailEntry.setId) : null
 
   return (
     <div className={styles.screen}>
@@ -97,28 +87,50 @@ export default function AdventureCuisinePick({ rosterSize, onConfirm, onBack, vo
             if (!set) return null
             const votes = voteState.tallies[absoluteIdx] ?? 0
             const pct = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0
-            const isHovered = hoveredIdx === absoluteIdx
             return (
               <button
                 key={entry.id}
                 type="button"
-                className={`${styles.card} ${styles[`cuisine_${entry.id}`]} ${isHovered ? styles.cardHovered : ''}`}
+                className={`${styles.card} ${styles[`cuisine_${entry.id}`]}`}
                 onClick={() => { if (!voteState.resolved) forceResolve(absoluteIdx) }}
-                onMouseEnter={() => setHoveredIdx(absoluteIdx)}
-                onMouseLeave={() => setHoveredIdx(null)}
                 disabled={voteState.resolved}
               >
                 <div className={styles.cardKey}>!{absoluteIdx + 1}</div>
                 <div className={styles.cardFlagChip}>{set.flag}</div>
                 <div className={styles.cardHero}>{set.emoji}</div>
                 <div className={styles.cardName}>{set.name}</div>
-                <div className={styles.cardRecipes}>
-                  {set.recipeKeys.slice(0, 4).map(key => {
+                <div className={styles.cardDescription}>{set.description}</div>
+
+                <div className={styles.cardRecipeList}>
+                  {set.recipeKeys.map(key => {
                     const r = RECIPES[key]
-                    return r ? <FoodIcon key={key} icon={r.emoji} size={22} /> : null
+                    if (!r) return null
+                    return (
+                      <div key={key} className={styles.cardRecipeRow}>
+                        <FoodIcon icon={r.emoji} size={22} className={styles.cardRecipeEmoji} />
+                        <div className={styles.cardRecipeBody}>
+                          <div className={styles.cardRecipeHeader}>
+                            <span className={styles.cardRecipeName}>{r.name}</span>
+                            <span className={styles.cardRecipeReward}>${r.reward}</span>
+                          </div>
+                          <div className={styles.cardRecipeSteps}>
+                            {r.steps.map((step, i) => (
+                              <Fragment key={i}>
+                                {i > 0 && (
+                                  <span className={step.requires ? styles.stepArrow : styles.stepSeparator}>
+                                    {step.requires ? '→' : '·'}
+                                  </span>
+                                )}
+                                <code className={styles.stepChip}>{step.action} {step.target.replace(/_/g, ' ')}</code>
+                              </Fragment>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )
                   })}
                 </div>
-                <div className={styles.cardDescription}>{set.description}</div>
+
                 <div className={styles.cardFooter}>
                   <span className={styles.cardVotes}>{votes} {votes === 1 ? 'vote' : 'votes'}{totalVotes > 0 ? ` · ${pct}%` : ''}</span>
                 </div>
@@ -136,52 +148,6 @@ export default function AdventureCuisinePick({ rosterSize, onConfirm, onBack, vo
           onClick={() => setCarouselStart(s => Math.min(CUISINE_ORDER.length - VISIBLE, s + 1))}
           aria-label="Scroll right"
         >›</button>
-      </div>
-
-      {/* Detail breakdown */}
-      <div className={styles.detailPanel}>
-        {detailSet ? (
-          <div className={styles.detailContent}>
-            <div className={styles.detailHeader}>
-              <span className={styles.detailFlag}>{detailSet.flag}</span>
-              <span className={styles.detailName}>{detailSet.name}</span>
-              <span className={styles.detailHint}>
-                {hoveredIdx !== null ? 'preview' : (totalVotes > 0 ? 'currently leading' : 'first cuisine')}
-              </span>
-            </div>
-            <div className={styles.recipesGrid}>
-              {detailSet.recipeKeys.map(key => {
-                const recipe = RECIPES[key]
-                if (!recipe) return null
-                return (
-                  <div key={key} className={styles.recipeRow}>
-                    <FoodIcon icon={recipe.emoji} size={24} className={styles.recipeEmoji} />
-                    <div className={styles.recipeInfo}>
-                      <div className={styles.recipeName}>
-                        {recipe.name}
-                        <span className={styles.recipeReward}>${recipe.reward}</span>
-                      </div>
-                      <div className={styles.recipeSteps}>
-                        {recipe.steps.map((step, i) => (
-                          <Fragment key={i}>
-                            {i > 0 && (
-                              <span className={step.requires ? styles.stepArrow : styles.stepSeparator}>
-                                {step.requires ? '→' : '·'}
-                              </span>
-                            )}
-                            <code className={styles.stepChip}>!{step.action} {step.target.replace(/_/g, ' ')}</code>
-                          </Fragment>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        ) : (
-          <div className={styles.detailPlaceholder}>Hover or vote for a cuisine to see its recipes</div>
-        )}
       </div>
 
       <div className={styles.actions}>

@@ -16,6 +16,7 @@ interface Props {
   bestRun: AdventureBestRun | null
   onStart: () => void
   onMenu: () => void
+  onManageLobby: () => void
   twitchStatus: TwitchStatus
   twitchChannel: string | null
 }
@@ -24,7 +25,7 @@ function formatMultiplier(value: number): string {
   return `${value.toFixed(2).replace(/\.?0+$/, '')}×`
 }
 
-export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitchStatus, twitchChannel }: Props) {
+export default function AdventureBriefing({ run, bestRun, onStart, onMenu, onManageLobby, twitchStatus, twitchChannel }: Props) {
   const [confirmExit, setConfirmExit] = useState(false)
 
   const lastResult = run.shiftResults.length > 0
@@ -116,6 +117,7 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, twitc
 
         <div className={styles.buttons}>
           <button className={styles.startBtn} onClick={onStart}>START</button>
+          <button className={styles.lobbyBtn} onClick={onManageLobby}>👥 Manage Lobby</button>
           <button className={styles.menuBtn} onClick={() => setConfirmExit(true)}>Main Menu</button>
           <TwitchStatusPill status={twitchStatus} channel={twitchChannel} />
         </div>
