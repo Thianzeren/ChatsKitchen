@@ -421,3 +421,98 @@
   text-align: right;
   flex-shrink: 0;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   .screenWon — applied to the root .screen when run.runWon === true
+   Recolors existing elements to a warm parchment / gold theme.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.screenWon {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 178, 70, 0.10) 0%, transparent 55%),
+    var(--bg);
+}
+
+/* ── Completed banner (above title) ── */
+
+.completedBanner {
+  align-self: flex-start;
+  font-family: 'Lilita One', cursive;
+  font-size: 18px;
+  letter-spacing: 5px;
+  color: #1a140e;
+  background: linear-gradient(180deg, #d4a155 0%, #b87333 100%);
+  border: 1px solid #6b3a18;
+  border-radius: 4px;
+  padding: 6px 18px;
+  box-shadow: 0 0 18px rgba(255, 178, 70, 0.30);
+}
+
+/* ── Title recolor when won ── */
+
+.screenWon .title {
+  color: #f0c850;
+  text-shadow: 0 2px 0 #6b3a18, 0 0 18px rgba(240, 200, 80, 0.45);
+}
+
+/* ── Hero stat treatment (Shifts Survived) ── */
+
+.statHero {
+  position: relative;
+  background: linear-gradient(180deg, rgba(212, 161, 85, 0.30) 0%, rgba(107, 58, 24, 0.40) 100%);
+  border: 1px solid #d4a155;
+  border-radius: 10px;
+  padding: 12px 18px;
+  box-shadow: inset 0 0 16px rgba(255, 178, 70, 0.25), 0 0 14px rgba(240, 200, 80, 0.20);
+}
+
+.statHero::before,
+.statHero::after {
+  content: '✦';
+  position: absolute;
+  top: 4px;
+  color: #f0c850;
+  font-size: 14px;
+  text-shadow: 0 0 8px #ffb060;
+}
+.statHero::before { left: 6px; }
+.statHero::after  { right: 6px; }
+
+.statHero .statValue {
+  font-size: 48px;
+  color: #f0c850;
+  text-shadow: 0 2px 0 #6b3a18;
+}
+
+/* ── Panel borders pick up the amber theme when won ── */
+
+.screenWon .historyPanel,
+.screenWon .leaderboard {
+  border-color: #6b3a18;
+}
+
+.screenWon .panelTitle,
+.screenWon .lbTitle {
+  color: #d4a155;
+}
+
+/* ── Leaderboard MVP row ── */
+
+.lbMvp {
+  background: rgba(240, 200, 80, 0.12) !important;
+  border: 1px solid rgba(212, 161, 85, 0.45);
+}
+
+.lbMvp .lbRank {
+  color: #f0c850;
+  text-shadow: 0 0 8px rgba(255, 178, 70, 0.5);
+}
+
+/* ── Play Again button — amber gradient when won ── */
+
+.screenWon .playAgainBtn {
+  background: linear-gradient(180deg, #d4a155 0%, #b87333 100%);
+  color: #1a140e;
+  border: 1px solid #6b3a18;
+  box-shadow: 0 2px 10px rgba(255, 178, 70, 0.25);
+}

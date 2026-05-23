@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { AdventureRun, AdventureBestRun, calcPlayerScore } from '../state/types'
 import { RECIPES, NAME_COLORS, hashStr } from '../data/recipes'
 import { GARNISHES } from '../data/adventureGarnishes'
 import { BOSSES, BossId } from '../data/adventureBosses'
+import { getCuisineRecipeSet, ADVENTURE_TOTAL_SHIFTS } from '../data/adventureMode'
 import FoodIcon from './FoodIcon'
+import AdventureSuccessOverlay from './AdventureSuccessOverlay'
 import styles from './AdventureRunEnd.module.css'
 
 interface Props {
@@ -27,14 +30,28 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
   const leaderboard = Object.entries(run.accumulatedPlayerStats)
     .sort(([, a], [, b]) => calcPlayerScore(b) - calcPlayerScore(a))
 
+  const isWon = run.runWon === true
+  const [showOverlay, setShowOverlay] = useState(isWon)
+
+  const mvpEntry = leaderboard[0]
+  const mvpName  = mvpEntry ? mvpEntry[0] : null
+  const mvpScore = mvpEntry ? calcPlayerScore(mvpEntry[1]) : null
+
+  const cuisineSet  = getCuisineRecipeSet(run.startCuisine)
+  const cuisineFlag = cuisineSet?.flag ?? ''
+  const cuisineName = cuisineSet?.name ?? ''
+
   return (
-    <div className={styles.screen}>
+    <div className={`${styles.screen} ${isWon ? styles.screenWon : ''}`}>
       {/* ── LEFT ── */}
       <div className={styles.leftCol}>
-        <h1 className={styles.title}>{run.runWon ? 'Run Won!' : 'Run Over'}</h1>
+        {isWon && (
+          <div className={styles.completedBanner}>★ ADVENTURE COMPLETED ★</div>
+        )}
+        <h1 className={styles.title}>{isWon ? 'Run Won!' : 'Run Over'}</h1>
 
         <div className={styles.stats}>
-          <div className={styles.stat}>
+          <div className={`${styles.stat} ${isWon ? styles.statHero : ''}`}>
             <div className={styles.statValue}>{passedShifts}</div>
             <div className={styles.statLabel}>Shifts Survived</div>
           </div>
@@ -149,9 +166,13 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
             leaderboard.map(([name, s], i) => {
               const color = NAME_COLORS[Math.abs(hashStr(name)) % NAME_COLORS.length]
               const isYou = name === 'You'
+              const isMvp = isWon && i === 0
               return (
-                <div key={name} className={`${styles.lbRow} ${isYou ? styles.lbYou : ''}`}>
-                  <span className={styles.lbRank}>{i + 1}</span>
+                <div
+                  key={name}
+                  className={`${styles.lbRow} ${isYou ? styles.lbYou : ''} ${isMvp ? styles.lbMvp : ''}`}
+                >
+                  <span className={styles.lbRank}>{isMvp ? '★' : i + 1}</span>
                   <span className={styles.lbName} style={{ color }}>{name}</span>
                   <span className={styles.lbDetail}>{s.cooked}</span>
                   <span className={styles.lbDetail}>{s.served}</span>
@@ -167,6 +188,17 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
           )}
         </div>
       </div>
+
+      {showOverlay && (
+        <AdventureSuccessOverlay
+          shiftCount={ADVENTURE_TOTAL_SHIFTS}
+          cuisineFlag={cuisineFlag}
+          cuisineName={cuisineName}
+          mvpName={mvpName}
+          mvpScore={mvpScore}
+          onDismiss={() => setShowOverlay(false)}
+        />
+      )}
     </div>
   )
 }
