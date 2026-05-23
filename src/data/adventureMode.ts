@@ -1,5 +1,5 @@
 import { RECIPES, RECIPE_SETS } from './recipes'
-import { PlayerStats, CuisineId, AdventureRun } from '../state/types'
+import { PlayerStats, CuisineId, AdventureRun, RecipeSet } from '../state/types'
 
 // ── 8-shift run constants ────────────────────────────────────────────────────
 
@@ -66,6 +66,11 @@ export function getCuisineRecipeKeys(cuisine: CuisineId): string[] {
   const setId = CUISINE_TO_RECIPE_SET_ID[cuisine]
   const set = RECIPE_SETS.find(s => s.id === setId)
   return set ? [...set.recipeKeys] : []
+}
+
+export function getCuisineRecipeSet(cuisine: CuisineId): RecipeSet | undefined {
+  const setId = CUISINE_TO_RECIPE_SET_ID[cuisine]
+  return RECIPE_SETS.find(s => s.id === setId)
 }
 
 // Rank recipes in a cuisine from easiest to hardest by total cooking duration.
