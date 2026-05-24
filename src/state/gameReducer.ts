@@ -346,7 +346,31 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         }
       }
 
-      const reward = Math.round(baseReward * multiplier) + tip + comboBonus
+      // ── Long Memory garnish — every 5th dish served (shift-wide) earns +$40 ──
+      let longMemoryBonus = 0
+      if (active.includes('long_memory') && (state.served + 1) % 5 === 0) {
+        longMemoryBonus = 40
+      }
+
+      // ── Repeat Customer garnish — every 3rd consecutive same-recipe by same user earns +$25 ──
+      let repeatCustomerBonus = 0
+      let nextRepeatCustomerStreak = state.repeatCustomerStreak
+      if (active.includes('repeat_customer')) {
+        const cur = state.repeatCustomerStreak
+        if (cur && cur.user === user && cur.recipe === order.dish) {
+          const nextCount = cur.count + 1
+          if (nextCount >= 3) {
+            repeatCustomerBonus = 25
+            nextRepeatCustomerStreak = { user, recipe: order.dish, count: 0 }
+          } else {
+            nextRepeatCustomerStreak = { user, recipe: order.dish, count: nextCount }
+          }
+        } else {
+          nextRepeatCustomerStreak = { user, recipe: order.dish, count: 1 }
+        }
+      }
+
+      const reward = Math.round(baseReward * multiplier) + tip + comboBonus + longMemoryBonus + repeatCustomerBonus
 
       let withStats = addStat(state, user, 'served', 1)
       withStats = addStat(withStats, user, 'moneyEarned', reward)
@@ -365,6 +389,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           : { ...afterPool, blueMoney: (afterPool.blueMoney ?? 0) + reward, blueServed: (afterPool.blueServed ?? 0) + 1 }
       }
 
+      // Compose a chat message that mentions any of the new triggered bonuses that fired.
+      const bonusTags: string[] = []
+      if (comboBonus > 0) bonusTags.push(`Combo Plate +$${comboBonus}`)
+      if (longMemoryBonus > 0) bonusTags.push(`Long Memory +$${longMemoryBonus}`)
+      if (repeatCustomerBonus > 0) bonusTags.push(`Repeat Customer +$${repeatCustomerBonus}`)
+      const bonusSuffix = bonusTags.length > 0 ? ` (${bonusTags.join(', ')}!)` : ''
+
       return addMsg(
         {
           ...afterPool,
@@ -373,11 +404,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           served: afterPool.served + 1,
           firstOrderServedThisShift: true,
           recentServes,
+          repeatCustomerStreak: nextRepeatCustomerStreak,
         },
         'KITCHEN',
-        comboBonus > 0
-          ? `${user} served ${recipe.emoji} ${recipe.name}! +$${reward} (Combo Plate +$${comboBonus}!)`
-          : `${user} served ${recipe.emoji} ${recipe.name}! +$${reward}`,
+        `${user} served ${recipe.emoji} ${recipe.name}! +$${reward}${bonusSuffix}`,
         'success',
       )
     }
@@ -503,8 +533,23 @@ let matchedStep = null
         patienceLeft: patience,
         spawnTime: action.now,
       }
+      // ── Side Salad garnish — seed 1 free prepped ingredient from this order's recipe ──
+      let sideSaladPreparedItems = state.preparedItems
+      let sideSaladPreparedItemSources = state.preparedItemSources
+      if ((state.activeGarnishes ?? []).includes('side_salad') && recipe.steps.length > 0) {
+        const step = recipe.steps[Math.floor(Math.random() * recipe.steps.length)]
+        sideSaladPreparedItems = [...sideSaladPreparedItems, step.produces]
+        sideSaladPreparedItemSources = [...sideSaladPreparedItemSources, '']
+      }
+
       return addMsg(
-        { ...state, orders: [...state.orders, order], nextOrderId: state.nextOrderId + 1 },
+        {
+          ...state,
+          orders: [...state.orders, order],
+          nextOrderId: state.nextOrderId + 1,
+          preparedItems: sideSaladPreparedItems,
+          preparedItemSources: sideSaladPreparedItemSources,
+        },
         'CUSTOMER', `Order #${order.id}: ${recipe.emoji} ${recipe.name}!`, 'system'
       )
     }
@@ -523,6 +568,8 @@ let matchedStep = null
       const newBluePreparedItemSources = state.teams ? [...(state.bluePreparedItemSources ?? [])] : []
       let newPlayerStats = { ...state.playerStats }
       let bloodhoundMoney = 0
+      let autoExtinguishChargesOut = state.autoExtinguishCharges  // unchanged unless Phoenix Wing fires
+      let badReviewsPenaltyTotal = 0
 
       // ── Periodic shift-timer effects (Tea Break + Recipe Roulette) ──
       const active = state.activeGarnishes ?? []
@@ -592,6 +639,34 @@ let matchedStep = null
           // Step B: Check overheat (threshold may be raised by Insulation or lowered by Glass Kitchen)
           const overheatLimit = state.overheatThreshold ?? 100
           if (currentHeat >= overheatLimit) {
+            // ── Phoenix Wing garnish — first overheat per shift is auto-extinguished ──
+            // Slots are still destroyed, but the station restores instantly (heat=0, not overheated).
+            // We still penalise firesCaused on the chefs whose slots tipped the station — those
+            // bonuses already exist below; we just skip the overheat *side-effects* (chat
+            // message, locked state, Bloodhound payout).
+            const phoenixCharges = state.autoExtinguishCharges ?? 0
+            if (phoenixCharges > 0) {
+              // Decrement charges on the live state-out (we don't mutate `state` directly;
+              // pass via the TICK return value). Track in a local so the bottom-of-handler
+              // return can pick it up.
+              autoExtinguishChargesOut = phoenixCharges - 1
+              // Still penalise the chefs (matches normal overheat penalty)
+              for (const s of station.slots) {
+                const statSnap = addStat({ ...state, playerStats: newPlayerStats }, s.user, 'firesCaused', 1)
+                newPlayerStats = statSnap.playerStats
+              }
+              for (const s of newStations[id].slots) delete newActiveUsers[s.user]
+              newStations[id] = { ...newStations[id], slots: [], heat: 0, overheated: false, extinguishVotes: [] }
+              messages.push({
+                id: nextMsgId++,
+                username: 'KITCHEN',
+                text: `🪶 Phoenix Wing saved the ${STATION_DEFS[id].name}! Slots lost, station restored.`,
+                type: 'success',
+              })
+              break // station handled, skip remaining slots
+            }
+            // ── End Phoenix Wing intercept ──
+
             // Penalise every player cooking at this station, not just the one whose slot tipped it over
             for (const s of station.slots) {
               const statSnap = addStat({ ...state, playerStats: newPlayerStats }, s.user, 'firesCaused', 1)
@@ -665,8 +740,47 @@ let matchedStep = null
         }
 
         if (!newStations[id].overheated) {
-          newStations[id] = { ...newStations[id], heat: currentHeat, slots: updatedSlots }
+          // Loose Lid garnish — heat above threshold dissipates passively.
+          let heatAfterDecay = currentHeat
+          if (
+            state.heatDecayAboveThreshold !== undefined &&
+            state.heatDecayRate !== undefined &&
+            !HEAT_EXEMPT_STATIONS.has(id) &&
+            currentHeat > state.heatDecayAboveThreshold
+          ) {
+            const decay = state.heatDecayRate * (delta / 1000)
+            heatAfterDecay = Math.max(state.heatDecayAboveThreshold, currentHeat - decay)
+          }
+          newStations[id] = { ...newStations[id], heat: heatAfterDecay, slots: updatedSlots }
         }
+      }
+
+      // ── The Apprentice garnish — drip a random prepped ingredient every 35s ──
+      let apprenticeTimerOut = state.apprenticeTimerMs
+      if (state.apprenticeTimerMs !== undefined) {
+        let timer = state.apprenticeTimerMs + delta
+        while (timer >= 35_000) {
+          // Pick a random `produces` from the active recipes' steps
+          const pool: string[] = []
+          for (const key of state.enabledRecipes) {
+            const r = RECIPES[key]
+            if (!r) continue
+            for (const step of r.steps) pool.push(step.produces)
+          }
+          if (pool.length > 0) {
+            const pick = pool[Math.floor(Math.random() * pool.length)]
+            newPreparedItems.push(pick)
+            newPreparedItemSources.push('')
+            messages.push({
+              id: nextMsgId++,
+              username: 'KITCHEN',
+              text: `👨‍🍳 The Apprentice prepped ${pick.replace(/_/g, ' ')}.`,
+              type: 'system',
+            })
+          }
+          timer -= 35_000
+        }
+        apprenticeTimerOut = timer
       }
 
       // Update order patience + expire (Tea Break can freeze patience drain temporarily)
@@ -679,6 +793,17 @@ let matchedStep = null
         if (newPatience <= 0) {
           lost++
           messages.push({ id: nextMsgId++, username: 'CUSTOMER', text: `Order #${order.id} expired! Lost a ${RECIPES[order.dish].emoji}!`, type: 'error' })
+          // Bad Reviews boss — flat $ deducted per expired order.
+          // Lost orders aren't team-tagged, so PvP charges BOTH teams equally.
+          if (state.lostOrderPenalty !== undefined) {
+            badReviewsPenaltyTotal += state.lostOrderPenalty
+            messages.push({
+              id: nextMsgId++,
+              username: 'KITCHEN',
+              text: `⭐ Bad Reviews · −$${state.lostOrderPenalty}`,
+              type: 'error',
+            })
+          }
           // Compost Bin garnish: turn the lost order into 1 random prepped ingredient
           if (compostActive) {
             const expiredRecipe = RECIPES[order.dish]
@@ -729,11 +854,19 @@ let matchedStep = null
         nextMessageId: nextMsgId,
         cookingSpeedModifier,
         moneyMultiplier,
-        money: state.money + bloodhoundMoney,
+        money: state.money + bloodhoundMoney - badReviewsPenaltyTotal,
+        redMoney: state.teams && state.redMoney !== undefined
+          ? state.redMoney - badReviewsPenaltyTotal
+          : state.redMoney,
+        blueMoney: state.teams && state.blueMoney !== undefined
+          ? state.blueMoney - badReviewsPenaltyTotal
+          : state.blueMoney,
         enabledRecipes: newEnabledRecipes,
         teaBreakNextAt,
         patiencePausedUntil,
         rouletteNextAt,
+        autoExtinguishCharges: autoExtinguishChargesOut,
+        apprenticeTimerMs: apprenticeTimerOut,
       }
     }
 
