@@ -40,15 +40,17 @@ interface CardVariant {
 }
 
 const EASY_VARIANTS: readonly CardVariant[] = [
-  { key: 'slow_day',  label: 'Slow Day',        icon: '😴', goalDelta: -0.15, cashBonus: 0,  flavor: 'A breather shift. Lower goal, no reward.' },
-  { key: 'steady',    label: 'Steady Service',  icon: '🍵', goalDelta: -0.08, cashBonus: 20, flavor: 'Smaller break on goal — but a small tip on pass.' },
-  { key: 'prep_day',  label: 'Prep Day',        icon: '📋', goalDelta: -0.20, cashBonus: 0,  flavor: 'Big goal cut. Save your cash for the Pantry.' },
+  { key: 'slow_day',             label: 'Slow Day',             icon: '😴', goalDelta: -0.15, cashBonus: 0,  flavor: 'A breather shift. Lower goal, no reward.' },
+  { key: 'steady',               label: 'Steady Service',       icon: '🍵', goalDelta: -0.08, cashBonus: 20, flavor: 'Smaller break on goal — but a small tip on pass.' },
+  { key: 'prep_day',             label: 'Prep Day',             icon: '📋', goalDelta: -0.20, cashBonus: 0,  flavor: 'Big goal cut. Save your cash for the Pantry.' },
+  { key: 'friend_of_the_house',  label: 'Friend of the House',  icon: '🤝', goalDelta: -0.12, cashBonus: 30, flavor: 'A regular tips the chef. Smaller goal, modest reward on pass.' },
 ]
 
 const RISK_VARIANTS: readonly CardVariant[] = [
-  { key: 'big_tab',     label: 'Big Tab',       icon: '💰', goalDelta: 0,    cashBonus: 60,  flavor: 'Same goal, cash bonus on pass.' },
+  { key: 'big_tab',     label: 'Big Tab',       icon: '💰', goalDelta: 0.05, cashBonus: 80,  flavor: 'Small risk for a solid tip on pass.' },
   { key: 'high_roller', label: 'High Roller',   icon: '🎲', goalDelta: 0.10, cashBonus: 120, flavor: 'Harder goal — bigger payday on pass.' },
   { key: 'gambit',      label: 'Chef’s Gambit', icon: '🎯', goalDelta: 0.05, cashBonus: 90,  flavor: 'Modest goal hike for a sizeable tip.' },
+  { key: 'all_in',      label: 'All-In',        icon: '🃏', goalDelta: 0.20, cashBonus: 200, flavor: 'Push every chip in. Toughest goal of the run — biggest payday.' },
 ]
 
 // ── Card generators ──────────────────────────────────────────────────────────
