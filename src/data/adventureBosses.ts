@@ -1,7 +1,7 @@
 import { GameOptions, GameState, PathCard } from '../state/types'
 import { RECIPES, STATION_DEFS, HEAT_EXEMPT_STATIONS } from './recipes'
 
-export type BossId = 'picky_critic' | 'rush_hour' | 'health_inspector' | 'understaffed' | 'heatwave' | 'chaos_mode' | 'recipe_roulette'
+export type BossId = 'picky_critic' | 'rush_hour' | 'health_inspector' | 'understaffed' | 'heatwave' | 'chaos_mode' | 'recipe_roulette' | 'hangry_mob' | 'bad_reviews'
 
 export interface BossDef {
   id: BossId
@@ -55,11 +55,28 @@ export const BOSSES: Record<BossId, BossDef> = {
     description: 'Every 45 seconds, one of your active recipes is swapped for a random dish from the catalog.',
     icon: '🎲',
   },
+  // ── Sub-project C: new bosses ──
+  hangry_mob: {
+    id: 'hangry_mob',
+    name: 'Hangry Mob',
+    description: 'Every order arrives with 30% less patience — same volume of orders, sharply less time to serve each.',
+    icon: '😤',
+  },
+  bad_reviews: {
+    id: 'bad_reviews',
+    name: 'Bad Reviews',
+    description: 'Every lost or expired order deducts $20 from the run bank.',
+    icon: '⭐',
+  },
 }
 
 export interface BossDelta {
   options: Partial<Pick<GameOptions, 'orderSpeed' | 'orderSpawnRate'>>
-  state: Partial<Pick<GameState, 'bossMoneyMultiplier' | 'cooldownMultiplier' | 'disabledStations' | 'heatPerCookMultiplier' | 'coolAmountBonus'>>
+  state: Partial<Pick<GameState,
+    | 'bossMoneyMultiplier' | 'cooldownMultiplier' | 'disabledStations'
+    | 'heatPerCookMultiplier' | 'coolAmountBonus'
+    | 'orderPatienceBonus' | 'lostOrderPenalty'
+  >>
 }
 
 // Compute the option/state adjustments for a given boss debuff.
@@ -93,6 +110,11 @@ export function applyBossDebuff(card: PathCard): BossDelta {
       // Effect lives in the TICK loop (driven by state.activeBossDebuff which
       // useAdventureRun copies from the chosen path card into RESET).
       return { options: {}, state: {} }
+    case 'hangry_mob':
+      // -15000 ms approximates -30% on a ~50s baseline patience across the recipe roster.
+      return { options: {}, state: { orderPatienceBonus: -15000 } }
+    case 'bad_reviews':
+      return { options: {}, state: { lostOrderPenalty: 20 } }
   }
 }
 
@@ -113,5 +135,5 @@ export function pickHealthInspectorStation(enabledRecipes: string[], rng: () => 
 
 // Return the boss pool. Both boss shifts (S4 + S8) draw from this set.
 export function getBossPool(): BossId[] {
-  return ['picky_critic', 'rush_hour', 'health_inspector', 'understaffed', 'heatwave', 'chaos_mode', 'recipe_roulette']
+  return ['picky_critic', 'rush_hour', 'health_inspector', 'understaffed', 'heatwave', 'chaos_mode', 'recipe_roulette', 'hangry_mob', 'bad_reviews']
 }

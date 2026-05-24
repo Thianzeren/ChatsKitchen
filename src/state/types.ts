@@ -280,6 +280,17 @@ export interface GameState {
   activeGarnishes?: string[]                  // garnish ids active for this shift
   firstOrderServedThisShift?: boolean         // First Bite, Big Tippers — flips after first SERVE
   overheatThreshold?: number                  // default 100; Glass Kitchen=60, Insulation=110
+  // ── Adventure content variety (Sub-project C) — new optional fields ──
+  heatDecayAboveThreshold?: number    // Loose Lid garnish — heat above this dissipates passively
+  heatDecayRate?: number               // Loose Lid garnish — points/sec decayed (e.g. 4)
+  autoExtinguishCharges?: number       // Phoenix Wing garnish — first overheat per shift auto-restores
+  apprenticeTimerMs?: number           // The Apprentice garnish — TICK accumulator for periodic ingredient drip
+  repeatCustomerStreak?: {             // Repeat Customer garnish — per-shift streak tracker
+    user: string
+    recipe: string
+    count: number
+  }
+  lostOrderPenalty?: number            // Bad Reviews boss — $ deducted per ORDER_EXPIRED
   teams?: Record<string, 'red' | 'blue'>
   redPreparedItems?: string[]
   bluePreparedItems?: string[]

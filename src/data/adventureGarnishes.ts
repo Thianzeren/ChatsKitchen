@@ -31,6 +31,9 @@ export type GarnishField =
   | 'flatTipPerOrder'
   | 'orderPatienceBonus'   // Friendly Faces — +ms to each new order's patienceMax/patienceLeft
   | 'overheatThresholdDelta'   // Insulation +10, Glass Kitchen -40 (additive to base 100)
+  // ── Sub-project C — content variety ──
+  | 'heatDecayAboveThreshold'   // Loose Lid — heat above this threshold dissipates
+  | 'heatDecayRate'              // Loose Lid — heat points per second dissipated
 
 // ── Catalog ───────────────────────────────────────────────────────────────────
 // Tier shape: 5 common stat-boosts (PR-1, doubled & one-shot) + 1 new triggered
@@ -242,6 +245,62 @@ export const GARNISHES: Record<string, GarnishDef> = {
     effects: [{ field: 'overheatThresholdDelta', value: -40, mode: 'add' }],
     // +50% money is handled inline in SERVE via activeGarnishes check
   },
+
+  // ── Sub-project C: new commons ──
+  loose_lid: {
+    id: 'loose_lid',
+    name: 'Loose Lid',
+    description: 'Heat above 75 dissipates passively at 4/sec.',
+    tier: 'common',
+    basePrice: 110,
+    icon: '🥘',
+    effects: [
+      { field: 'heatDecayAboveThreshold', value: 75, mode: 'add' },
+      { field: 'heatDecayRate', value: 4, mode: 'add' },
+    ],
+  },
+  repeat_customer: {
+    id: 'repeat_customer',
+    name: 'Repeat Customer',
+    description: 'Every 3rd consecutive dish of the same recipe earns +$25.',
+    tier: 'common',
+    basePrice: 130,
+    icon: '🔁',
+  },
+  side_salad: {
+    id: 'side_salad',
+    name: 'Side Salad',
+    description: 'Each new order arrives with 1 free prepped ingredient.',
+    tier: 'common',
+    basePrice: 120,
+    icon: '🥗',
+  },
+
+  // ── Sub-project C: new rares ──
+  phoenix_wing: {
+    id: 'phoenix_wing',
+    name: 'Phoenix Wing',
+    description: 'The first station overheat each shift is auto-extinguished (slots still lost).',
+    tier: 'rare',
+    basePrice: 240,
+    icon: '🪶',
+  },
+  apprentice: {
+    id: 'apprentice',
+    name: 'The Apprentice',
+    description: 'Every 35 seconds, one random prepped ingredient appears in the tray.',
+    tier: 'rare',
+    basePrice: 260,
+    icon: '👨‍🍳',
+  },
+  long_memory: {
+    id: 'long_memory',
+    name: 'Long Memory',
+    description: 'Every 5th dish served each shift earns +$40.',
+    tier: 'rare',
+    basePrice: 220,
+    icon: '📖',
+  },
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -317,6 +376,8 @@ export function applyAllGarnishes(
   let flatTipPerOrder = 0
   let orderPatienceBonus = 0
   let overheatThreshold = OVERHEAT_THRESHOLD_BASE
+  let heatDecayAboveThreshold: number | undefined = undefined
+  let heatDecayRate: number | undefined = undefined
 
   // Stat-effect aggregation
   for (const entry of owned) {
@@ -356,6 +417,12 @@ export function applyAllGarnishes(
         case 'overheatThresholdDelta':
           overheatThreshold += effect.value
           break
+        case 'heatDecayAboveThreshold':
+          heatDecayAboveThreshold = effect.value
+          break
+        case 'heatDecayRate':
+          heatDecayRate = effect.value
+          break
       }
     }
   }
@@ -381,6 +448,8 @@ export function applyAllGarnishes(
       flatTipPerOrder:            flatTipPerOrder       === 0 ? undefined : flatTipPerOrder,
       orderPatienceBonus:         orderPatienceBonus    === 0 ? undefined : orderPatienceBonus,
       overheatThreshold:          overheatThreshold     === OVERHEAT_THRESHOLD_BASE ? undefined : overheatThreshold,
+      heatDecayAboveThreshold,
+      heatDecayRate,
     },
   }
 }
