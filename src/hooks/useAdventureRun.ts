@@ -108,6 +108,15 @@ function buildShiftReset(
   const heatMul = (delta.state.heatPerCookMultiplier ?? 1) * (boss.state.heatPerCookMultiplier ?? 1)
   const coolBonus = (delta.state.coolAmountBonus ?? 0) + (boss.state.coolAmountBonus ?? 0)
 
+  // ── Sub-project C — garnish-driven seeds ──
+  const ownsPhoenixWing = run.ownedGarnishes.some(g => g.garnishId === 'phoenix_wing')
+  const ownsApprentice  = run.ownedGarnishes.some(g => g.garnishId === 'apprentice')
+
+  // ── Sub-project C — combined orderPatienceBonus (garnish + boss can both contribute) ──
+  // Friendly Faces (+ms) and Hangry Mob (-ms) compose additively.
+  const orderPatienceBonusCombined =
+    (delta.state.orderPatienceBonus ?? 0) + (boss.state.orderPatienceBonus ?? 0)
+
   return {
     type: 'RESET',
     shiftDuration: ADVENTURE_SHIFT_DURATION,
@@ -121,13 +130,19 @@ function buildShiftReset(
     coolAmountBonus: coolBonus === 0 ? undefined : coolBonus,
     flatTipPerOrder: delta.state.flatTipPerOrder,
     choppingCookTimeMultiplier: delta.state.choppingCookTimeMultiplier,
-    orderPatienceBonus: delta.state.orderPatienceBonus,
+    orderPatienceBonus: orderPatienceBonusCombined === 0 ? undefined : orderPatienceBonusCombined,
     overheatThreshold: delta.state.overheatThreshold,
     bossMoneyMultiplier: boss.state.bossMoneyMultiplier,
     cooldownMultiplier: boss.state.cooldownMultiplier,
     disabledStations: boss.state.disabledStations,
     activeGarnishes: run.ownedGarnishes.map(g => g.garnishId),
     activeBossDebuff: pathCard?.bossDebuffId,
+    // ── Sub-project C — new RESET seeds ──
+    heatDecayAboveThreshold: delta.state.heatDecayAboveThreshold,
+    heatDecayRate: delta.state.heatDecayRate,
+    autoExtinguishCharges: ownsPhoenixWing ? 1 : undefined,
+    apprenticeTimerMs: ownsApprentice ? 0 : undefined,
+    lostOrderPenalty: boss.state.lostOrderPenalty,
   }
 }
 
