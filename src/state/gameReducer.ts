@@ -34,6 +34,12 @@ export type GameAction =
       disabledStations?: string[]
       activeGarnishes?: string[]
       activeBossDebuff?: string
+      // ── Adventure content variety (Sub-project C) — new RESET fields ──
+      heatDecayAboveThreshold?: number   // Loose Lid garnish
+      heatDecayRate?: number              // Loose Lid garnish
+      autoExtinguishCharges?: number      // Phoenix Wing garnish (set to 1 each shift if owned)
+      apprenticeTimerMs?: number          // The Apprentice garnish (set to 0 each shift if owned)
+      lostOrderPenalty?: number           // Bad Reviews boss
     }
   | { type: 'SET_STATION_HEAT'; stationId: string; heat: number }
   | { type: 'OVERHEAT_STATION'; stationId: string }
@@ -192,6 +198,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         teaBreakNextAt: undefined,
         patiencePausedUntil: undefined,
         rouletteNextAt: undefined,
+        // ── Sub-project C — content variety fields ──
+        heatDecayAboveThreshold: action.heatDecayAboveThreshold,
+        heatDecayRate: action.heatDecayRate,
+        autoExtinguishCharges: action.autoExtinguishCharges,
+        apprenticeTimerMs: action.apprenticeTimerMs,
+        lostOrderPenalty: action.lostOrderPenalty,
+        repeatCustomerStreak: undefined,
       }
     }
 
