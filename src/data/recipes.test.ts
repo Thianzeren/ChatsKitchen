@@ -58,7 +58,7 @@ describe('gap-filler dishes', () => {
   it('veggie_dumplings is a premium but heat-free prep_heavy dish', () => {
     const p = getRecipeProfile(RECIPES.veggie_dumplings)
     expect(p.complexityPips).toBe(3)
-    expect(p.tags).toEqual(expect.arrayContaining(['premium', 'prep_heavy']))
+    expect(p.tags).toEqual(expect.arrayContaining(['slow', 'premium', 'prep_heavy']))
     expect(p.tags).not.toContain('hot_line')
   })
 })
