@@ -4,6 +4,7 @@ import { pickMiseEnPlaceIngredients } from '../data/adventureGarnishes'
 
 export const HEAT_PER_COOK = 20   // kept for reference; actual value is random 10–20 per slot
 export const COOL_AMOUNT   = 50   // midpoint reference only — actual value rolled randomly 40–60 on each use
+export const SERVE_TIME_BONUS_MAX = 9   // max $ bonus for serving at full patience (cafe scale; was 30)
 
 export type GameAction =
   | { type: 'TICK'; delta: number; now: number }
@@ -305,7 +306,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newOrders = state.orders.map((o, i) =>
         i === orderIdx ? { ...o, served: true, outcome: 'served' as const, completedAt: Date.now(), servedBy: user } : o
       )
-      const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * 30))
+      const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * SERVE_TIME_BONUS_MAX))
       const baseReward = recipe.reward + timeBonus
       const bossMoneyMul = state.bossMoneyMultiplier ?? 1
       let multiplier = (state.moneyMultiplier?.multiplier ?? 1) * bossMoneyMul
