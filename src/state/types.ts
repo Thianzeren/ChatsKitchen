@@ -1,4 +1,4 @@
-export type Screen = 'menu' | 'localplay' | 'pvplobby' | 'adventurelobby' | 'adventurebriefing' | 'adventurepantryshop' | 'adventurepathpick' | 'adventurecuisinepick' | 'adventurebossbriefing' | 'options' | 'playsetpicker' | 'freeplaysetup' | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'adventureshiftpassed' | 'adventurerunend' | 'credits'
+export type Screen = 'menu' | 'localplay' | 'pvplobby' | 'adventurelobby' | 'adventurebriefing' | 'adventurepantryshop' | 'adventurerecipepick' | 'options' | 'playsetpicker' | 'freeplaysetup' | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'adventureshiftpassed' | 'adventurerunend' | 'credits'
 
 export type CuisineId = 'western' | 'chinese' | 'japanese' | 'korean' | 'sg' | 'japanese_bakery'
 
@@ -15,17 +15,6 @@ export interface ShopOffer {
   rarity: GarnishTier
 }
 
-export interface PathCard {
-  id: string
-  label: string
-  archetype: 'easy' | 'risk' | 'boss'
-  goalDelta: number                       // multiplicative; -0.15 = 15% easier, +0.10 = 10% harder
-  rewardOnPass?: { cashBonus?: number; freeGarnishTier?: GarnishTier; freeRecipe?: boolean }
-  bossDebuffId?: string
-  bossPayload?: { disabledStationId?: string }   // pre-rolled by the generator for deterministic display
-  flavor?: string                          // one-line subtitle shown on the card
-  icon?: string                            // emoji shown on the card (set for easy/risk variants; bosses use their own icon)
-}
 export type TutorialDestination = 'menu' | 'playsetpicker' | 'freeplaysetup'
 
 export interface ActiveEventOptions {
@@ -165,26 +154,21 @@ export interface ShiftResult {
   served: number
   lost: number
   passed: boolean
-  chosenPathCardId?: string
   bossDebuffId?: string
-  cashBonusEarned?: number             // path-card cashBonus added on pass (0 if none)
 }
 
 export interface AdventureRun {
   runSeed: string
-  startCuisine: CuisineId
   currentShift: number                              // 1-based; shift being set up or played
   shiftResults: ShiftResult[]                       // completed shifts (appended after shiftend)
   currentRunMoney: number                           // bank — carries between shifts; spent in shop
-  unlockedRecipes: string[]                         // grows via auto-unlock + shop
-  currentRecipes: string[]                          // subset of unlockedRecipes active this shift
+  currentRecipes: string[]                          // the full active menu (grows via Recipe Pick)
   currentGoal: number                               // money goal for the current shift
-  participantCount: number                          // crew size — scales goals + garnish prices; refreshed each shift from the (future) Adventure lobby roster
-  pendingPathCards?: [PathCard, PathCard]
-  chosenPath?: PathCard
+  participantCount: number                          // crew size — scales goals + garnish prices
+  pendingRecipeOffers?: string[]                    // recipe keys offered on the Recipe Pick screen
+  currentBoss?: { id: string; disabledStationId?: string }  // set on boss shifts (S4/S8)
   pendingShopOffers?: ShopOffer[]
   ownedGarnishes: OwnedGarnish[]
-  currentBossDebuff?: string
   accumulatedPlayerStats: Record<string, PlayerStats>
   runWon?: boolean                                  // set when shift 8 is cleared
 }
@@ -193,7 +177,6 @@ export interface AdventureBestRun {
   furthestShift: number   // shift number of the last (failed) shift
   totalMoney: number      // sum of moneyEarned across all shifts
   wonRuns: number         // count of full 8-shift completions
-  bestStartCuisine?: CuisineId
   bestEndedAt?: number    // timestamp
 }
 

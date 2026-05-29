@@ -24,9 +24,7 @@ export function useGameAudio(screen: Screen, state: GameState, audioSettings: Au
       case 'adventurelobby':
       case 'adventurebriefing':
       case 'adventurepantryshop':
-      case 'adventurepathpick':
-      case 'adventurecuisinepick':
-      case 'adventurebossbriefing':
+      case 'adventurerecipepick':
       case 'adventurerunend':
       case 'options':
       case 'freeplaysetup':

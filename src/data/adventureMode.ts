@@ -1,5 +1,4 @@
-import { RECIPES, RECIPE_SETS } from './recipes'
-import { PlayerStats, CuisineId, AdventureRun } from '../state/types'
+import { PlayerStats } from '../state/types'
 
 // ── 8-shift run constants ────────────────────────────────────────────────────
 
@@ -30,14 +29,6 @@ export const PER_PLAYER_GOALS: readonly number[] = [
 // Keeping it fixed makes the goal number the single difficulty knob.
 export const ADVENTURE_SHIFT_DURATION = 180_000
 
-// Number of recipes active at each shift before any shop unlocks (1-indexed).
-// S1=1, S2=2, S3+=3. After S3, growth is driven by the shop only.
-export function getAutoUnlockedRecipeCount(shift: number): number {
-  if (shift <= 1) return 1
-  if (shift === 2) return 2
-  return 3
-}
-
 // ── Goal & duration lookups ──────────────────────────────────────────────────
 
 export function getAdventureGoal(shift: number, participantCount: number = 1): number {
@@ -48,54 +39,6 @@ export function getAdventureGoal(shift: number, participantCount: number = 1): n
 
 export function isBossShift(shift: number): boolean {
   return ADVENTURE_BOSS_SHIFTS.includes(shift)
-}
-
-// ── Cuisine helpers ──────────────────────────────────────────────────────────
-
-const CUISINE_TO_RECIPE_SET_ID: Record<CuisineId, string> = {
-  western: 'western_classics',
-  chinese: 'chinese',
-  japanese: 'japanese',
-  korean: 'korean',
-  japanese_bakery: 'japanese_bakery',
-  sg: 'sg_hawker',
-}
-
-export function getCuisineRecipeKeys(cuisine: CuisineId): string[] {
-  const setId = CUISINE_TO_RECIPE_SET_ID[cuisine]
-  const set = RECIPE_SETS.find(s => s.id === setId)
-  return set ? [...set.recipeKeys] : []
-}
-
-// Rank recipes in a cuisine from easiest to hardest by total cooking duration.
-// Used to pick a forgiving starter for shift 1.
-function rankRecipesByEase(keys: string[]): string[] {
-  return [...keys].sort((a, b) => {
-    const aTotal = RECIPES[a]?.steps.reduce((sum, s) => sum + s.duration, 0) ?? 0
-    const bTotal = RECIPES[b]?.steps.reduce((sum, s) => sum + s.duration, 0) ?? 0
-    return aTotal - bTotal
-  })
-}
-
-export function pickStartingRecipe(cuisine: CuisineId): string {
-  const ranked = rankRecipesByEase(getCuisineRecipeKeys(cuisine))
-  // Pick from the easier half so S1 always gets a forgiving dish.
-  const easyHalf = ranked.slice(0, Math.max(1, Math.ceil(ranked.length / 2)))
-  return easyHalf[Math.floor(Math.random() * easyHalf.length)] ?? ranked[0]
-}
-
-// Picks one recipe from the run's starting cuisine that the run does NOT yet own.
-// Returns null when every recipe in the cuisine has been unlocked.
-export function pickAutoUnlockRecipe(run: AdventureRun): string | null {
-  const pool = getCuisineRecipeKeys(run.startCuisine).filter(k => !run.unlockedRecipes.includes(k))
-  if (pool.length === 0) return null
-  return pool[Math.floor(Math.random() * pool.length)]
-}
-
-// PR-1 fallback when no CuisinePick screen has run yet — pick a random cuisine for the run.
-export function pickRandomCuisine(): CuisineId {
-  const cuisines: CuisineId[] = ['western', 'chinese', 'japanese', 'korean', 'japanese_bakery', 'sg']
-  return cuisines[Math.floor(Math.random() * cuisines.length)]
 }
 
 export function makeRunSeed(): string {

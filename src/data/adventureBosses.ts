@@ -1,5 +1,6 @@
-import { GameOptions, GameState, PathCard } from '../state/types'
+import { GameOptions, GameState } from '../state/types'
 import { RECIPES, STATION_DEFS, HEAT_EXEMPT_STATIONS } from './recipes'
+import { hashStringToSeed, mulberry32 } from './seededRng'
 
 export type BossId = 'picky_critic' | 'rush_hour' | 'health_inspector' | 'understaffed' | 'heatwave' | 'chaos_mode' | 'recipe_roulette' | 'hangry_mob' | 'bad_reviews'
 
@@ -80,10 +81,8 @@ export interface BossDelta {
 }
 
 // Compute the option/state adjustments for a given boss debuff.
-// `pathCard.bossPayload` carries the pre-rolled health-inspector station id so the
-// briefing UI can display "Stove is closed!" before the run begins.
-export function applyBossDebuff(card: PathCard): BossDelta {
-  const id = card.bossDebuffId as BossId | undefined
+export function applyBossDebuff(bossId: string | undefined, disabledStationId?: string): BossDelta {
+  const id = bossId as BossId | undefined
   if (!id) return { options: {}, state: {} }
 
   switch (id) {
@@ -91,27 +90,17 @@ export function applyBossDebuff(card: PathCard): BossDelta {
       return { options: {}, state: { bossMoneyMultiplier: 0.75 } }
     case 'rush_hour':
       return { options: { orderSpawnRate: 1.5, orderSpeed: 1.1 }, state: {} }
-    case 'health_inspector': {
-      const station = card.bossPayload?.disabledStationId
-      return {
-        options: {},
-        state: station ? { disabledStations: [station] } : {},
-      }
-    }
+    case 'health_inspector':
+      return { options: {}, state: disabledStationId ? { disabledStations: [disabledStationId] } : {} }
     case 'understaffed':
       return { options: {}, state: { cooldownMultiplier: 1.5 } }
     case 'heatwave':
       return { options: {}, state: { heatPerCookMultiplier: 1.5, coolAmountBonus: -10 } }
     case 'chaos_mode':
-      // Effect lives in the activeEventOptions config (set by useAdventureRun.closeShop),
-      // not in the RESET payload — chaos doesn't touch any game-state knob directly.
       return { options: {}, state: {} }
     case 'recipe_roulette':
-      // Effect lives in the TICK loop (driven by state.activeBossDebuff which
-      // useAdventureRun copies from the chosen path card into RESET).
       return { options: {}, state: {} }
     case 'hangry_mob':
-      // -15000 ms approximates -30% on a ~50s baseline patience across the recipe roster.
       return { options: {}, state: { orderPatienceBonus: -15000 } }
     case 'bad_reviews':
       return { options: {}, state: { lostOrderPenalty: 20 } }
@@ -136,4 +125,16 @@ export function pickHealthInspectorStation(enabledRecipes: string[], rng: () => 
 // Return the boss pool. Both boss shifts (S4 + S8) draw from this set.
 export function getBossPool(): BossId[] {
   return ['picky_critic', 'rush_hour', 'health_inspector', 'understaffed', 'heatwave', 'chaos_mode', 'recipe_roulette', 'hangry_mob', 'bad_reviews']
+}
+
+// Auto-assign one boss for a boss shift, seeded for determinism. Pre-rolls the
+// Health Inspector's disabled station so the briefing can name it.
+export function pickBossForShift(runSeed: string, shift: number, enabledRecipes: string[]): { id: string; disabledStationId?: string } {
+  const rng = mulberry32(hashStringToSeed(`${runSeed}::boss::${shift}`))
+  const pool = getBossPool()
+  const id = pool[Math.floor(rng() * pool.length)]
+  const disabledStationId = id === 'health_inspector'
+    ? (pickHealthInspectorStation(enabledRecipes, rng) ?? undefined)
+    : undefined
+  return { id, disabledStationId }
 }

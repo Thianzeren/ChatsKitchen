@@ -33,11 +33,11 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, onMan
     : null
   const isFirstShift = run.currentShift === 1
   const isBoss = isBossShift(run.currentShift)
-  const chosenBoss = run.chosenPath?.bossDebuffId
-    ? BOSSES[run.chosenPath.bossDebuffId as BossId]
+  const chosenBoss = run.currentBoss?.id
+    ? BOSSES[run.currentBoss.id as BossId]
     : null
-  const bossDisabledStation = run.chosenPath?.bossPayload?.disabledStationId
-    ? STATION_DEFS[run.chosenPath.bossPayload.disabledStationId]?.name
+  const bossDisabledStation = run.currentBoss?.disabledStationId
+    ? STATION_DEFS[run.currentBoss.disabledStationId]?.name
     : null
 
   // Effective options for this shift (with all owned garnishes applied).
