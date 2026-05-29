@@ -25,7 +25,7 @@ describe('getRecipeProfile — derived knobs', () => {
   })
 
   it('computes raw complexity = steps + 2×chains + distinctStations − 2', () => {
-    expect(getRecipeProfile(RECIPES.mushroom_soup).complexity).toBe(2)
+    expect(getRecipeProfile(RECIPES.mushroom_soup).complexity).toBe(2) // Grilled Cheese: 2 steps, 0 chains, 2 stations → 2
     expect(getRecipeProfile(RECIPES.burger).complexity).toBe(4)
     expect(getRecipeProfile(RECIPES.korean_fried_chicken).complexity).toBe(6)
   })
@@ -45,9 +45,9 @@ describe('getRecipeProfile — derived knobs', () => {
 })
 
 describe('getRecipeProfile — archetype tags', () => {
-  it('tags a quick cheap one-step dish fast + value + chop_heavy', () => {
+  it('tags a quick cheap one-step dish fast + value + prep_heavy', () => {
     const p = getRecipeProfile(mockRecipe({ reward: 6 })) // 1 mix step, 5000ms
-    expect(p.tags).toEqual(expect.arrayContaining(['fast', 'value', 'chop_heavy']))
+    expect(p.tags).toEqual(expect.arrayContaining(['fast', 'value', 'prep_heavy']))
     expect(p.tags).not.toContain('hot_line')
     expect(p.tags).not.toContain('premium')
   })
@@ -62,6 +62,12 @@ describe('getRecipeProfile — archetype tags', () => {
       plate: ['a', 'b'],
     }))
     expect(p.tags).toEqual(expect.arrayContaining(['slow', 'premium', 'hot_line']))
-    expect(p.tags).not.toContain('chop_heavy')
+    expect(p.tags).not.toContain('prep_heavy')
+  })
+
+  it('leaves a mid-prep dish untagged for speed', () => {
+    const p = getRecipeProfile(RECIPES.burger) // 23000ms — between fast (≤14000) and slow (≥25000)
+    expect(p.tags).not.toContain('fast')
+    expect(p.tags).not.toContain('slow')
   })
 })

@@ -1,6 +1,6 @@
 import { Recipe, HEAT_EXEMPT_STATIONS } from './recipes'
 
-export type RecipeTag = 'fast' | 'slow' | 'premium' | 'value' | 'chop_heavy' | 'hot_line'
+export type RecipeTag = 'fast' | 'slow' | 'premium' | 'value' | 'prep_heavy' | 'hot_line'
 
 export interface RecipeProfile {
   reward: number            // authored base reward (cafe scale, coupled to complexity)
@@ -44,7 +44,7 @@ export function getRecipeProfile(recipe: Recipe): RecipeProfile {
   if (prepTimeMs >= PREP_SLOW_MIN_MS) tags.push('slow')
   if (recipe.reward <= REWARD_VALUE_MAX) tags.push('value')
   if (recipe.reward >= REWARD_PREMIUM_MIN) tags.push('premium')
-  if (exemptStepCount * 2 > recipe.steps.length) tags.push('chop_heavy') // majority of steps heat-exempt
+  if (exemptStepCount * 2 > recipe.steps.length) tags.push('prep_heavy') // prep_heavy: majority of steps on heat-exempt (cold-prep) stations
   if (heatStations.length >= 2) tags.push('hot_line')
 
   return { reward: recipe.reward, prepTimeMs, complexity, complexityPips, stations, heatStations, tags }
