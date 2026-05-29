@@ -114,7 +114,7 @@ Band thresholds (prep-time low/high, reward top/bottom) are constants in `recipe
 
 ### Reward rescale → $5–$25 (coupled to complexity)
 
-**Reward tracks complexity.** Each dish is priced within the band set by its complexity pips (including any authored override) — pricier dishes are genuinely harder to make. This keeps pricing legible, at the cost of the "simple-but-premium" and "complex-but-cheap" cells: those archetypes do not exist under coupling. Build variety instead comes from **prep time, station footprint, and tags** (a ●●● dish can be `hot_line` or heat-free `chop_heavy`; a ●○○ dish can be `fast` volume).
+**Reward tracks complexity.** Each dish is priced within the band set by its complexity pips (including any authored override) — pricier dishes are genuinely harder to make. This keeps pricing legible, at the cost of the "simple-but-premium" and "complex-but-cheap" cells: those archetypes do not exist under coupling. Build variety instead comes from **prep time, station footprint, and tags** (a ●●● dish can be `hot_line` or heat-free `prep_heavy`; a ●○○ dish can be `fast` volume).
 
 | Complexity | Reward band |
 |-----------|-------------|
@@ -140,7 +140,7 @@ The reducer's SERVE path computes `timeBonus = floor((patienceLeft / patienceMax
 2. **Then add ~4–6 dishes** to fill gaps. Expected candidates (final set driven by the audit):
    - An ultra-fast `value` snack/drink: 1 step, 1 station, ●○○ (e.g. a cold drink via `mix`/`grind`).
    - A `slow` + `premium` + `hot_line` ●●● showpiece: 4–5 steps across 3–4 heat-bearing stations.
-   - A heat-free `chop_heavy` option for safe/no-overheat play.
+   - A heat-free `prep_heavy` option for safe/no-overheat play.
 3. New dishes follow existing `Recipe` conventions (emoji, steps, plate, patience) and slot into the appropriate cuisine tag.
 
 ---
