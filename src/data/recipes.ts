@@ -279,6 +279,36 @@ export const RECIPES: Record<string, Recipe> = {
     ],
     plate: ['cooked_rice', 'sambal_paste', 'fried_anchovies', 'fried_egg']
   },
+
+  // ── Gap-filler dishes (ungrouped; Adventure-eligible via sub-project B) ──
+
+  iced_lemon_tea: {
+    name: 'Iced Lemon Tea', emoji: '\u{1F964}', reward: 5, patience: 45000,
+    steps: [
+      { action: 'mix', target: 'lemon_tea', station: 'mixing_bowl', duration: 5000, produces: 'iced_lemon_tea' },
+    ],
+    plate: ['iced_lemon_tea']
+  },
+  ramen_bowl: {
+    name: 'Ramen Bowl', emoji: '\u{1F35C}', reward: 24, patience: 90000,
+    steps: [
+      { action: 'boil',  target: 'broth',   station: 'stove',         duration: 10000, produces: 'ramen_broth' },
+      { action: 'chop',  target: 'chashu',  station: 'cutting_board', duration: 6000,  produces: 'sliced_chashu' },
+      { action: 'grill', target: 'chashu',  station: 'grill',         duration: 9000,  produces: 'grilled_chashu', requires: 'sliced_chashu' },
+      { action: 'boil',  target: 'noodles', station: 'stove',         duration: 8000,  produces: 'boiled_noodles' },
+    ],
+    plate: ['ramen_broth', 'grilled_chashu', 'boiled_noodles']
+  },
+  veggie_dumplings: {
+    name: 'Veggie Dumplings', emoji: '\u{1F95F}', reward: 21, patience: 70000,
+    steps: [
+      { action: 'chop',  target: 'cabbage', station: 'cutting_board', duration: 6000, produces: 'sliced_cabbage' },
+      { action: 'chop',  target: 'carrot',  station: 'cutting_board', duration: 6000, produces: 'sliced_carrot' },
+      { action: 'knead', target: 'wrapper', station: 'knead_board',   duration: 7000, produces: 'dumpling_wrapper' },
+      { action: 'steam', target: 'dumplings', station: 'steamer',     duration: 9000, produces: 'steamed_dumplings', requires: 'dumpling_wrapper' },
+    ],
+    plate: ['steamed_dumplings', 'sliced_cabbage', 'sliced_carrot']
+  },
 }
 
 export const STATION_DEFS: Record<string, StationDef> = {
@@ -387,6 +417,16 @@ export const INGREDIENT_EMOJI: Record<string, string> = {
   curry_dip:               '\u{1F35B}',
   sambal_paste:            '\u{1F336}\u{FE0F}',
   fried_anchovies:         '\u{1F41F}',
+
+  // Gap-filler dishes
+  iced_lemon_tea:    '\u{1F964}',
+  ramen_broth:       '\u{1F35C}',
+  sliced_chashu:     '\u{1F356}',
+  grilled_chashu:    '\u{1F356}',
+  boiled_noodles:    '\u{1F35D}',
+  sliced_carrot:     '\u{1F955}',
+  dumpling_wrapper:  '\u{1F95F}',
+  steamed_dumplings: '\u{1F95F}',
 }
 
 export const RECIPE_SETS: RecipeSet[] = [

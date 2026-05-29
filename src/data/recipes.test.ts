@@ -40,3 +40,25 @@ describe('complexity overrides on multi-component dishes', () => {
     expect(RECIPES.nasi_lemak.reward).toBeGreaterThanOrEqual(19)
   })
 })
+
+describe('gap-filler dishes', () => {
+  it('iced_lemon_tea is a fast value one-tap volume dish', () => {
+    const p = getRecipeProfile(RECIPES.iced_lemon_tea)
+    expect(p.complexityPips).toBe(1)
+    expect(p.tags).toEqual(expect.arrayContaining(['fast', 'value', 'prep_heavy']))
+    expect(p.heatStations).toHaveLength(0)
+  })
+
+  it('ramen_bowl is a premium hot_line showpiece (needs heat management)', () => {
+    const p = getRecipeProfile(RECIPES.ramen_bowl)
+    expect(p.complexityPips).toBe(3)
+    expect(p.tags).toEqual(expect.arrayContaining(['slow', 'premium', 'hot_line']))
+  })
+
+  it('veggie_dumplings is a premium but heat-free prep_heavy dish', () => {
+    const p = getRecipeProfile(RECIPES.veggie_dumplings)
+    expect(p.complexityPips).toBe(3)
+    expect(p.tags).toEqual(expect.arrayContaining(['premium', 'prep_heavy']))
+    expect(p.tags).not.toContain('hot_line')
+  })
+})
