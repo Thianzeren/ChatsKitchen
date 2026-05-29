@@ -112,14 +112,19 @@ Band thresholds (prep-time low/high, reward top/bottom) are constants in `recipe
 
 ## Catalog Retune
 
-### Reward rescale → $5–$25 (independent of complexity)
+### Reward rescale → $5–$25 (coupled to complexity)
 
-**Reward and complexity are independent knobs.** Reward is authored per dish by *prestige / ingredient cost* and rescaled into the $5–$25 cafe range; it is NOT derived from or coupled to complexity. This is what creates the interesting recipe archetypes that builds target:
+**Reward tracks complexity.** Each dish is priced within the band set by its complexity pips (including any authored override) — pricier dishes are genuinely harder to make. This keeps pricing legible, at the cost of the "simple-but-premium" and "complex-but-cheap" cells: those archetypes do not exist under coupling. Build variety instead comes from **prep time, station footprint, and tags** (a ●●● dish can be `hot_line` or heat-free `chop_heavy`; a ●○○ dish can be `fast` volume).
 
-- **"Easy money"** — low complexity + high reward (e.g. Salmon Donburi: ●○○, $25). Great with reward-focused garnishes.
-- **"Labor of love"** — high complexity + low reward (e.g. a fiddly ●●● dish at $9). A trap unless you have an efficiency build.
+| Complexity | Reward band |
+|-----------|-------------|
+| ●○○ (1) | $5–$9 |
+| ●●○ (2) | $11–$18 |
+| ●●● (3) | $19–$25 |
 
-Anchor prices from the approved preview: Coffee $5, Kaya Toast $6, Fries $7, Grilled Cheese $9, Burger $14, Bulgogi $18, Nasi Lemak $22, Salmon Donburi $25. All dishes land in $5–$25. The full per-dish table is fixed in the implementation plan.
+Because reward is coupled, a `complexityOverride` also moves the dish into the higher reward band — so overrides are applied together with the rescale. Full per-dish values are fixed in the implementation plan.
+
+> Note: this supersedes some preview anchors. Salmon Donburi profiles to ●○○ (cook rice + chop + chop, no chains), so under coupling it is priced $5–$9, not $25.
 
 ### Serve time-bonus rescale (critical)
 
@@ -151,7 +156,7 @@ The reducer's SERVE path computes `timeBonus = floor((patienceLeft / patienceMax
 ## Acceptance Criteria
 
 - `getRecipeProfile` returns a correct `RecipeProfile` for every recipe; derived fields match step data; `complexityOverride` takes precedence over the derived pip bucket.
-- All dish rewards fall within $5–$25 (authored by prestige, independent of complexity).
+- All dish rewards fall within the band dictated by their complexity pips ($5–9 / $11–18 / $19–25), overrides included.
 - The serve time-bonus cap is rescaled (~$9) and lives in a named constant.
 - Each archetype tag is populated by at least one dish after gap-fillers are added (no empty archetype after the retune).
 - `npm run build` and `npm run lint` pass.

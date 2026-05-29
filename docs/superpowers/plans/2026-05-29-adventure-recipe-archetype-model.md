@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a derived `RecipeProfile` characterization (reward, prep time, complexity, station footprint, archetype tags), rescale all dish rewards to a $5–$25 cafe range, and add gap-filler dishes — the shared foundation for the Adventure build-system rework.
+**Goal:** Add a derived `RecipeProfile` characterization (reward, prep time, complexity, station footprint, archetype tags), rescale all dish rewards to a $5–$25 cafe range **coupled to complexity**, and add gap-filler dishes — the shared foundation for the Adventure build-system rework.
 
-**Architecture:** One new pure module `src/data/recipeProfile.ts` exposes `getRecipeProfile(recipe)`. Reward and complexity are **independent** knobs: reward is authored (rescaled by prestige), complexity is derived from step data with an optional per-recipe override. The serve time-bonus cap in the reducer is rescaled to match the new money scale. No run-flow, screen, goal, or garnish code is touched (those are sub-projects B and C).
+**Architecture:** One new pure module `src/data/recipeProfile.ts` exposes `getRecipeProfile(recipe)`. Complexity is derived from step data with an optional per-recipe override. **Reward is coupled to complexity**: every dish is priced within the band its complexity pips dictate (●○○ $5–9, ●●○ $11–18, ●●● $19–25). Build variety comes from prep time, station footprint, and tags rather than reward-vs-complexity tension. The serve time-bonus cap in the reducer is rescaled to match the new money scale. No run-flow, screen, goal, or garnish code is touched (those are sub-projects B and C).
 
 **Tech Stack:** TypeScript, React 18, Vite 5. Tests via **Vitest** (added in Task 1 — the project currently has none).
 
@@ -19,10 +19,25 @@
 
 - **Create** `src/data/recipeProfile.ts` — the `RecipeProfile` type, `RecipeTag` type, `getRecipeProfile()`, and band-threshold constants. One responsibility: characterize a recipe.
 - **Create** `src/data/recipeProfile.test.ts` — unit tests for `getRecipeProfile`.
-- **Create** `src/data/recipes.test.ts` — guard tests over the real catalog (reward range, gap-filler profiles).
-- **Modify** `src/data/recipes.ts` — add `complexityOverride?` to `Recipe`; rescale all `reward` values; add 3 gap-filler dishes; add their `INGREDIENT_EMOJI` entries; set overrides on two dishes.
+- **Create** `src/data/recipes.test.ts` — guard tests over the real catalog (reward coupled to complexity band, gap-filler profiles).
+- **Create** `src/data/recipeArchetypes.audit.test.ts` — reporting test that prints the spread and asserts no empty archetype.
+- **Modify** `src/data/recipes.ts` — add `complexityOverride?` to `Recipe`; rescale all `reward` values; set overrides on two dishes; add 3 gap-filler dishes; add their `INGREDIENT_EMOJI` entries.
 - **Modify** `src/state/gameReducer.ts` — extract the serve time-bonus cap into a constant and rescale it.
 - **Modify** `package.json` — add `vitest` dev dependency and a `test` script.
+
+---
+
+## Reward Coupling Reference
+
+Reward bands by final complexity pips (including overrides):
+
+| Pips | Band |
+|------|------|
+| ●○○ (1) | $5–$9 |
+| ●●○ (2) | $11–$18 |
+| ●●● (3) | $19–$25 |
+
+There is a deliberate gap between bands ($9→$11, $18→$19) so a dish's tier is unambiguous.
 
 ---
 
@@ -214,7 +229,7 @@ import { Recipe, HEAT_EXEMPT_STATIONS } from './recipes'
 export type RecipeTag = 'fast' | 'slow' | 'premium' | 'value' | 'chop_heavy' | 'hot_line'
 
 export interface RecipeProfile {
-  reward: number            // authored base reward (cafe scale)
+  reward: number            // authored base reward (cafe scale, coupled to complexity)
   prepTimeMs: number        // derived: sum of step durations
   complexity: number        // derived raw score (override does NOT change this)
   complexityPips: 1 | 2 | 3 // bucketed raw score, OR the authored override when set
@@ -287,168 +302,51 @@ git commit -m "feat(recipes): add RecipeProfile model with derived knobs + compl
 
 ---
 
-## Task 3: Rescale rewards to cafe range + serve time-bonus
+## Task 3: Rescale rewards (coupled to complexity) + overrides + serve time-bonus
 
 **Files:**
-- Modify: `src/data/recipes.ts` (all `reward` values)
+- Modify: `src/data/recipes.ts` (all `reward` values; `complexityOverride` on two dishes)
 - Modify: `src/state/gameReducer.ts` (serve time-bonus cap)
-- Create: `src/data/recipes.test.ts` (reward-range guard)
+- Create: `src/data/recipes.test.ts` (reward-coupling guard + override assertions)
 
-- [ ] **Step 1: Write the failing reward-range guard test**
+> Overrides are applied here, not in a later task: because reward is coupled to complexity, promoting a dish to ●●● also moves it into the $19–25 band. Doing both together keeps the guard test green at every commit.
+
+- [ ] **Step 1: Write the failing reward-coupling guard test**
 
 Create `src/data/recipes.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest'
 import { RECIPES } from './recipes'
+import { getRecipeProfile } from './recipeProfile'
 
-describe('recipe reward rescale (cafe range $5–$25)', () => {
-  it('prices every dish within $5–$25', () => {
+const REWARD_BANDS: Record<1 | 2 | 3, [number, number]> = {
+  1: [5, 9],
+  2: [11, 18],
+  3: [19, 25],
+}
+
+describe('reward is coupled to complexity', () => {
+  it('prices every dish within the band its complexity pips dictate', () => {
     for (const [key, recipe] of Object.entries(RECIPES)) {
-      expect(recipe.reward, `${key} reward out of range`).toBeGreaterThanOrEqual(5)
-      expect(recipe.reward, `${key} reward out of range`).toBeLessThanOrEqual(25)
+      const pips = getRecipeProfile(recipe).complexityPips
+      const [lo, hi] = REWARD_BANDS[pips]
+      expect(recipe.reward, `${key} (${pips} pips) reward ${recipe.reward} out of band ${lo}-${hi}`).toBeGreaterThanOrEqual(lo)
+      expect(recipe.reward, `${key} (${pips} pips) reward ${recipe.reward} out of band ${lo}-${hi}`).toBeLessThanOrEqual(hi)
     }
   })
 
-  it('keeps the approved anchor prices', () => {
-    expect(RECIPES.pour_over_coffee.reward).toBe(5)
-    expect(RECIPES.kaya_toast.reward).toBe(6)
-    expect(RECIPES.fries.reward).toBe(7)
-    expect(RECIPES.mushroom_soup.reward).toBe(9)   // Grilled Cheese
-    expect(RECIPES.burger.reward).toBe(14)
-    expect(RECIPES.bulgogi.reward).toBe(18)
-    expect(RECIPES.nasi_lemak.reward).toBe(22)
-    expect(RECIPES.salmon_donburi.reward).toBe(25)
-  })
-})
-```
-
-- [ ] **Step 2: Run to verify it fails**
-
-Run:
-```bash
-npm test -- recipes.test.ts
-```
-Expected: FAIL — current rewards ($35–$75) are out of range and anchors don't match.
-
-- [ ] **Step 3: Rescale every recipe's `reward` in `recipes.ts`**
-
-In `src/data/recipes.ts`, update each recipe's `reward` to the new cafe-scale value (prestige-priced, independent of complexity). Change only the `reward:` number on each — leave `patience` and `steps` untouched:
-
-| Recipe key | New `reward` |
-|------------|--------------|
-| `burger` | 14 |
-| `fries` | 7 |
-| `pasta` (Hot Dog) | 10 |
-| `salad` (Caesar) | 7 |
-| `mushroom_soup` (Grilled Cheese) | 9 |
-| `fish_burger` (Fish & Chips) | 14 |
-| `roasted_veggies` | 11 |
-| `fried_rice` | 12 |
-| `stir_fried_pork` | 15 |
-| `steamed_tofu` | 8 |
-| `steamed_buns` | 11 |
-| `bulgogi` | 18 |
-| `kimchi_jjigae` | 15 |
-| `korean_fried_chicken` | 19 |
-| `tteokbokki` | 13 |
-| `sushi_roll` | 20 |
-| `tempura` | 13 |
-| `chawanmushi` | 9 |
-| `salmon_donburi` | 25 |
-| `shio_pan` | 7 |
-| `melon_pan` | 10 |
-| `pour_over_coffee` | 5 |
-| `matcha_latte` | 7 |
-| `kaya_toast` | 6 |
-| `economic_bee_hoon` | 16 |
-| `roti_prata` | 11 |
-| `nasi_lemak` | 22 |
-
-- [ ] **Step 4: Run the guard test to verify it passes**
-
-Run:
-```bash
-npm test -- recipes.test.ts
-```
-Expected: PASS — all rewards in range and anchors correct.
-
-- [ ] **Step 5: Add the serve time-bonus constant in the reducer**
-
-In `src/state/gameReducer.ts`, after the `COOL_AMOUNT` constant (line 6), add:
-
-```ts
-export const SERVE_TIME_BONUS_MAX = 9   // max $ bonus for serving at full patience (cafe scale; was 30)
-```
-
-- [ ] **Step 6: Use the constant in the SERVE handler**
-
-In `src/state/gameReducer.ts`, change the `timeBonus` line (currently line 308) from:
-
-```ts
-      const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * 30))
-```
-to:
-```ts
-      const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * SERVE_TIME_BONUS_MAX))
-```
-
-- [ ] **Step 7: Lint, build, and run the full test suite**
-
-Run:
-```bash
-npm run lint && npm run build && npm test
-```
-Expected: all clean / green.
-
-- [ ] **Step 8: Commit**
-
-```bash
-git add src/data/recipes.ts src/data/recipes.test.ts src/state/gameReducer.ts
-git commit -m "feat(recipes): rescale rewards to cafe range + rescale serve time-bonus"
-```
-
----
-
-## Task 4: Add gap-filler dishes + overrides
-
-**Files:**
-- Modify: `src/data/recipes.ts` (add 3 dishes, their `INGREDIENT_EMOJI`, and 2 overrides)
-- Modify: `src/data/recipes.test.ts` (profile assertions for the new dishes)
-
-The 3 gap-fillers fill archetype cells the existing catalog lacks: a pure-volume snack, a premium showpiece, and a complex-but-cheap "labor of love". They are intentionally left out of `RECIPE_SETS` (ungrouped, like `fries`/`pasta`) so Free Play playsets are unchanged; sub-project B defines the Adventure-eligible pool.
-
-- [ ] **Step 1: Write failing profile assertions for the new dishes and overrides**
-
-Append to `src/data/recipes.test.ts`:
-
-```ts
-import { getRecipeProfile } from './recipeProfile'
-
-describe('gap-filler dishes', () => {
-  it('iced_lemon_tea is a fast value one-tap volume dish', () => {
-    const p = getRecipeProfile(RECIPES.iced_lemon_tea)
-    expect(p.complexityPips).toBe(1)
-    expect(p.tags).toEqual(expect.arrayContaining(['fast', 'value', 'chop_heavy']))
-    expect(p.heatStations).toHaveLength(0)
-  })
-
-  it('ramen_bowl is a slow premium hot_line showpiece', () => {
-    const p = getRecipeProfile(RECIPES.ramen_bowl)
-    expect(p.complexityPips).toBe(3)
-    expect(p.tags).toEqual(expect.arrayContaining(['slow', 'premium', 'hot_line']))
-  })
-
-  it('veggie_dumplings is a complex cheap heat-light dish (labor of love)', () => {
-    const p = getRecipeProfile(RECIPES.veggie_dumplings)
-    expect(p.complexityPips).toBe(3)
-    expect(p.tags).toEqual(expect.arrayContaining(['value', 'chop_heavy']))
-    expect(p.tags).not.toContain('hot_line')
+  it('keeps representative anchor prices', () => {
+    expect(RECIPES.pour_over_coffee.reward).toBe(5)   // ●○○
+    expect(RECIPES.salmon_donburi.reward).toBe(9)     // ●○○ (simple-but-not-premium under coupling)
+    expect(RECIPES.burger.reward).toBe(14)            // ●●○
+    expect(RECIPES.bulgogi.reward).toBe(17)           // ●●○
+    expect(RECIPES.korean_fried_chicken.reward).toBe(20) // ●●●
   })
 })
 
 describe('complexity overrides on multi-component dishes', () => {
-  it('promotes economic_bee_hoon and nasi_lemak to ●●●', () => {
+  it('promotes economic_bee_hoon and nasi_lemak to ●●● (and into the premium band)', () => {
     expect(RECIPES.economic_bee_hoon.complexityOverride).toBe(3)
     expect(getRecipeProfile(RECIPES.economic_bee_hoon).complexityPips).toBe(3)
     expect(RECIPES.nasi_lemak.complexityOverride).toBe(3)
@@ -463,11 +361,159 @@ Run:
 ```bash
 npm test -- recipes.test.ts
 ```
-Expected: FAIL — `RECIPES.iced_lemon_tea` (etc.) undefined; overrides absent.
+Expected: FAIL — current rewards ($35–$75) are out of band, overrides absent.
+
+- [ ] **Step 3: Rescale every recipe's `reward` in `recipes.ts`**
+
+In `src/data/recipes.ts`, update each recipe's `reward` to the new cafe-scale value. Each value sits inside the band for that dish's complexity pips (shown for reference). Change only the `reward:` number — leave `patience` and `steps` untouched:
+
+| Recipe key | Pips | New `reward` |
+|------------|------|--------------|
+| `burger` | ●●○ | 14 |
+| `fries` | ●●○ | 11 |
+| `pasta` (Hot Dog) | ●●○ | 12 |
+| `salad` (Caesar) | ●○○ | 7 |
+| `mushroom_soup` (Grilled Cheese) | ●○○ | 8 |
+| `fish_burger` (Fish & Chips) | ●●○ | 15 |
+| `roasted_veggies` | ●●○ | 13 |
+| `fried_rice` | ●●○ | 14 |
+| `stir_fried_pork` | ●●○ | 15 |
+| `steamed_tofu` | ●●○ | 12 |
+| `steamed_buns` | ●○○ | 8 |
+| `bulgogi` | ●●○ | 17 |
+| `kimchi_jjigae` | ●●○ | 15 |
+| `korean_fried_chicken` | ●●● | 20 |
+| `tteokbokki` | ●●● | 19 |
+| `sushi_roll` | ●●○ | 16 |
+| `tempura` | ●●○ | 13 |
+| `chawanmushi` | ●●○ | 12 |
+| `salmon_donburi` | ●○○ | 9 |
+| `shio_pan` | ●●○ | 11 |
+| `melon_pan` | ●●● | 19 |
+| `pour_over_coffee` | ●○○ | 5 |
+| `matcha_latte` | ●○○ | 6 |
+| `kaya_toast` | ●○○ | 5 |
+| `economic_bee_hoon` | ●●● (override) | 22 |
+| `roti_prata` | ●●● | 21 |
+| `nasi_lemak` | ●●● (override) | 23 |
+
+- [ ] **Step 4: Add `complexityOverride: 3` to the two multi-component dishes**
+
+In `src/data/recipes.ts`, add `complexityOverride: 3` to the header line of `economic_bee_hoon` and `nasi_lemak` (their natural raw scores are 4 and 5 = ●●○; they play like ●●● because of their 4 parallel components). Change `economic_bee_hoon`'s header from:
+
+```ts
+  economic_bee_hoon: {
+    name: 'Economic Bee Hoon', emoji: '\u{1F35C}', reward: 22, patience: 80000,
+```
+to:
+```ts
+  economic_bee_hoon: {
+    name: 'Economic Bee Hoon', emoji: '\u{1F35C}', reward: 22, patience: 80000, complexityOverride: 3,
+```
+
+And `nasi_lemak`'s header from:
+```ts
+  nasi_lemak: {
+    name: 'Nasi Lemak', emoji: '\u{1F371}', reward: 23, patience: 85000,
+```
+to:
+```ts
+  nasi_lemak: {
+    name: 'Nasi Lemak', emoji: '\u{1F371}', reward: 23, patience: 85000, complexityOverride: 3,
+```
+
+- [ ] **Step 5: Run the guard test to verify it passes**
+
+Run:
+```bash
+npm test -- recipes.test.ts
+```
+Expected: PASS — every dish in its complexity band; overrides present and effective.
+
+- [ ] **Step 6: Add the serve time-bonus constant in the reducer**
+
+In `src/state/gameReducer.ts`, after the `COOL_AMOUNT` constant (line 6), add:
+
+```ts
+export const SERVE_TIME_BONUS_MAX = 9   // max $ bonus for serving at full patience (cafe scale; was 30)
+```
+
+- [ ] **Step 7: Use the constant in the SERVE handler**
+
+In `src/state/gameReducer.ts`, change the `timeBonus` line (currently line 308) from:
+
+```ts
+      const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * 30))
+```
+to:
+```ts
+      const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * SERVE_TIME_BONUS_MAX))
+```
+
+- [ ] **Step 8: Lint, build, and run the full test suite**
+
+Run:
+```bash
+npm run lint && npm run build && npm test
+```
+Expected: all clean / green.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add src/data/recipes.ts src/data/recipes.test.ts src/state/gameReducer.ts
+git commit -m "feat(recipes): rescale rewards coupled to complexity + overrides + serve time-bonus"
+```
+
+---
+
+## Task 4: Add gap-filler dishes
+
+**Files:**
+- Modify: `src/data/recipes.ts` (add 3 dishes + their `INGREDIENT_EMOJI`)
+- Modify: `src/data/recipes.test.ts` (profile assertions for the new dishes)
+
+The 3 gap-fillers fill archetype cells the existing catalog lacks: a pure-volume snack (●○○ fast/value), a premium showpiece that demands heat management (●●● `hot_line`), and a premium dish that is complex but heat-free (●●● `chop_heavy`, contrasting the showpiece). Rewards stay coupled to their pips. They are intentionally left out of `RECIPE_SETS` (ungrouped, like `fries`/`pasta`) so Free Play playsets are unchanged; sub-project B defines the Adventure-eligible pool.
+
+- [ ] **Step 1: Write failing profile assertions for the new dishes**
+
+Append to `src/data/recipes.test.ts`:
+
+```ts
+describe('gap-filler dishes', () => {
+  it('iced_lemon_tea is a fast value one-tap volume dish', () => {
+    const p = getRecipeProfile(RECIPES.iced_lemon_tea)
+    expect(p.complexityPips).toBe(1)
+    expect(p.tags).toEqual(expect.arrayContaining(['fast', 'value', 'chop_heavy']))
+    expect(p.heatStations).toHaveLength(0)
+  })
+
+  it('ramen_bowl is a premium hot_line showpiece (needs heat management)', () => {
+    const p = getRecipeProfile(RECIPES.ramen_bowl)
+    expect(p.complexityPips).toBe(3)
+    expect(p.tags).toEqual(expect.arrayContaining(['slow', 'premium', 'hot_line']))
+  })
+
+  it('veggie_dumplings is a premium but heat-free chop_heavy dish', () => {
+    const p = getRecipeProfile(RECIPES.veggie_dumplings)
+    expect(p.complexityPips).toBe(3)
+    expect(p.tags).toEqual(expect.arrayContaining(['premium', 'chop_heavy']))
+    expect(p.tags).not.toContain('hot_line')
+  })
+})
+```
+
+- [ ] **Step 2: Run to verify it fails**
+
+Run:
+```bash
+npm test -- recipes.test.ts
+```
+Expected: FAIL — `RECIPES.iced_lemon_tea` (etc.) undefined.
 
 - [ ] **Step 3: Add the 3 gap-filler dishes to `RECIPES`**
 
-In `src/data/recipes.ts`, add these entries inside the `RECIPES` object (place them after `nasi_lemak`, before the closing `}` of `RECIPES`):
+In `src/data/recipes.ts`, add these entries inside the `RECIPES` object (place them after `nasi_lemak`, before the closing `}` of `RECIPES`). Rewards are coupled: iced tea is ●○○ ($5), ramen and dumplings are ●●● ($24 / $21):
 
 ```ts
   // ── Gap-filler dishes (ungrouped; Adventure-eligible via sub-project B) ──
@@ -480,7 +526,7 @@ In `src/data/recipes.ts`, add these entries inside the `RECIPES` object (place t
     plate: ['iced_lemon_tea']
   },
   ramen_bowl: {
-    name: 'Ramen Bowl', emoji: '\u{1F35C}', reward: 23, patience: 90000,
+    name: 'Ramen Bowl', emoji: '\u{1F35C}', reward: 24, patience: 90000,
     steps: [
       { action: 'boil',  target: 'broth',   station: 'stove',         duration: 10000, produces: 'ramen_broth' },
       { action: 'chop',  target: 'chashu',  station: 'cutting_board', duration: 6000,  produces: 'sliced_chashu' },
@@ -490,7 +536,7 @@ In `src/data/recipes.ts`, add these entries inside the `RECIPES` object (place t
     plate: ['ramen_broth', 'grilled_chashu', 'boiled_noodles']
   },
   veggie_dumplings: {
-    name: 'Veggie Dumplings', emoji: '\u{1F95F}', reward: 9, patience: 70000,
+    name: 'Veggie Dumplings', emoji: '\u{1F95F}', reward: 21, patience: 70000,
     steps: [
       { action: 'chop',  target: 'cabbage', station: 'cutting_board', duration: 6000, produces: 'sliced_cabbage' },
       { action: 'chop',  target: 'carrot',  station: 'cutting_board', duration: 6000, produces: 'sliced_carrot' },
@@ -501,32 +547,7 @@ In `src/data/recipes.ts`, add these entries inside the `RECIPES` object (place t
   },
 ```
 
-- [ ] **Step 4: Add `complexityOverride: 3` to the two multi-component dishes**
-
-In `src/data/recipes.ts`, add `complexityOverride: 3` to the first line of `economic_bee_hoon` and `nasi_lemak`. For example, change `economic_bee_hoon`'s header from:
-
-```ts
-  economic_bee_hoon: {
-    name: 'Economic Bee Hoon', emoji: '\u{1F35C}', reward: 16, patience: 80000,
-```
-to:
-```ts
-  economic_bee_hoon: {
-    name: 'Economic Bee Hoon', emoji: '\u{1F35C}', reward: 16, patience: 80000, complexityOverride: 3,
-```
-
-And `nasi_lemak`'s header from:
-```ts
-  nasi_lemak: {
-    name: 'Nasi Lemak', emoji: '\u{1F371}', reward: 22, patience: 85000,
-```
-to:
-```ts
-  nasi_lemak: {
-    name: 'Nasi Lemak', emoji: '\u{1F371}', reward: 22, patience: 85000, complexityOverride: 3,
-```
-
-- [ ] **Step 5: Add `INGREDIENT_EMOJI` entries for the new produced ingredients**
+- [ ] **Step 4: Add `INGREDIENT_EMOJI` entries for the new produced ingredients**
 
 In `src/data/recipes.ts`, add these keys to the `INGREDIENT_EMOJI` object (anywhere inside it; group them with a comment):
 
@@ -544,15 +565,15 @@ In `src/data/recipes.ts`, add these keys to the `INGREDIENT_EMOJI` object (anywh
 
 (`sliced_cabbage` already exists and is reused by `veggie_dumplings`.)
 
-- [ ] **Step 6: Run the new dish tests to verify they pass**
+- [ ] **Step 5: Run the new dish tests to verify they pass**
 
 Run:
 ```bash
 npm test -- recipes.test.ts
 ```
-Expected: PASS — gap-filler profiles and overrides assert correctly.
+Expected: PASS — gap-filler profiles assert correctly, and the coupling guard from Task 3 still holds for the new dishes (iced tea ●○○ $5, ramen/dumplings ●●● $24/$21).
 
-- [ ] **Step 7: Lint, build, full test run**
+- [ ] **Step 6: Lint, build, full test run**
 
 Run:
 ```bash
@@ -560,11 +581,11 @@ npm run lint && npm run build && npm test
 ```
 Expected: all clean / green.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add src/data/recipes.ts src/data/recipes.test.ts
-git commit -m "feat(recipes): add gap-filler dishes + complexity overrides for archetype coverage"
+git commit -m "feat(recipes): add gap-filler dishes for archetype coverage"
 ```
 
 ---
@@ -635,7 +656,7 @@ git commit -m "test(recipes): archetype coverage audit"
 
 ## Self-Review Checklist (completed during planning)
 
-- **Spec coverage:** RecipeProfile model (Task 2) ✓ · complexity formula + override (Task 2) ✓ · archetype tags (Task 2) ✓ · reward rescale (Task 3) ✓ · serve time-bonus rescale (Task 3) ✓ · gap-filler dishes (Task 4) ✓ · archetype audit (Task 5) ✓ · "no run-flow/screen/goal/garnish changes" honored (only recipes.ts data + one reducer constant touched) ✓.
-- **Reward/complexity independence:** rewards in Task 3 are prestige-priced and asserted only for range + anchors, never tied to complexity — matches the corrected spec.
+- **Spec coverage:** RecipeProfile model (Task 2) ✓ · complexity formula + override (Task 2) ✓ · archetype tags (Task 2) ✓ · reward rescale coupled to complexity (Task 3) ✓ · overrides shift reward band, applied with rescale (Task 3) ✓ · serve time-bonus rescale (Task 3) ✓ · gap-filler dishes (Task 4) ✓ · archetype audit (Task 5) ✓ · "no run-flow/screen/goal/garnish changes" honored (only recipes.ts data + one reducer constant touched) ✓.
+- **Reward/complexity coupling:** Task 3's guard test asserts every dish's reward is inside the band its pips dictate; overrides are applied in the same task so no commit leaves a dish mispriced for its tier. Hand-verified: all 27 + 3 gap-filler rewards sit in-band (●○○ 5–9, ●●○ 11–18, ●●● 19–25), with the inter-band gaps ($10, $18→19 boundary) unoccupied.
 - **Type consistency:** `RecipeProfile`, `RecipeTag`, `getRecipeProfile`, and `complexityOverride` names are identical across the module, tests, and `Recipe` interface.
 - **Calibration note:** band-threshold constants (`PREP_FAST_MAX_MS` etc.) are defined once in `recipeProfile.ts`; the audit test (Task 5) is the calibration feedback loop.
