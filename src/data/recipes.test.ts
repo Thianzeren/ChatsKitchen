@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { RECIPES } from './recipes'
 import { getRecipeProfile } from './recipeProfile'
 
+// Must stay in sync with REWARD_VALUE_MAX / REWARD_PREMIUM_MIN in recipeProfile.ts
+// (those band edges are intentionally unexported, so they are mirrored here).
 const REWARD_BANDS: Record<1 | 2 | 3, [number, number]> = {
   1: [5, 9],
   2: [11, 18],
@@ -33,5 +35,8 @@ describe('complexity overrides on multi-component dishes', () => {
     expect(getRecipeProfile(RECIPES.economic_bee_hoon).complexityPips).toBe(3)
     expect(RECIPES.nasi_lemak.complexityOverride).toBe(3)
     expect(getRecipeProfile(RECIPES.nasi_lemak).complexityPips).toBe(3)
+    // ...and therefore must be priced in the ●●● band
+    expect(RECIPES.economic_bee_hoon.reward).toBeGreaterThanOrEqual(19)
+    expect(RECIPES.nasi_lemak.reward).toBeGreaterThanOrEqual(19)
   })
 })

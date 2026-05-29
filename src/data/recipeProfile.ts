@@ -15,8 +15,8 @@ export interface RecipeProfile {
 // Band thresholds — calibrated against the retuned catalog so each tag is populated.
 const PREP_FAST_MAX_MS = 14000
 const PREP_SLOW_MIN_MS = 25000
-const REWARD_VALUE_MAX = 9
-const REWARD_PREMIUM_MIN = 18
+const REWARD_VALUE_MAX = 9      // top of the ●○○ reward band — `value` aligns with cheap/simple dishes
+const REWARD_PREMIUM_MIN = 19   // floor of the ●●● reward band — `premium` aligns with expensive/complex dishes
 
 function rawComplexity(recipe: Recipe): number {
   const stepCount = recipe.steps.length
