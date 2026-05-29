@@ -526,68 +526,6 @@
   filter: brightness(1.08);
 }
 
-.capacityGrid {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.dimmed {
-  opacity: 0.35;
-  pointer-events: none;
-}
-
-.capacityRow {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.capacityLabel {
-  font-family: 'Fredoka', sans-serif;
-  font-size: var(--base-fs);
-  font-weight: 600;
-  color: var(--text);
-  min-width: 110px;
-}
-
-.capacityControl {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.capacityBtn {
-  width: 32px;
-  height: 32px;
-  border: 2px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Space Mono', monospace;
-  font-size: var(--base-fs);
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.capacityBtn:hover {
-  border-color: var(--accent);
-  background: var(--border);
-}
-
-.capacityValue {
-  font-family: 'Space Mono', monospace;
-  font-size: var(--base-fs);
-  font-weight: 700;
-  color: var(--accent);
-  min-width: 24px;
-  text-align: center;
-}
-
 /* ── Event buttons ── */
 
 .eventCategoryRow {

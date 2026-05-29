@@ -1,11 +1,6 @@
 import { GameOptions, EventType } from '../state/types'
 import { RECIPES, getEnabledStations } from './recipes'
 
-// Approximate concurrency available per active station. Used to calibrate the
-// player/station surplus ratio that drives the coordination-efficiency curve.
-// Station capacity itself is no longer a runtime constraint.
-const SLOTS_PER_STATION = 3
-
 const BASE_SPAWN_INTERVAL_MS = 14000
 const MIN_SPAWN_INTERVAL_MS  = 5000   // floor from shift progression (Math.max(5000, 14000 - shift*1000))
 const REACTION_TIME_MS = 8000
@@ -46,15 +41,19 @@ export function computeStarThresholds(options: GameOptions, playerCount: number)
   const completionTime = REACTION_TIME_MS + effectiveCookTime
   const patienceFactor = Math.min(1.0, Math.max(0.15, effectivePatience / (completionTime * 1.5)))
 
+  // Saturation point = the number of parallel work-streams the kitchen offers.
+  // Stations have no slot cap, so a single station can host unlimited concurrent
+  // cooks — the real limit on useful concurrency is the count of active stations
+  // (roughly one productive cook per station). Surplus players past that add only
+  // diminishing coordination value, and well past it just accelerate order spawn.
   const enabledStations = getEnabledStations(enabledRecipes)
-  const stationSlots = enabledStations.length * SLOTS_PER_STATION
-  const surplusRatio = playerCount / Math.max(1, stationSlots)
+  const surplusRatio = playerCount / Math.max(1, enabledStations.length)
   const coordinationEfficiency = COORD_FLOOR + COORD_RANGE * Math.min(1.0, surplusRatio)
 
   // Player surplus drives shift-counter acceleration: more players → serve faster →
   // shift counter ticks up faster → spawn interval tightens toward MIN_SPAWN_INTERVAL_MS.
   // Modelled as a logarithmic blend from base toward max spawn total,
-  // reaching full acceleration at surplusRatio ≈ 3 (3× more players than slots).
+  // reaching full acceleration at surplusRatio ≈ 3 (3× the kitchen's saturation point).
   const spawnAccelFactor = surplusRatio > 1.0
     ? Math.min(1.0, Math.log(surplusRatio) / Math.log(3))
     : 0.0

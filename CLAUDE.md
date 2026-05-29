@@ -195,7 +195,7 @@ Mod detection uses `tags.mod` and `tags.badges.broadcaster` from tmi.js. The loc
 
 Priority order: **extinguish overheated station → cool hot station (heat ≥ 60) → serve → cook**
 
-Bots respect station capacity, skip overheated stations, and skip `cutting_board` and `mixing_bowl` for cooling.
+Bots skip overheated stations, and skip `cutting_board` and `mixing_bowl` for cooling.
 
 ---
 
@@ -210,8 +210,6 @@ interface GameState {
   cookingSpeed: number
   orderSpeed: number
   orderSpawnRate: number
-  stationCapacity: StationCapacity           // slot limits per station type
-  restrictSlots: boolean
   enabledRecipes: string[]
   stations: Record<string, Station>          // id → Station
   orders: Order[]
@@ -270,8 +268,6 @@ interface GameOptions {
   orderSpeed: number
   orderSpawnRate: number
   shiftDuration: number
-  stationCapacity: StationCapacity
-  restrictSlots: boolean
   enabledRecipes: string[]
   allowShortformCommands: boolean
   autoRestart: boolean        // Free Play only — auto-restart after game over
@@ -355,22 +351,22 @@ Steps marked `→` require the prior ingredient in `preparedItems` before starti
 
 ### Stations (10 types)
 
-| Station | Command | Default Capacity | Heat |
-|---------|---------|-----------------|------|
-| Chopping Board 🔪 | `!chop <ingredient>` | 3 slots | Exempt |
-| Grill 🔥 | `!grill <ingredient>` | 2 slots | Yes |
-| Fryer 🫕 | `!fry <ingredient>` | 2 slots | Yes |
-| Stove ♨️ | `!boil <ingredient>` | 2 slots | Yes |
-| Oven 🧱 | `!toast` / `!roast <ingredient>` | 2 slots | Yes |
-| Wok 🍳 | `!stirfry <ingredient>` | 2 slots | Yes |
-| Steamer 🫕 | `!steam <ingredient>` | 2 slots | Yes |
-| Stone Pot 🍲 | `!simmer <ingredient>` | 2 slots | Yes |
-| Rice Pot 🍚 | `!cook <ingredient>` | 2 slots | Yes |
-| Mixing Bowl 🥣 | `!mix <ingredient>` | 3 slots | Exempt |
-| Grinder ☕ | `!grind <ingredient>` | 3 slots | Exempt |
-| Knead Board 🫓 | `!knead <ingredient>` | 3 slots | Exempt |
+| Station | Command | Heat |
+|---------|---------|------|
+| Chopping Board 🔪 | `!chop <ingredient>` | Exempt |
+| Grill 🔥 | `!grill <ingredient>` | Yes |
+| Fryer 🫕 | `!fry <ingredient>` | Yes |
+| Stove ♨️ | `!boil <ingredient>` | Yes |
+| Oven 🧱 | `!toast` / `!roast <ingredient>` | Yes |
+| Wok 🍳 | `!stirfry <ingredient>` | Yes |
+| Steamer 🫕 | `!steam <ingredient>` | Yes |
+| Stone Pot 🍲 | `!simmer <ingredient>` | Yes |
+| Rice Pot 🍚 | `!cook <ingredient>` | Yes |
+| Mixing Bowl 🥣 | `!mix <ingredient>` | Exempt |
+| Grinder ☕ | `!grind <ingredient>` | Exempt |
+| Knead Board 🫓 | `!knead <ingredient>` | Exempt |
 
-Only stations needed by the currently enabled recipes are rendered. Station capacities are configurable in Free Play via the More Options panel.
+Only stations needed by the currently enabled recipes are rendered. Stations have no slot limit — any number of cooking actions can run concurrently at one station; throughput is bounded only by heat and the per-user cooldown.
 
 ### Heat Mechanic
 
@@ -445,8 +441,8 @@ In PvP mode, `redPreparedItemSources` and `bluePreparedItemSources` mirror the p
 | Component styles | `*.module.css` same name | `Kitchen.module.css` |
 | Custom hooks | `use` prefix | `useGameLoop` |
 | Action types | UPPER_SNAKE_CASE | `TICK`, `COOK`, `PLATE`, `SERVE` |
-| Helper functions | camelCase | `parseCommand`, `getStationCapacity` |
-| Types/interfaces | PascalCase | `GameState`, `StationCapacity` |
+| Helper functions | camelCase | `parseCommand`, `getEnabledStations` |
+| Types/interfaces | PascalCase | `GameState`, `StationSlot` |
 
 ---
 
@@ -455,7 +451,7 @@ In PvP mode, `redPreparedItemSources` and `bluePreparedItemSources` mirror the p
 | File | Responsibility |
 |------|---------------|
 | `src/App.tsx` | Screen routing, game state init, Twitch/bot wiring |
-| `src/state/gameReducer.ts` | **All game logic** — the single source of truth; also exports `getStationCapacity` |
+| `src/state/gameReducer.ts` | **All game logic** — the single source of truth |
 | `src/state/types.ts` | All TypeScript interfaces and types |
 | `src/state/commandProcessor.ts` | `parseCommand()` — maps chat text to `GameAction` |
 | `src/state/defaultOptions.ts` | `DEFAULT_GAME_OPTIONS` constant |
@@ -538,13 +534,13 @@ When implementing a new feature of similar scope, create a spec + plan document 
 ## Common Pitfalls
 
 1. **Do not mutate `GameState` directly** — the reducer must return a new object for React to detect changes.
-2. **Capacity checks must happen before queuing** — always check `station.slots.length < capacity` in `COOK` actions, and reject commands on overheated stations before the capacity check.
+2. **No station capacity** — there is no per-station slot limit; a station accepts any number of concurrent cooking slots. `COOK` only needs to reject commands on overheated (locked) stations and disabled stations. Do not reintroduce a `slots.length < capacity` check.
 3. **User cooldown** — commands are throttled at 1500ms per user (`userCooldowns` in state). Bots use the same cooldown system.
 4. **`activeUsers`** — a player cooking at one station cannot simultaneously use another. Check and clear this map correctly on station completion and overheat. `!cool` and `!extinguish` are instant actions that do not set `activeUsers`.
 5. **Chat messages are capped at 200** — `ADD_CHAT` slices to `chatMessages.slice(-200)`.
 6. **`elapsedMs` accumulates tick deltas** — slot progress is `slot.elapsedMs / slot.cookDuration`. `elapsedMs` starts at 0 and is incremented by `delta` each TICK. The TICK loop is skipped entirely when paused, so no cook-time adjustment is needed on unpause. Do **not** use wall-clock `Date.now()` for progress calculations — that was replaced with `elapsedMs` to make pause work correctly. The old `cookStart` field and `ADJUST_COOK_TIMES` action no longer exist.
 7. **`heatApplied` and `heatPerCook` on slots** — each `StationSlot` has `heatApplied: number` (init 0, tracks heat already contributed) and `heatPerCook: number` (random 10–20, rolled at cook start). The TICK loop applies `progress × heatPerCook - heatApplied` each tick. When adding new slot-creating code paths, always initialise both to 0.
-8. **Heat-exempt stations** — `cutting_board`, `mixing_bowl`, `grinder`, and `knead_board` are all exempt from heat. The canonical set is `HEAT_EXEMPT_STATIONS` exported from `recipes.ts` — always import it, never redefine it locally. Treat all four identically in heat-related checks (TICK heat loop, COOL guard, `getStationCapacity`, bot cool-skip). `getStationCapacity` is exported from `gameReducer.ts` and imported by `Kitchen.tsx` — do not duplicate it. All four exempt stations use `capacity.chopping` for slot limits.
+8. **Heat-exempt stations** — `cutting_board`, `mixing_bowl`, `grinder`, and `knead_board` are all exempt from heat. The canonical set is `HEAT_EXEMPT_STATIONS` exported from `recipes.ts` — always import it, never redefine it locally. Treat all four identically in heat-related checks (TICK heat loop, COOL guard, bot cool-skip).
 9. **`!red`, `!blue`, `!join red`, `!join blue` are lobby-only** — These commands are intercepted exclusively in `handleTwitchMessage` when `screen === 'pvplobby'` and never reach `commandProcessor.ts`. Do not add `case 'red'` or `case 'blue'` to `commandProcessor.ts` — this would allow players to switch teams mid-game, silently rerouting cooked ingredients to the wrong team's prep pool.
 10. **PvP lobby state lives in App.tsx, not GameState** — `pvpLobby: { red: string[], blue: string[] } | null` is pre-game state. It is merged into the reducer's RESET action as `teams` when the game starts, then cleared. Do not store it in `GameState`.
 11. **`pvpLobbyRef` for stale closure safety** — Lobby mod commands (`!move`) check `pvpLobbyRef.current` synchronously before calling `setPvpLobby`. Reading `pvpLobby` state directly inside a `useCallback` would see a stale snapshot.

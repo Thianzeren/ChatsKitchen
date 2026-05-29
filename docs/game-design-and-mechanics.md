@@ -24,7 +24,7 @@ The game is meant to be busy, but not unreadable. UI panels, order tickets, the 
 
 The game supports:
 
-- `Free Play`, where the player can tune settings such as speeds and station capacity
+- `Free Play`, where the player can tune settings such as speeds and order frequency
 - `Adventure`, a roguelike multi-shift run where each shift must hit a money goal to continue
 - `PvP Mode`, where chat splits into two competing teams
 
@@ -106,24 +106,135 @@ Free Play is the flexible mode. Parameters are configured directly in the Free P
 | Auto-Restart | OFF | ON / OFF | — |
 | Restart Delay | 60 s | 10–300 s | 10 s |
 
-Station slot capacity can also be toggled and adjusted per station type (chopping: 1–8, cooking: 1–8).
-
 Auto-Restart and Restart Delay are found in the More Options panel. When Auto-Restart is on, the game over screen displays a countdown and automatically begins a new round when it reaches zero. Moderators and the broadcaster can also control this live from chat (see Mod Commands below).
 
 It is the best mode for experimenting, practicing, or playing casually with chat.
 
 ## Adventure Mode
 
-Adventure is a roguelike multi-shift run. Each shift has a fixed money goal — meet it to advance to the next shift, fail and the run ends. Recipes and difficulty scale as shifts progress.
+Adventure is the roguelike campaign — a **Balatro-inspired 8-shift run** where chat builds up a single restaurant over a series of shifts. Each shift sets a money goal; hit it and the run continues, miss it and the run is over. Between shifts, chat collectively shapes the run by picking a cuisine, choosing a path, and shopping the Pantry for permanent upgrades.
 
-Every shift has:
+The fantasy is a single escalating night service that gets harder, weirder, and more rewarding the deeper chat pushes — with real decisions about risk and build direction made by vote.
 
-- a shift number
-- a money goal that must be reached to continue
-- an increasing number of enabled recipes as shifts progress
-- a fixed shift duration
+### Run Structure
 
-The best run (most shifts completed) is saved to the browser.
+A run is **8 shifts long**, each a fixed **3-minute** service. Shift duration never changes — the money goal is the single difficulty knob, so longer/shorter shifts can't accidentally invert the curve.
+
+| Shift | Recipes | Notes |
+|-------|---------|-------|
+| 1 | 1 | Single forgiving starter dish, no kitchen events |
+| 2 | 2 | A second recipe auto-unlocks |
+| 3 | 3 | Third recipe auto-unlocks; **kitchen events begin** |
+| 4 | 3+ | **BOSS shift** |
+| 5–7 | 3+ | Difficulty ramps; further variety comes from shop unlocks |
+| 8 | 3+ | **FINAL BOSS shift** — clear it to win the run |
+
+After shift 3, the active recipe count holds at 3 from auto-unlocks, but the run's overall variety keeps growing through the cuisine pool and any recipes earned along the way.
+
+### Money Goals & Crew Scaling
+
+Every shift's goal is **per-player**, then multiplied by the crew size:
+
+```
+shift goal = perPlayerGoal[shift] × participantCount
+```
+
+This keeps the pressure-per-person constant whether one person or fifty are cooking. The per-player baselines climb steeply across the run (roughly $27/player/min on shift 1 up to $200/player/min on the final boss). The two boss shifts (4 and 8) bake a **×1.5 multiplier** into their baseline.
+
+Participant count is read from the Adventure lobby roster at run start, and re-counted at each shift boundary so mid-run `!join` / `!leave` / `!kick` changes are reflected in the next goal.
+
+### The Between-Shift Loop
+
+Each cleared shift flows through a short series of voting screens before the next one begins:
+
+```
+shift cleared → Shift Passed (leaderboard) → Path Pick → Pantry Shop → next Shift Briefing
+```
+
+1. **Shift Passed** — shows the run leaderboard and shift result.
+2. **Path Pick** — chat votes between two cards that modify the upcoming shift.
+3. **Pantry Shop** — chat votes to spend the shared run bank on permanent garnishes.
+4. **Briefing** — the next shift's goal, recipes, and any boss debuff are previewed, then service begins.
+
+All voting screens use plurality voting: chat types `!1`, `!2`, … `!N` and the option with the most votes wins when the timer expires (or the streamer resolves early).
+
+### The Lobby
+
+Adventure has its own pre-run lobby. Only the local "You" auto-joins — the broadcaster and viewers must opt in themselves.
+
+| Command | Effect |
+|---------|--------|
+| `!join` | Join the run roster |
+| `!leave` | Leave the roster |
+| `!kick @name` | Remove a player (mod / broadcaster only) |
+| `!clear` | Empty the roster (mod / broadcaster only) |
+
+The roster size becomes the run's participant count, which drives both goal scaling and shop pricing.
+
+### Cuisine Pick
+
+At the start of a run, chat votes on which **cuisine** the restaurant specialises in (Western, Chinese, Japanese, Korean, Japanese Bakery, or SG Hawker). The chosen cuisine determines the pool of dishes the run draws from. Shift 1 always opens with one of the cuisine's easier dishes so the first service is approachable, and shifts 2–3 auto-unlock additional dishes from that same cuisine.
+
+### Path Pick
+
+Before each shift, chat picks one of two **path cards**. The cards are seeded by `runSeed + shift`, so the same run always offers the same choices (and slot positions are shuffled so chat can't memorise "always vote `!1`").
+
+**Non-boss shifts** offer one **Easy** card and one **Risk** card:
+
+| Type | Examples | Trade-off |
+|------|----------|-----------|
+| Easy | Slow Day, Steady Service, Prep Day, Friend of the House | Lowers the shift goal (−8% to −20%); little or no cash reward |
+| Risk | Big Tab, High Roller, Chef's Gambit, All-In | Raises the goal (+5% to +20%) in exchange for a cash bonus ($80–$200) paid into the bank **on pass** |
+
+Goal deltas are applied multiplicatively to the shift's base goal. Risk-card cash bonuses are only awarded if the shift is actually cleared.
+
+**Boss shifts (4 & 8)** instead offer **two distinct bosses** — chat votes on which debuff to take on. There's no "safe" option; the choice is which kind of pain to fight through.
+
+### Bosses
+
+Bosses are shift-long debuffs that reshape the kitchen. The current roster:
+
+| Boss | Effect |
+|------|--------|
+| 🧐 The Picky Critic | Every served dish pays 25% less |
+| ⏱️ Rush Hour | Orders spawn 50% faster and patience drains ~10% sooner |
+| 📋 The Health Inspector | One station is shut down for the whole shift |
+| 👥 Understaffed | Per-action cooldown is 50% longer — the line crawls |
+| 🥵 Heatwave | Heat builds 50% faster and cooling pulls 10 less heat |
+| 🌪️ Chaos Mode | Kitchen events spawn ~3× more often (cadence tightens to 20–40s) |
+| 🎲 Recipe Roulette | Every 45s, one active recipe is swapped for a random dish |
+| 😤 Hangry Mob | Every order arrives with ~30% less patience |
+| ⭐ Bad Reviews | Every lost or expired order deducts $20 from the run bank |
+
+The chosen boss's debuff is previewed on the briefing screen (e.g. the Health Inspector's closed station is named in advance) and layered into that shift's setup.
+
+### The Pantry Shop & Garnishes
+
+After every path pick, chat visits the **Pantry** to spend the shared run bank on **garnishes** — permanent, run-long upgrades. The shop offers **4 garnishes per visit**, drawn from a tier-graded catalog:
+
+- **Common** — straightforward stat boosts and small triggered bonuses (Quick Hands +15% cooking speed, Tip Jar +$8/dish, Heat Sink +30 cooling, Precise Cuts −40% chop time, Friendly Faces +10s patience, etc.)
+- **Rare** — stronger or conditional effects (First Bite sells the shift's first dish at 3×, Mise en Place starts each shift with 5 prepped ingredients, Bloodhound pays $40 per overheat, Phoenix Wing auto-extinguishes the first fire, etc.)
+- **Legendary** — build-defining swings (Sharp Knives makes chopping instant, Snowball compounds +8% cooking speed per shift survived, Doppelgänger 20% chance to duplicate any cooked item, Glass Kitchen lowers the overheat threshold to 60 but pays +50% on every dish)
+
+Key rules:
+
+- Every garnish is **one-shot** — it can be bought only once and never reappears in the shop.
+- Purchases are **not** replenished within a visit; buying one leaves the other three offers on the menu.
+- Garnish prices scale with shift (+15% per shift past the first) and linearly with crew size, matching goal scaling.
+- Chat can **reroll** the offers for a fresh set of 4. Reroll cost is `$100 × 2^(rerolls this visit) × participantCount` — it doubles each time and resets when the shop reopens.
+
+Garnish effects **compose**, and they stack on top of the active boss debuff. For example, a Slow Burner garnish (−25% heat) partially counteracts a Heatwave boss (+50% heat). Triggered garnishes (First Bite, Phoenix Wing, the Apprentice, etc.) fire from runtime hooks during the shift rather than as flat stat changes.
+
+### Kitchen Events in Adventure
+
+Kitchen events are **off** for shifts 1–2 and turn **on from shift 3 onward**, using a curated mid-run mix (Angry Chef, Smoke Blast, Mystery Recipe, Dance, Chef's Chant) on a relaxed 60–120s cadence calibrated for stream pacing. The **Chaos Mode** boss overrides this to a frantic 20–40s cadence.
+
+### Winning, Losing & Persistence
+
+- **Clearing shift 8** wins the run.
+- **Missing any shift's goal** ends the run immediately at the run-end screen.
+- The **best run** (furthest shift, then most total money as a tiebreaker) and a running count of **won runs** are saved to the browser and persist between sessions.
+- The full run is **auto-saved at every shift boundary**. If the browser is closed mid-run, a Resume pill on the Main Menu drops chat back into the upcoming shift's briefing. Saved state is cleared when the run ends (win or fail). Mid-shift cooking state is never saved — resuming always restarts at a briefing.
 
 ## Orders And Scoring
 
@@ -183,9 +294,7 @@ The kitchen is divided into nine station types, each tied to specific commands:
 
 Only stations required by the currently enabled recipes are rendered — unused stations do not appear in the kitchen.
 
-Each station has a slot limit. If a station is full, new actions at that station are rejected until space opens up.
-
-In Free Play, slot capacity can be adjusted in the More Options panel. In gameplay terms, capacity strongly affects how crowded or forgiving the kitchen feels.
+Stations accept any number of simultaneous cooking slots — there is no per-station capacity limit. Multiple players can queue actions at the same station at once, and slots stack vertically as they cook. The only thing that takes a station offline is overheating.
 
 ## Command System
 
@@ -445,25 +554,36 @@ Steps marked `→` require the prior ingredient in the prepared-items pool befor
 
 ## Station Reference
 
-| Station | Command(s) | Heat | Default slots |
-|---------|-----------|------|---------------|
-| 🔪 Chopping Board | `chop` | exempt — never overheats | 3 |
-| 🔥 Grill | `grill` | +20% per cook | 2 |
-| 🫕 Fryer | `fry` | +20% per cook | 2 |
-| ♨️ Stove | `boil` | +20% per cook | 2 |
-| 🧱 Oven | `toast` / `roast` | +20% per cook | 2 |
-| 🥘 Wok | `stirfry` | +10–20% per cook | 2 |
-| 🫕 Steamer | `steam` | +20% per cook | 2 |
-| 🍲 Stone Pot | `simmer` | +20% per cook | 2 |
-| 🍚 Rice Pot | `cook` | +20% per cook | 2 |
+| Station | Command(s) | Heat |
+|---------|-----------|------|
+| 🔪 Chopping Board | `chop` | exempt — never overheats |
+| 🔥 Grill | `grill` | +20% per cook |
+| 🫕 Fryer | `fry` | +20% per cook |
+| ♨️ Stove | `boil` | +20% per cook |
+| 🧱 Oven | `toast` / `roast` | +20% per cook |
+| 🥘 Wok | `stirfry` | +10–20% per cook |
+| 🫕 Steamer | `steam` | +20% per cook |
+| 🍲 Stone Pot | `simmer` | +20% per cook |
+| 🍚 Rice Pot | `cook` | +20% per cook |
 
 All cooking stations reach overheat after 5–10 completed cooks without cooling (heat per cook is random 10–20%). The border colour of each station reflects current heat level. Use `cool <station>` (-40–60% heat, random) to prevent lockouts.
 
-Slot limits apply separately to the chopping board and to each cooking station type. In Free Play, both limits are configurable in the More Options panel (chopping: 1–8 slots, cooking: 1–8 slots per station type).
+Stations have no slot limit — any number of cooking actions can run concurrently at a single station. Throughput is bounded only by heat (overheating locks a station until extinguished) and the per-user cooldown / busy state.
 
 ## Adventure Mode Reference
 
-Each Adventure shift has a fixed money goal. Recipes available increase as shifts progress, keeping early shifts accessible while later shifts demand broader coordination. The best run (most shifts survived) is saved to the browser and persists between sessions.
+See the **Adventure Mode** section above for the full run design (8 shifts, cuisine pick, path cards, bosses, and the Pantry shop). Quick reference:
+
+| Aspect | Value |
+|--------|-------|
+| Shifts per run | 8 (bosses on 4 & 8) |
+| Shift duration | 3 minutes (fixed) |
+| Goal scaling | `perPlayerGoal[shift] × participantCount` |
+| Recipes | S1 = 1, S2 = 2, S3+ = 3 (auto-unlocked from the start cuisine) |
+| Kitchen events | Off for S1–2, on from S3 (Chaos Mode boss tightens cadence) |
+| Shop | 4 garnishes/visit, one-shot, reroll `$100 × 2^n × crew` |
+| Win / lose | Clear S8 to win; miss any goal to end the run |
+| Persistence | Best run + won-run count saved; full run auto-saved at shift boundaries for resume |
 
 ## Player Stats
 
