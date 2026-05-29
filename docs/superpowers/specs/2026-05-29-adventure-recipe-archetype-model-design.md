@@ -112,17 +112,14 @@ Band thresholds (prep-time low/high, reward top/bottom) are constants in `recipe
 
 ## Catalog Retune
 
-### Reward rescale → $5–$25 (by archetype, not a flat multiplier)
+### Reward rescale → $5–$25 (independent of complexity)
 
-Rewards are re-priced so value correlates with complexity — this is what makes reward-based builds legible.
+**Reward and complexity are independent knobs.** Reward is authored per dish by *prestige / ingredient cost* and rescaled into the $5–$25 cafe range; it is NOT derived from or coupled to complexity. This is what creates the interesting recipe archetypes that builds target:
 
-| Complexity | Target band | Anchor examples |
-|-----------|-------------|-----------------|
-| ●○○ | $5–$9 | Coffee $5, Fries $7, Grilled Cheese $9 |
-| ●●○ | $11–$18 | Burger $14, Bulgogi $18 |
-| ●●● | $19–$25 | Nasi Lemak $22, Salmon Donburi $25 |
+- **"Easy money"** — low complexity + high reward (e.g. Salmon Donburi: ●○○, $25). Great with reward-focused garnishes.
+- **"Labor of love"** — high complexity + low reward (e.g. a fiddly ●●● dish at $9). A trap unless you have an efficiency build.
 
-Final per-dish numbers are hand-set against this rubric, anchored to the approved preview values.
+Anchor prices from the approved preview: Coffee $5, Kaya Toast $6, Fries $7, Grilled Cheese $9, Burger $14, Bulgogi $18, Nasi Lemak $22, Salmon Donburi $25. All dishes land in $5–$25. The full per-dish table is fixed in the implementation plan.
 
 ### Serve time-bonus rescale (critical)
 
@@ -154,7 +151,7 @@ The reducer's SERVE path computes `timeBonus = floor((patienceLeft / patienceMax
 ## Acceptance Criteria
 
 - `getRecipeProfile` returns a correct `RecipeProfile` for every recipe; derived fields match step data; `complexityOverride` takes precedence over the derived pip bucket.
-- All dish rewards fall within $5–$25 and correlate with complexity per the rubric.
+- All dish rewards fall within $5–$25 (authored by prestige, independent of complexity).
 - The serve time-bonus cap is rescaled (~$9) and lives in a named constant.
 - Each archetype tag is populated by at least one dish after gap-fillers are added (no empty archetype after the retune).
 - `npm run build` and `npm run lint` pass.
