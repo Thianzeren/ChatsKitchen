@@ -14,6 +14,7 @@ export interface Recipe {
   patience: number
   steps: RecipeStep[]
   plate: string[]
+  complexityOverride?: 1 | 2 | 3   // authored override; wins over the derived pip bucket
 }
 
 export interface StationDef {
