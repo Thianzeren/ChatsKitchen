@@ -1,0 +1,427 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  height: 100%;
+  background:
+    radial-gradient(ellipse at top, rgba(216, 116, 40, 0.05), transparent 65%),
+    radial-gradient(ellipse at bottom right, rgba(196, 160, 32, 0.04), transparent 60%),
+    var(--bg);
+  padding: 32px 60px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.title {
+  font-family: 'Lilita One', cursive;
+  font-size: 44px;
+  color: #fff;
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.15);
+}
+
+.subtitle {
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--base-fs);
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-top: 6px;
+  max-width: 820px;
+}
+
+.subtitle code {
+  font-family: 'Space Mono', monospace;
+  background: rgba(196, 160, 32, 0.14);
+  border: 1px solid rgba(196, 160, 32, 0.32);
+  padding: 1px 10px;
+  border-radius: 5px;
+  color: #c4a020;
+  font-size: 20px;
+}
+
+.crewBadge {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  background: rgba(196, 160, 32, 0.10);
+  border: 2px solid rgba(196, 160, 32, 0.36);
+  padding: 12px 24px;
+  border-radius: 14px;
+}
+
+.crewBadgeValue {
+  font-family: 'Lilita One', cursive;
+  font-size: 36px;
+  color: #c4a020;
+}
+
+.crewBadgeLabel {
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--base-fs);
+  color: var(--text-secondary);
+}
+
+.timerBar {
+  position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.timerFill {
+  height: 100%;
+  background: linear-gradient(90deg, #d87428, #c4a020);
+  transition: width 100ms linear;
+}
+
+.timerBarPaused {
+  height: 22px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.timerBarPaused .timerFill {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(196, 160, 32, 0.45) 0,
+    rgba(196, 160, 32, 0.45) 8px,
+    rgba(216, 116, 40, 0.35) 8px,
+    rgba(216, 116, 40, 0.35) 16px
+  );
+}
+
+.timerPausedLabel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Lilita One', cursive;
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+/* ── Carousel ──────────────────────────────────────────────────────────── */
+
+.carouselArea {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: stretch;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+}
+
+.navArrow {
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  width: 52px;
+  font-family: 'Lilita One', cursive;
+  font-size: 32px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: filter 0.1s, background 0.1s, border-color 0.1s;
+}
+
+.navArrow:not(:disabled):hover {
+  filter: brightness(1.15);
+  background: rgba(196, 160, 32, 0.10);
+  border-color: rgba(196, 160, 32, 0.4);
+  color: #c4a020;
+}
+
+.navArrowDisabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.cardsViewport {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  min-height: 0;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(180deg, var(--station-bg) 0%, rgba(0, 0, 0, 0.18) 100%);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 18px 16px;
+  cursor: pointer;
+  transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  text-align: center;
+  font: inherit;
+  color: inherit;
+  outline-offset: 4px;
+  min-height: 0;
+}
+
+.card:not(:disabled):hover {
+  transform: translateY(-4px);
+  filter: brightness(1.06);
+  border-color: rgba(196, 160, 32, 0.5);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+.card:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.cardKey {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  font-family: 'Space Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: #c4a020;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(196, 160, 32, 0.4);
+  border-radius: 8px;
+  padding: 3px 12px;
+}
+
+.cardFlagChip {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 24px;
+  line-height: 1;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.cardHero {
+  font-size: 72px;
+  line-height: 1;
+  margin-top: 14px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
+}
+
+/* ── Per-card scrollable recipe list ────────────────────────────────────── */
+
+.cardRecipeList {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 6px;
+  text-align: left;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  /* Visible scrollbar so viewers know the panel scrolls */
+  scrollbar-color: rgba(196, 160, 32, 0.5) rgba(255, 255, 255, 0.05);
+  scrollbar-width: thin;
+}
+
+.cardRecipeList::-webkit-scrollbar           { width: 6px; }
+.cardRecipeList::-webkit-scrollbar-track     { background: rgba(255, 255, 255, 0.04); border-radius: 3px; }
+.cardRecipeList::-webkit-scrollbar-thumb     { background: rgba(196, 160, 32, 0.45); border-radius: 3px; }
+.cardRecipeList::-webkit-scrollbar-thumb:hover { background: rgba(196, 160, 32, 0.65); }
+
+.cardRecipeRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 8px;
+  padding: 8px 10px;
+  flex-shrink: 0;
+}
+
+.cardRecipeEmoji {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.cardRecipeBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardRecipeHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.cardRecipeName {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+  text-align: left;
+}
+
+.cardRecipeReward {
+  font-family: 'Space Mono', monospace;
+  font-size: 16px;
+  color: #c4a020;
+  font-weight: 700;
+}
+
+.cardRecipeSteps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Per-cuisine accent ringing (subtle border + glow tint) ─────────────── */
+
+.cuisine_western     { border-color: rgba(216, 116, 40, 0.55); }
+.cuisine_western:hover { box-shadow: 0 8px 22px rgba(216, 116, 40, 0.30); }
+
+.cuisine_chinese     { border-color: rgba(217, 79, 79, 0.55); }
+.cuisine_chinese:hover { box-shadow: 0 8px 22px rgba(217, 79, 79, 0.30); }
+
+.cuisine_korean      { border-color: rgba(232, 88, 96, 0.55); }
+.cuisine_korean:hover { box-shadow: 0 8px 22px rgba(232, 88, 96, 0.30); }
+
+.cuisine_japanese    { border-color: rgba(120, 168, 220, 0.55); }
+.cuisine_japanese:hover { box-shadow: 0 8px 22px rgba(120, 168, 220, 0.30); }
+
+.cuisine_japanese_bakery { border-color: rgba(232, 192, 160, 0.6); }
+.cuisine_japanese_bakery:hover { box-shadow: 0 8px 22px rgba(232, 192, 160, 0.30); }
+
+.cuisine_sg          { border-color: rgba(106, 170, 94, 0.55); }
+.cuisine_sg:hover { box-shadow: 0 8px 22px rgba(106, 170, 94, 0.30); }
+
+.cardName {
+  font-family: 'Lilita One', cursive;
+  font-size: 28px;
+  color: var(--text);
+}
+
+.cardDescription {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 18px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  max-width: 92%;
+  flex-shrink: 0;
+}
+
+.cardFooter {
+  margin-top: 6px;
+}
+
+.cardVotes {
+  font-family: 'Space Mono', monospace;
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+.cardVoteBar {
+  width: 84%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.cardVoteFill {
+  height: 100%;
+  background: linear-gradient(90deg, #5a9ab0, #c4a020);
+  transition: width 200ms ease;
+}
+
+/* ── Step chips (used inline within each card's recipe rows) ─────────────── */
+
+.stepSeparator,
+.stepArrow {
+  font-size: 14px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.stepArrow {
+  color: var(--text-secondary);
+}
+
+.stepChip {
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+/* ── Actions ───────────────────────────────────────────────────────────── */
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+
+.pauseBtn,
+.backBtn {
+  border: none;
+  border-radius: 12px;
+  padding: 14px 32px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: var(--base-fs);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s, box-shadow 0.15s;
+}
+
+.pauseBtn {
+  background: rgba(90, 154, 176, 0.18);
+  color: #7ab8c8;
+  border: 2px solid rgba(90, 154, 176, 0.4);
+}
+
+.pauseBtn:not(:disabled):hover {
+  transform: scale(1.04);
+  filter: brightness(1.18);
+  box-shadow: 0 4px 18px rgba(90, 154, 176, 0.28);
+}
+
+.pauseBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.backBtn {
+  background: var(--border);
+  color: var(--text);
+}
+
+.backBtn:not(:disabled):hover {
+  transform: scale(1.03);
+  filter: brightness(1.2);
+}
+
+.backBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
