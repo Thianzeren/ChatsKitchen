@@ -189,9 +189,9 @@ describe('getRecipeProfile — derived knobs', () => {
 })
 
 describe('getRecipeProfile — archetype tags', () => {
-  it('tags a quick cheap one-step dish fast + value + chop_heavy', () => {
+  it('tags a quick cheap one-step dish fast + value + prep_heavy', () => {
     const p = getRecipeProfile(mockRecipe({ reward: 6 })) // 1 mix step, 5000ms
-    expect(p.tags).toEqual(expect.arrayContaining(['fast', 'value', 'chop_heavy']))
+    expect(p.tags).toEqual(expect.arrayContaining(['fast', 'value', 'prep_heavy']))
     expect(p.tags).not.toContain('hot_line')
     expect(p.tags).not.toContain('premium')
   })
@@ -206,7 +206,7 @@ describe('getRecipeProfile — archetype tags', () => {
       plate: ['a', 'b'],
     }))
     expect(p.tags).toEqual(expect.arrayContaining(['slow', 'premium', 'hot_line']))
-    expect(p.tags).not.toContain('chop_heavy')
+    expect(p.tags).not.toContain('prep_heavy')
   })
 })
 ```
@@ -226,7 +226,7 @@ Create `src/data/recipeProfile.ts`:
 ```ts
 import { Recipe, HEAT_EXEMPT_STATIONS } from './recipes'
 
-export type RecipeTag = 'fast' | 'slow' | 'premium' | 'value' | 'chop_heavy' | 'hot_line'
+export type RecipeTag = 'fast' | 'slow' | 'premium' | 'value' | 'prep_heavy' | 'hot_line'
 
 export interface RecipeProfile {
   reward: number            // authored base reward (cafe scale, coupled to complexity)
@@ -270,7 +270,7 @@ export function getRecipeProfile(recipe: Recipe): RecipeProfile {
   if (prepTimeMs >= PREP_SLOW_MIN_MS) tags.push('slow')
   if (recipe.reward <= REWARD_VALUE_MAX) tags.push('value')
   if (recipe.reward >= REWARD_PREMIUM_MIN) tags.push('premium')
-  if (exemptStepCount * 2 > recipe.steps.length) tags.push('chop_heavy') // majority of steps heat-exempt
+  if (exemptStepCount * 2 > recipe.steps.length) tags.push('prep_heavy') // majority of steps heat-exempt
   if (heatStations.length >= 2) tags.push('hot_line')
 
   return { reward: recipe.reward, prepTimeMs, complexity, complexityPips, stations, heatStations, tags }
@@ -473,7 +473,7 @@ git commit -m "feat(recipes): rescale rewards coupled to complexity + overrides 
 - Modify: `src/data/recipes.ts` (add 3 dishes + their `INGREDIENT_EMOJI`)
 - Modify: `src/data/recipes.test.ts` (profile assertions for the new dishes)
 
-The 3 gap-fillers fill archetype cells the existing catalog lacks: a pure-volume snack (●○○ fast/value), a premium showpiece that demands heat management (●●● `hot_line`), and a premium dish that is complex but heat-free (●●● `chop_heavy`, contrasting the showpiece). Rewards stay coupled to their pips. They are intentionally left out of `RECIPE_SETS` (ungrouped, like `fries`/`pasta`) so Free Play playsets are unchanged; sub-project B defines the Adventure-eligible pool.
+The 3 gap-fillers fill archetype cells the existing catalog lacks: a pure-volume snack (●○○ fast/value), a premium showpiece that demands heat management (●●● `hot_line`), and a premium dish that is complex but heat-free (●●● `prep_heavy`, contrasting the showpiece). Rewards stay coupled to their pips. They are intentionally left out of `RECIPE_SETS` (ungrouped, like `fries`/`pasta`) so Free Play playsets are unchanged; sub-project B defines the Adventure-eligible pool.
 
 - [ ] **Step 1: Write failing profile assertions for the new dishes**
 
@@ -484,7 +484,7 @@ describe('gap-filler dishes', () => {
   it('iced_lemon_tea is a fast value one-tap volume dish', () => {
     const p = getRecipeProfile(RECIPES.iced_lemon_tea)
     expect(p.complexityPips).toBe(1)
-    expect(p.tags).toEqual(expect.arrayContaining(['fast', 'value', 'chop_heavy']))
+    expect(p.tags).toEqual(expect.arrayContaining(['fast', 'value', 'prep_heavy']))
     expect(p.heatStations).toHaveLength(0)
   })
 
@@ -494,10 +494,10 @@ describe('gap-filler dishes', () => {
     expect(p.tags).toEqual(expect.arrayContaining(['slow', 'premium', 'hot_line']))
   })
 
-  it('veggie_dumplings is a premium but heat-free chop_heavy dish', () => {
+  it('veggie_dumplings is a premium but heat-free prep_heavy dish', () => {
     const p = getRecipeProfile(RECIPES.veggie_dumplings)
     expect(p.complexityPips).toBe(3)
-    expect(p.tags).toEqual(expect.arrayContaining(['premium', 'chop_heavy']))
+    expect(p.tags).toEqual(expect.arrayContaining(['premium', 'prep_heavy']))
     expect(p.tags).not.toContain('hot_line')
   })
 })
@@ -618,7 +618,7 @@ describe('archetype coverage audit', () => {
     // Visible in test output for tuning:
     console.table({ pips: pipCounts, tags: tagCounts })
 
-    const allTags: RecipeTag[] = ['fast', 'slow', 'premium', 'value', 'chop_heavy', 'hot_line']
+    const allTags: RecipeTag[] = ['fast', 'slow', 'premium', 'value', 'prep_heavy', 'hot_line']
     for (const t of allTags) {
       expect(tagCounts[t] ?? 0, `archetype tag "${t}" is empty`).toBeGreaterThan(0)
     }

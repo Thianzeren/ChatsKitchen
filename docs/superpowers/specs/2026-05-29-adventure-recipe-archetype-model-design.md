@@ -103,7 +103,7 @@ Derived; a dish can hold several. These are the synergy hooks sub-project C keys
 | `slow` | prep time in the highest band |
 | `premium` | reward in the top band |
 | `value` | reward in the bottom band |
-| `chop_heavy` | majority of steps on heat-exempt stations |
+| `prep_heavy` | majority of steps on heat-exempt (cold-prep) stations |
 | `hot_line` | 2+ distinct heat-bearing stations |
 
 Band thresholds (prep-time low/high, reward top/bottom) are constants in `recipeProfile.ts`, calibrated against the retuned catalog so each tag is meaningfully populated.
