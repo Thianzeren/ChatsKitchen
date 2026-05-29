@@ -6,22 +6,21 @@ import { PlayerStats, CuisineId, AdventureRun } from '../state/types'
 export const ADVENTURE_TOTAL_SHIFTS = 8
 export const ADVENTURE_BOSS_SHIFTS: readonly number[] = [4, 8]
 
-// Money goal per shift PER PLAYER (1-indexed: PER_PLAYER_GOALS[shift-1])
-// Total shift goal = PER_PLAYER_GOALS[shift-1] × participantCount, so the per-player
-// pressure stays constant regardless of crew size.
-// Bosses on shifts 4 and 8 already bake in their 1.5x multiplier in this table.
-//
-// Per-minute pressure ($/p/min over the 3-min shift):
-//   S1 27 → S2 43 → S3 47 → S4 80 (boss) → S5 72 → S6 92 → S7 113 → S8 200 (final boss)
+// Money goal per shift PER PLAYER (1-indexed: PER_PLAYER_GOALS[shift-1]).
+// Total shift goal = PER_PLAYER_GOALS[shift-1] × participantCount.
+// Cafe scale (sub-project A): dishes are $5–$25. Curve is monotonic; boss
+// shifts (4 & 8) are elevated but the curve never dips after them. Bosses now
+// apply their own debuffs, so the old ×1.5 boss multiplier is NOT baked in here.
+// $/player/min over the 3-min shift: 6.7 → 11.7 → 16.7 → 23.3 → 28.3 → 36.7 → 46.7 → 66.7
 export const PER_PLAYER_GOALS: readonly number[] = [
-   80,   // S1: 1 recipe, no events
-  130,   // S2: 2 recipes
-  140,   // S3: 3 recipes + events introduced
-  240,   // S4: BOSS (160 × 1.5)
-  215,   // S5: harder
-  275,   // S6: harder
-  340,   // S7: brutal
-  600,   // S8: FINAL BOSS (400 × 1.5)
+   20,   // S1
+   35,   // S2
+   50,   // S3
+   70,   // S4 (boss)
+   85,   // S5
+  110,   // S6
+  140,   // S7
+  200,   // S8 (final boss)
 ]
 
 // Shift duration is constant across all 8 shifts. Variable duration was tried earlier
