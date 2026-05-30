@@ -112,24 +112,23 @@ It is the best mode for experimenting, practicing, or playing casually with chat
 
 ## Adventure Mode
 
-Adventure is the roguelike campaign — a **Balatro-inspired 8-shift run** where chat builds up a single restaurant over a series of shifts. Each shift sets a money goal; hit it and the run continues, miss it and the run is over. Between shifts, chat collectively shapes the run by picking a cuisine, choosing a path, and shopping the Pantry for permanent upgrades.
+Adventure is the roguelike campaign — a **Balatro-inspired 8-shift run** where chat builds up a single restaurant over a series of shifts. Each shift sets a money goal; hit it and the run continues, miss it and the run is over. Between shifts, chat collectively grows the menu by drafting a new dish, then shops the Pantry for permanent upgrades.
 
-The fantasy is a single escalating night service that gets harder, weirder, and more rewarding the deeper chat pushes — with real decisions about risk and build direction made by vote.
+The fantasy is a single escalating night service that gets harder, weirder, and more rewarding the deeper chat pushes.
 
 ### Run Structure
 
-A run is **8 shifts long**, each a fixed **3-minute** service. Shift duration never changes — the money goal is the single difficulty knob, so longer/shorter shifts can't accidentally invert the curve.
+A run is **8 shifts long**, each a fixed **3-minute** service. Shift duration never changes — the money goal is the single difficulty knob.
 
-| Shift | Recipes | Notes |
-|-------|---------|-------|
-| 1 | 1 | Single forgiving starter dish, no kitchen events |
-| 2 | 2 | A second recipe auto-unlocks |
-| 3 | 3 | Third recipe auto-unlocks; **kitchen events begin** |
-| 4 | 3+ | **BOSS shift** |
-| 5–7 | 3+ | Difficulty ramps; further variety comes from shop unlocks |
-| 8 | 3+ | **FINAL BOSS shift** — clear it to win the run |
+| Shift | Recipes on menu | Notes |
+|-------|----------------|-------|
+| 1 | 1 | Opening draft dish; no kitchen events |
+| 2 | 2 | Between-shift recipe add |
+| 3 | 3 | **Kitchen events begin** |
+| 4 | 4 | **BOSS shift** (auto-assigned) |
+| 5–8 | 5–8 | Menu keeps growing each shift; shift 8 is the **FINAL BOSS** |
 
-After shift 3, the active recipe count holds at 3 from auto-unlocks, but the run's overall variety keeps growing through the cuisine pool and any recipes earned along the way.
+The run opens with a **mandatory recipe draft**: chat picks 1 dish from 3 all-cuisine options. Between every cleared shift, chat adds 1 more dish from 3 all-cuisine options, or votes `!skip`. All owned recipes are active — orders spawn from the entire menu. Cuisine tags are cosmetic flavour labels and have no mechanical effect on gameplay.
 
 ### Money Goals & Crew Scaling
 
@@ -139,7 +138,7 @@ Every shift's goal is **per-player**, then multiplied by the crew size:
 shift goal = perPlayerGoal[shift] × participantCount
 ```
 
-This keeps the pressure-per-person constant whether one person or fifty are cooking. The per-player baselines climb steeply across the run (roughly $27/player/min on shift 1 up to $200/player/min on the final boss). The two boss shifts (4 and 8) bake a **×1.5 multiplier** into their baseline.
+This keeps the pressure-per-person constant whether one person or fifty are cooking. The per-player baselines are `[20, 35, 50, 70, 85, 110, 140, 200]`. The two boss shifts (4 and 8) bake a **×1.5 multiplier** into their baseline.
 
 Participant count is read from the Adventure lobby roster at run start, and re-counted at each shift boundary so mid-run `!join` / `!leave` / `!kick` changes are reflected in the next goal.
 
@@ -148,13 +147,13 @@ Participant count is read from the Adventure lobby roster at run start, and re-c
 Each cleared shift flows through a short series of voting screens before the next one begins:
 
 ```
-shift cleared → Shift Passed (leaderboard) → Path Pick → Pantry Shop → next Shift Briefing
+shift cleared → Shift Passed (leaderboard) → Recipe Pick → Pantry Shop → next Shift Briefing
 ```
 
 1. **Shift Passed** — shows the run leaderboard and shift result.
-2. **Path Pick** — chat votes between two cards that modify the upcoming shift.
+2. **Recipe Pick** — chat votes to add a new dish from 3 all-cuisine options, or `!skip`.
 3. **Pantry Shop** — chat votes to spend the shared run bank on permanent garnishes.
-4. **Briefing** — the next shift's goal, recipes, and any boss debuff are previewed, then service begins.
+4. **Briefing** — the next shift's goal, active menu, and any boss debuff are previewed, then service begins.
 
 All voting screens use plurality voting: chat types `!1`, `!2`, … `!N` and the option with the most votes wins when the timer expires (or the streamer resolves early).
 
@@ -171,28 +170,9 @@ Adventure has its own pre-run lobby. Only the local "You" auto-joins — the bro
 
 The roster size becomes the run's participant count, which drives both goal scaling and shop pricing.
 
-### Cuisine Pick
-
-At the start of a run, chat votes on which **cuisine** the restaurant specialises in (Western, Chinese, Japanese, Korean, Japanese Bakery, or SG Hawker). The chosen cuisine determines the pool of dishes the run draws from. Shift 1 always opens with one of the cuisine's easier dishes so the first service is approachable, and shifts 2–3 auto-unlock additional dishes from that same cuisine.
-
-### Path Pick
-
-Before each shift, chat picks one of two **path cards**. The cards are seeded by `runSeed + shift`, so the same run always offers the same choices (and slot positions are shuffled so chat can't memorise "always vote `!1`").
-
-**Non-boss shifts** offer one **Easy** card and one **Risk** card:
-
-| Type | Examples | Trade-off |
-|------|----------|-----------|
-| Easy | Slow Day, Steady Service, Prep Day, Friend of the House | Lowers the shift goal (−8% to −20%); little or no cash reward |
-| Risk | Big Tab, High Roller, Chef's Gambit, All-In | Raises the goal (+5% to +20%) in exchange for a cash bonus ($80–$200) paid into the bank **on pass** |
-
-Goal deltas are applied multiplicatively to the shift's base goal. Risk-card cash bonuses are only awarded if the shift is actually cleared.
-
-**Boss shifts (4 & 8)** instead offer **two distinct bosses** — chat votes on which debuff to take on. There's no "safe" option; the choice is which kind of pain to fight through.
-
 ### Bosses
 
-Bosses are shift-long debuffs that reshape the kitchen. The current roster:
+Bosses are shift-long debuffs that reshape the kitchen. On shifts 4 and 8 a boss is **auto-assigned** — there is no vote. The boss is previewed on the shift briefing so the team can prepare. The current roster:
 
 | Boss | Effect |
 |------|--------|
@@ -572,14 +552,15 @@ Stations have no slot limit — any number of cooking actions can run concurrent
 
 ## Adventure Mode Reference
 
-See the **Adventure Mode** section above for the full run design (8 shifts, cuisine pick, path cards, bosses, and the Pantry shop). Quick reference:
+See the **Adventure Mode** section above for the full run design (8 shifts, recipe draft, bosses, and the Pantry shop). Quick reference:
 
 | Aspect | Value |
 |--------|-------|
-| Shifts per run | 8 (bosses on 4 & 8) |
+| Shifts per run | 8 (bosses auto-assigned on 4 & 8) |
 | Shift duration | 3 minutes (fixed) |
-| Goal scaling | `perPlayerGoal[shift] × participantCount` |
-| Recipes | S1 = 1, S2 = 2, S3+ = 3 (auto-unlocked from the start cuisine) |
+| Goal scaling | `perPlayerGoal[shift] × participantCount` (baselines: 20/35/50/70/85/110/140/200) |
+| Recipes | Opens with 1 drafted dish; chat adds 1 per cleared shift (or skips); grows up to 8 |
+| Cuisine tags | Cosmetic flavour only — no mechanical effect |
 | Kitchen events | Off for S1–2, on from S3 (Chaos Mode boss tightens cadence) |
 | Shop | 4 garnishes/visit, one-shot, reroll `$100 × 2^n × crew` |
 | Win / lose | Clear S8 to win; miss any goal to end the run |
