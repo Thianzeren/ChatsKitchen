@@ -2,6 +2,7 @@ import { useEffect, useState, Fragment } from 'react'
 import { useChoiceVote } from '../hooks/useChoiceVote'
 import { RECIPES } from '../data/recipes'
 import { getRecipeProfile } from '../data/recipeProfile'
+import { orderStepsForDisplay } from '../data/recipeSteps'
 import { getAudioManager } from '../audio/AudioManager'
 import styles from './AdventureRecipePick.module.css'
 
@@ -109,7 +110,7 @@ export default function AdventureRecipePick({ offers, shiftNumber, rosterSize, a
                 </div>
 
                 <div className={`${styles.steps} ${r.steps.length >= 4 ? styles.stepsDense : ''}`}>
-                  {r.steps.map((step, i) => (
+                  {orderStepsForDisplay(r.steps).map((step, i) => (
                     <Fragment key={i}>
                       {i > 0 && (
                         <div className={styles.stepConnector}>
