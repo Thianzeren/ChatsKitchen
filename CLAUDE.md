@@ -64,8 +64,8 @@ ChatsKitchen/
 
 `App.tsx` owns top-level screen state as a union type:
 ```
-'menu' | 'localplay' | 'pvplobby' | 'adventurelobby' | 'adventurecuisinepick'
-| 'adventurebriefing' | 'adventurepathpick' | 'adventurepantryshop' | 'adventurebossbriefing'
+'menu' | 'localplay' | 'pvplobby' | 'adventurelobby' | 'adventurerecipepick'
+| 'adventurebriefing' | 'adventurepantryshop' | 'adventurebossbriefing'
 | 'adventureshiftpassed' | 'adventurerunend'
 | 'options' | 'playsetpicker' | 'freeplaysetup'
 | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'credits'
@@ -110,27 +110,26 @@ Drag-and-drop is also available in the `PvPLobby` component UI — players can b
 
 ### Adventure Mode (Roguelike)
 
-A Balatro-inspired 8-shift run. Chat builds up a kitchen via cuisine pick, between-shift path picks, and a Pantry shop. Any failed shift ends the run; the goal is to clear shift 8.
+A Balatro-inspired 8-shift run. Chat builds up a menu via a draft system, and shops the Pantry for permanent upgrades. Any failed shift ends the run; the goal is to clear shift 8.
 
-**Screen flow:** `menu` → `adventurelobby` → `adventurecuisinepick` → `adventurebriefing` → `countdown` → `playing` → `shiftend` → `adventureshiftpassed` → `adventurepathpick` → `adventurepantryshop` → next `adventurebriefing` (loop) → `adventurerunend`
+**Screen flow:** `menu` → `adventurelobby` → `adventurerecipepick` (opening draft) → `adventurebriefing` → `countdown` → `playing` → `shiftend` → `adventureshiftpassed` → `adventurerecipepick` → `adventurepantryshop` → next `adventurebriefing` (loop) → `adventurerunend`
 
-Most run-level state lives in `useAdventureRun.ts` (`AdventureRun` shape in `types.ts`); the lobby roster is owned by `useAdventureLobby.ts`. Path-card and shop voting screens use the shared `useChoiceVote.ts` hook (plurality `!1`..`!N` with timer + pause). Both `pvpLobbyRef` and `adventureLobbyRef` mirror their respective rosters into refs for stale-closure-safe chat command handling.
+Most run-level state lives in `useAdventureRun.ts` (`AdventureRun` shape in `types.ts`); the lobby roster is owned by `useAdventureLobby.ts`. The recipe-draft and shop voting screens use the shared `useChoiceVote.ts` hook (plurality `!1`..`!N` with timer + pause). Both `pvpLobbyRef` and `adventureLobbyRef` mirror their respective rosters into refs for stale-closure-safe chat command handling.
 
 **Run structure**
 - 8 shifts, constant 3-minute shift duration (`ADVENTURE_SHIFT_DURATION` in `data/adventureMode.ts`)
-- S1 = 1 recipe, S2 = 2 recipes auto-unlocked, S3+ = 3 recipes (further variety comes from shop unlocks)
-- Bosses on shifts 4 & 8 — the `adventurepathpick` for those shifts offers 2 distinct bosses from `getBossPool()`
-- Goal = `PER_PLAYER_GOALS[shift-1] × participantCount` (per-player scaling). S4 & S8 baselines already bake in the ×1.5 boss multiplier.
+- Run opens with a **mandatory recipe draft**: chat picks 1 dish from 3 all-cuisine options (no skip). Between every cleared shift, chat adds 1 more dish from 3 all-cuisine options, or votes `!skip`. The menu grows from 1 dish up to 8; all owned recipes are active and orders spawn from the entire menu.
+- Cuisine tags are **cosmetic flavor** — they appear on dish cards but have no mechanical role.
+- Bosses on shifts 4 & 8 are **auto-assigned** (no vote) and previewed on the shift briefing.
+- Goal = `PER_PLAYER_GOALS[shift-1] × participantCount` (per-player scaling). Baselines: `[20, 35, 50, 70, 85, 110, 140, 200]` — a monotonic cafe-scale ramp. Bosses apply their own debuffs; no ×1.5 goal multiplier is baked into the table.
 
 **Lobby** — Only the local "You" auto-joins; broadcaster and viewers must `!join` themselves. `!leave`, `!kick @name`, and `!clear` (mod only) for roster management. Mid-run `!leave` / `!kick` re-counts participants at the next shift boundary in `closeShop`.
 
-**Garnishes (Pantry shop)** — `data/adventureGarnishes.ts` defines a tier-graded catalog (common / rare / legendary). Each garnish is **one-shot** (cannot be bought twice); the shop offers 4 garnishes per visit, no replenish on purchase. Reroll cost is `$100 × 2^rerollCount × participantCount`. Effects compose in `applyAllGarnishes` and layer on top of the boss debuff in `buildShiftReset`.
+**Garnishes (Pantry shop)** — `data/adventureGarnishes.ts` defines a 24-garnish, tier-graded catalog (common / rare / legendary) built around six recipe archetype tags: `premium`, `value`, `fast`, `slow`, `prep_heavy`, `hot_line`, plus neutrals. Each garnish is **one-shot** (cannot be bought twice); the shop offers 4 garnishes per visit, no replenish on purchase. Offers are **tier-weighted by the upcoming shift** (mostly common early, rising rare/legendary; boss shops before shifts 4 & 8 spike rare/legendary). Reroll cost is `$25 × 2^rerollCount × participantCount`. Effects fire via three mechanisms: **`applyServeTriggers`** (data-driven serve-triggers keyed off `getRecipeProfile` — reward multipliers and flat bonuses gated by tag/timing), **`applyAllGarnishes`** (stat effects: cooking speed, patience, cooling, tip, chopping time, overheat threshold), and **bespoke** hooks (First Bite 3× first dish, Time Is Money patience-scaled reward, Bloodhound $12/overheat, Doppelgänger 20% duplicate, Mise en Place shift-start prep, Glass Kitchen, Snowball compound speed). All effects compose and layer on top of the boss debuff in `buildShiftReset`.
 
 **Bosses** — `data/adventureBosses.ts`. Some bosses set GameState knobs (`heatPerCookMultiplier`, `coolAmountBonus`, `cooldownMultiplier`, `disabledStations`, `bossMoneyMultiplier`); Chaos Mode tightens kitchen-event cadence; Recipe Roulette is implemented as a lazy-init TICK timer in the reducer.
 
-**Path cards** — `data/adventurePathCards.ts` generates 2 cards seeded by `runSeed + shift`. Non-boss shifts pick 1 easy variant + 1 risk variant from the variant pools (Slow Day / Steady Service / Prep Day vs Big Tab / High Roller / Chef's Gambit). Boss shifts pick 2 distinct bosses from `getBossPool()`. Cards carry `goalDelta` (applied multiplicatively) and `rewardOnPass.cashBonus` (added to bank on pass).
-
-**Chat command routing** — When in any Adventure choice-vote screen (`adventurelobby`, `adventurecuisinepick`, `adventurepathpick`, `adventurepantryshop`), `handleTwitchMessage` intercepts the message and routes it to `adventureVoteRef.current(...)` before any game-command processing. This mirrors the PvP lobby intercept pattern.
+**Chat command routing** — When in any Adventure choice-vote screen (`adventurelobby`, `adventurerecipepick`, `adventurepantryshop`), `handleTwitchMessage` intercepts the message and routes it to `adventureVoteRef.current(...)` before any game-command processing. This mirrors the PvP lobby intercept pattern.
 
 ### Component Hierarchy (during gameplay)
 
@@ -195,7 +194,7 @@ Mod detection uses `tags.mod` and `tags.badges.broadcaster` from tmi.js. The loc
 
 Priority order: **extinguish overheated station → cool hot station (heat ≥ 60) → serve → cook**
 
-Bots respect station capacity, skip overheated stations, and skip `cutting_board` and `mixing_bowl` for cooling.
+Bots skip overheated stations, and skip `cutting_board` and `mixing_bowl` for cooling.
 
 ---
 
@@ -210,8 +209,6 @@ interface GameState {
   cookingSpeed: number
   orderSpeed: number
   orderSpawnRate: number
-  stationCapacity: StationCapacity           // slot limits per station type
-  restrictSlots: boolean
   enabledRecipes: string[]
   stations: Record<string, Station>          // id → Station
   orders: Order[]
@@ -270,8 +267,6 @@ interface GameOptions {
   orderSpeed: number
   orderSpawnRate: number
   shiftDuration: number
-  stationCapacity: StationCapacity
-  restrictSlots: boolean
   enabledRecipes: string[]
   allowShortformCommands: boolean
   autoRestart: boolean        // Free Play only — auto-restart after game over
@@ -355,22 +350,22 @@ Steps marked `→` require the prior ingredient in `preparedItems` before starti
 
 ### Stations (10 types)
 
-| Station | Command | Default Capacity | Heat |
-|---------|---------|-----------------|------|
-| Chopping Board 🔪 | `!chop <ingredient>` | 3 slots | Exempt |
-| Grill 🔥 | `!grill <ingredient>` | 2 slots | Yes |
-| Fryer 🫕 | `!fry <ingredient>` | 2 slots | Yes |
-| Stove ♨️ | `!boil <ingredient>` | 2 slots | Yes |
-| Oven 🧱 | `!toast` / `!roast <ingredient>` | 2 slots | Yes |
-| Wok 🍳 | `!stirfry <ingredient>` | 2 slots | Yes |
-| Steamer 🫕 | `!steam <ingredient>` | 2 slots | Yes |
-| Stone Pot 🍲 | `!simmer <ingredient>` | 2 slots | Yes |
-| Rice Pot 🍚 | `!cook <ingredient>` | 2 slots | Yes |
-| Mixing Bowl 🥣 | `!mix <ingredient>` | 3 slots | Exempt |
-| Grinder ☕ | `!grind <ingredient>` | 3 slots | Exempt |
-| Knead Board 🫓 | `!knead <ingredient>` | 3 slots | Exempt |
+| Station | Command | Heat |
+|---------|---------|------|
+| Chopping Board 🔪 | `!chop <ingredient>` | Exempt |
+| Grill 🔥 | `!grill <ingredient>` | Yes |
+| Fryer 🫕 | `!fry <ingredient>` | Yes |
+| Stove ♨️ | `!boil <ingredient>` | Yes |
+| Oven 🧱 | `!toast` / `!roast <ingredient>` | Yes |
+| Wok 🍳 | `!stirfry <ingredient>` | Yes |
+| Steamer 🫕 | `!steam <ingredient>` | Yes |
+| Stone Pot 🍲 | `!simmer <ingredient>` | Yes |
+| Rice Pot 🍚 | `!cook <ingredient>` | Yes |
+| Mixing Bowl 🥣 | `!mix <ingredient>` | Exempt |
+| Grinder ☕ | `!grind <ingredient>` | Exempt |
+| Knead Board 🫓 | `!knead <ingredient>` | Exempt |
 
-Only stations needed by the currently enabled recipes are rendered. Station capacities are configurable in Free Play via the More Options panel.
+Only stations needed by the currently enabled recipes are rendered. Stations have no slot limit — any number of cooking actions can run concurrently at one station; throughput is bounded only by heat and the per-user cooldown.
 
 ### Heat Mechanic
 
@@ -445,8 +440,8 @@ In PvP mode, `redPreparedItemSources` and `bluePreparedItemSources` mirror the p
 | Component styles | `*.module.css` same name | `Kitchen.module.css` |
 | Custom hooks | `use` prefix | `useGameLoop` |
 | Action types | UPPER_SNAKE_CASE | `TICK`, `COOK`, `PLATE`, `SERVE` |
-| Helper functions | camelCase | `parseCommand`, `getStationCapacity` |
-| Types/interfaces | PascalCase | `GameState`, `StationCapacity` |
+| Helper functions | camelCase | `parseCommand`, `getEnabledStations` |
+| Types/interfaces | PascalCase | `GameState`, `StationSlot` |
 
 ---
 
@@ -455,7 +450,7 @@ In PvP mode, `redPreparedItemSources` and `bluePreparedItemSources` mirror the p
 | File | Responsibility |
 |------|---------------|
 | `src/App.tsx` | Screen routing, game state init, Twitch/bot wiring |
-| `src/state/gameReducer.ts` | **All game logic** — the single source of truth; also exports `getStationCapacity` |
+| `src/state/gameReducer.ts` | **All game logic** — the single source of truth |
 | `src/state/types.ts` | All TypeScript interfaces and types |
 | `src/state/commandProcessor.ts` | `parseCommand()` — maps chat text to `GameAction` |
 | `src/state/defaultOptions.ts` | `DEFAULT_GAME_OPTIONS` constant |
@@ -466,12 +461,13 @@ In PvP mode, `redPreparedItemSources` and `bluePreparedItemSources` mirror the p
 | `src/hooks/useKitchenEvents.ts` | Kitchen events lifecycle — spawn timer, command matching, resolve/fail dispatch, audio triggers |
 | `src/hooks/usePvpLobby.ts` | PvP lobby state, `balanceLobby`, `handleLobbyJoin`, `handleLobbyMetaCommand` |
 | `src/hooks/useAdventureLobby.ts` | Adventure lobby roster, `!join`/`!leave`/`!kick`/`!clear`, ref mirror |
-| `src/hooks/useAdventureRun.ts` | Adventure run state machine — `buildShiftReset`, path/shop callbacks, best-run persistence |
-| `src/hooks/useChoiceVote.ts` | Shared plurality-vote hook (`!1`..`!N`) — used by cuisine pick, path pick, pantry shop |
-| `src/data/adventureMode.ts` | `PER_PLAYER_GOALS`, `getAdventureGoal`, `getAdventureShiftDuration`, cuisine/recipe pickers |
+| `src/hooks/useAdventureRun.ts` | Adventure run state machine — `buildShiftReset`, recipe-draft/shop callbacks, best-run persistence |
+| `src/hooks/useChoiceVote.ts` | Shared plurality-vote hook (`!1`..`!N`) — used by recipe draft, pantry shop |
+| `src/data/adventureMode.ts` | `PER_PLAYER_GOALS`, `getAdventureGoal`, `getAdventureShiftDuration` |
+| `src/data/adventureRecipeDraft.ts` | `generateRecipeOffers` — seeded all-cuisine recipe-draft roll for opening pick and between-shift adds |
+| `src/data/seededRng.ts` | Deterministic seeded RNG utility used by adventure draft and boss assignment |
 | `src/data/adventureGarnishes.ts` | Garnish catalog, `applyAllGarnishes`, `generateShopOffers`, tier pricing |
 | `src/data/adventureBosses.ts` | Boss catalog, `applyBossDebuff`, `getBossPool`, `pickHealthInspectorStation` |
-| `src/data/adventurePathCards.ts` | `generatePathPair` — seeded easy/risk variant + boss-shift card generation |
 | `src/hooks/useGameSession.ts` | Free Play result state — finalStats, high score, history, star thresholds |
 | `src/hooks/useBotSimulation.ts` | AI player logic, action priority, cooldown awareness |
 | `src/components/EventCardOverlay.tsx` | Receipt-ticket overlay for active kitchen events; dance memorise/type phases |
@@ -538,13 +534,13 @@ When implementing a new feature of similar scope, create a spec + plan document 
 ## Common Pitfalls
 
 1. **Do not mutate `GameState` directly** — the reducer must return a new object for React to detect changes.
-2. **Capacity checks must happen before queuing** — always check `station.slots.length < capacity` in `COOK` actions, and reject commands on overheated stations before the capacity check.
+2. **No station capacity** — there is no per-station slot limit; a station accepts any number of concurrent cooking slots. `COOK` only needs to reject commands on overheated (locked) stations and disabled stations. Do not reintroduce a `slots.length < capacity` check.
 3. **User cooldown** — commands are throttled at 1500ms per user (`userCooldowns` in state). Bots use the same cooldown system.
 4. **`activeUsers`** — a player cooking at one station cannot simultaneously use another. Check and clear this map correctly on station completion and overheat. `!cool` and `!extinguish` are instant actions that do not set `activeUsers`.
 5. **Chat messages are capped at 200** — `ADD_CHAT` slices to `chatMessages.slice(-200)`.
 6. **`elapsedMs` accumulates tick deltas** — slot progress is `slot.elapsedMs / slot.cookDuration`. `elapsedMs` starts at 0 and is incremented by `delta` each TICK. The TICK loop is skipped entirely when paused, so no cook-time adjustment is needed on unpause. Do **not** use wall-clock `Date.now()` for progress calculations — that was replaced with `elapsedMs` to make pause work correctly. The old `cookStart` field and `ADJUST_COOK_TIMES` action no longer exist.
 7. **`heatApplied` and `heatPerCook` on slots** — each `StationSlot` has `heatApplied: number` (init 0, tracks heat already contributed) and `heatPerCook: number` (random 10–20, rolled at cook start). The TICK loop applies `progress × heatPerCook - heatApplied` each tick. When adding new slot-creating code paths, always initialise both to 0.
-8. **Heat-exempt stations** — `cutting_board`, `mixing_bowl`, `grinder`, and `knead_board` are all exempt from heat. The canonical set is `HEAT_EXEMPT_STATIONS` exported from `recipes.ts` — always import it, never redefine it locally. Treat all four identically in heat-related checks (TICK heat loop, COOL guard, `getStationCapacity`, bot cool-skip). `getStationCapacity` is exported from `gameReducer.ts` and imported by `Kitchen.tsx` — do not duplicate it. All four exempt stations use `capacity.chopping` for slot limits.
+8. **Heat-exempt stations** — `cutting_board`, `mixing_bowl`, `grinder`, and `knead_board` are all exempt from heat. The canonical set is `HEAT_EXEMPT_STATIONS` exported from `recipes.ts` — always import it, never redefine it locally. Treat all four identically in heat-related checks (TICK heat loop, COOL guard, bot cool-skip).
 9. **`!red`, `!blue`, `!join red`, `!join blue` are lobby-only** — These commands are intercepted exclusively in `handleTwitchMessage` when `screen === 'pvplobby'` and never reach `commandProcessor.ts`. Do not add `case 'red'` or `case 'blue'` to `commandProcessor.ts` — this would allow players to switch teams mid-game, silently rerouting cooked ingredients to the wrong team's prep pool.
 10. **PvP lobby state lives in App.tsx, not GameState** — `pvpLobby: { red: string[], blue: string[] } | null` is pre-game state. It is merged into the reducer's RESET action as `teams` when the game starts, then cleared. Do not store it in `GameState`.
 11. **`pvpLobbyRef` for stale closure safety** — Lobby mod commands (`!move`) check `pvpLobbyRef.current` synchronously before calling `setPvpLobby`. Reading `pvpLobby` state directly inside a `useCallback` would see a stale snapshot.

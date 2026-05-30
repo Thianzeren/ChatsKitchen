@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react'
 import { AdventureRun, AdventureBestRun } from '../state/types'
 import { RECIPES, STATION_DEFS } from '../data/recipes'
+import { orderStepsForDisplay } from '../data/recipeSteps'
 import FoodIcon from './FoodIcon'
 import { ADVENTURE_SHIFT_DURATION, isBossShift, ADVENTURE_TOTAL_SHIFTS } from '../data/adventureMode'
 import { GARNISHES, applyAllGarnishes } from '../data/adventureGarnishes'
@@ -33,11 +34,11 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, onMan
     : null
   const isFirstShift = run.currentShift === 1
   const isBoss = isBossShift(run.currentShift)
-  const chosenBoss = run.chosenPath?.bossDebuffId
-    ? BOSSES[run.chosenPath.bossDebuffId as BossId]
+  const chosenBoss = run.currentBoss?.id
+    ? BOSSES[run.currentBoss.id as BossId]
     : null
-  const bossDisabledStation = run.chosenPath?.bossPayload?.disabledStationId
-    ? STATION_DEFS[run.chosenPath.bossPayload.disabledStationId]?.name
+  const bossDisabledStation = run.currentBoss?.disabledStationId
+    ? STATION_DEFS[run.currentBoss.disabledStationId]?.name
     : null
 
   // Effective options for this shift (with all owned garnishes applied).
@@ -138,14 +139,14 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, onMan
                   <span className={styles.recipeReward}>${recipe.reward}</span>
                 </div>
                 <div className={styles.recipeSteps}>
-                  {recipe.steps.map((step, si) => (
+                  {orderStepsForDisplay(recipe.steps).map((step, si) => (
                     <Fragment key={si}>
                       {si > 0 && (
                         <span className={step.requires ? styles.stepArrow : styles.stepSeparator}>
                           {step.requires ? '→' : '·'}
                         </span>
                       )}
-                      <code className={styles.stepCmd}>!{step.action} {step.target}</code>
+                      <code className={styles.stepCmd}>{step.action} {step.target.replace(/_/g, ' ')}</code>
                     </Fragment>
                   ))}
                 </div>

@@ -11,13 +11,12 @@ interface Props {
   goalMoney: number
   served: number
   lost: number
-  cashBonus: number
   playerStats: Record<string, PlayerStats>
   onNext: () => void
   onMenu: () => void
 }
 
-export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, served, lost, cashBonus, playerStats, onNext, onMenu }: Props) {
+export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, served, lost, playerStats, onNext, onMenu }: Props) {
   const [confirmExit, setConfirmExit] = useState(false)
 
   const leaderboard = Object.entries(playerStats)
@@ -51,19 +50,12 @@ export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, se
           </div>
         </div>
 
-        {cashBonus > 0 && (
-          <div className={styles.bonusChip}>
-            <span className={styles.bonusIcon}>💰</span>
-            <span className={styles.bonusText}>Path bonus: <strong>+${cashBonus}</strong></span>
-          </div>
-        )}
-
         <div className={styles.earnedNote}>
           Earnings carry into the run bank — spend them in the Pantry next.
         </div>
 
         <div className={styles.buttons}>
-          <button className={styles.nextBtn} onClick={onNext}>Choose Path →</button>
+          <button className={styles.nextBtn} onClick={onNext}>Add a Recipe →</button>
           <button className={styles.menuBtn} onClick={() => setConfirmExit(true)}>Main Menu</button>
         </div>
       </div>

@@ -149,13 +149,6 @@
   white-space: nowrap;
 }
 
-.capacity {
-  font-family: 'Space Mono', monospace;
-  font-size: var(--base-fs);
-  color: var(--text-secondary);
-  margin-left: auto;
-}
-
 .idleStatus {
   text-align: center;
   padding: 8px 4px;

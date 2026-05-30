@@ -6,7 +6,7 @@ import { useAdventureRun, loadSavedAdventureRun, SavedAdventureRun } from './hoo
 import { useGameSession } from './hooks/useGameSession'
 import { gameReducer, createInitialState } from './state/gameReducer'
 import { parseCommand } from './state/commandProcessor'
-import { AudioSettings, CuisineId, GameOptions, Screen, TutorialDestination, ActiveEventOptions, toActiveEventOptions } from './state/types'
+import { AudioSettings, GameOptions, Screen, TutorialDestination, ActiveEventOptions, toActiveEventOptions } from './state/types'
 import { computeStarThresholds } from './data/starThresholds'
 import { useGameLoop } from './hooks/useGameLoop'
 import { useBotSimulation } from './hooks/useBotSimulation'
@@ -23,11 +23,10 @@ import Countdown from './components/Countdown'
 import ShiftEnd from './components/ShiftEnd'
 import GameOver from './components/GameOver'
 import AdventureBriefing from './components/AdventureBriefing'
-import AdventureCuisinePick from './components/AdventureCuisinePick'
+import AdventureRecipePick from './components/AdventureRecipePick'
 import AdventureIntroModal from './components/AdventureIntroModal'
 import AdventureLobby from './components/AdventureLobby'
 import AdventurePantryShop from './components/AdventurePantryShop'
-import AdventurePathPick from './components/AdventurePathPick'
 import AdventureRunEnd from './components/AdventureRunEnd'
 import AdventureShiftPassed from './components/AdventureShiftPassed'
 import TutorialModal from './components/TutorialModal'
@@ -40,7 +39,7 @@ import CreditsScreen from './components/CreditsScreen'
 import Toast from './components/Toast'
 import PlaysetPicker from './components/PlaysetPicker'
 import { DIFFICULTY_PRESETS, type Playset, type Difficulty } from './data/playsets'
-import { getAdventureGoal, mergePlayerStats, ADVENTURE_TOTAL_SHIFTS } from './data/adventureMode'
+import { mergePlayerStats, ADVENTURE_TOTAL_SHIFTS } from './data/adventureMode'
 import GameplayScreen from './components/GameplayScreen'
 import LocalPlayScreen from './components/LocalPlayScreen'
 import { DEFAULT_GAME_OPTIONS } from './state/defaultOptions'
@@ -144,7 +143,7 @@ export default function App() {
     adventureRun, setAdventureRun, adventureRunRef, adventureBestRun,
     isNewBestAdventureRun, startAdventure,
     handleShiftEndDone, resetAdventureBestRun,
-    openPathPick, confirmPathCard, purchaseGarnish, rerollShopOffers, closeShop, getRerollPrice,
+    openRecipePick, confirmRecipePick, skipRecipePick, purchaseGarnish, rerollShopOffers, closeShop, getRerollPrice,
     resumeAdventureRun, hydrateAdventureRun, clearSavedAdventureRun,
   } = useAdventureRun(dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, finalStatsRef, adventureLobbyRef)
 
@@ -284,8 +283,8 @@ export default function App() {
   }, [checkTwitch, openAdventureLobby])
 
   // !start from the lobby (or the on-screen Start button) either starts a new
-  // run (cuisine pick) or resumes an existing one if the host had stepped back
-  // to the lobby mid-run via the briefing's "Manage Lobby" button.
+  // run (opening recipe draft) or resumes an existing one if the host had stepped
+  // back to the lobby mid-run via the briefing's "Manage Lobby" button.
   const handleAdventureLobbyStart = useCallback(() => {
     const roster = adventureLobbyRef.current ?? []
     if (roster.length === 0) return
@@ -293,8 +292,8 @@ export default function App() {
       resumeAdventureRun()
       return
     }
-    setScreen('adventurecuisinepick')
-  }, [setScreen, adventureLobbyRef, adventureRunRef, resumeAdventureRun])
+    startAdventure()
+  }, [adventureLobbyRef, adventureRunRef, resumeAdventureRun, startAdventure])
 
   // Briefing → lobby (preserves the active run; lobby's "Resume" button calls
   // resumeAdventureRun to return).
@@ -309,11 +308,6 @@ export default function App() {
     setAdventureLobby(saved.lobby)
     hydrateAdventureRun(saved)
   }, [savedRunPreview, setAdventureLobby, hydrateAdventureRun])
-
-  // Resolved cuisine vote → start the run.
-  const handleCuisineConfirmed = useCallback((cuisine: CuisineId) => {
-    startAdventure(cuisine)
-  }, [startAdventure])
 
   // "Play Again" from the run-end screen reopens the lobby so the host can adjust the roster.
   const handleAdventurePlayAgain = useCallback(() => {
@@ -479,8 +473,7 @@ export default function App() {
     // Adventure choice-vote screens: route !1/!2/... to the active vote handler.
     if (
       screenRef.current === 'adventurepantryshop'
-      || screenRef.current === 'adventurecuisinepick'
-      || screenRef.current === 'adventurepathpick'
+      || screenRef.current === 'adventurerecipepick'
     ) {
       if (adventureVoteRef.current?.(user, text)) return
     }
@@ -538,8 +531,7 @@ export default function App() {
     }
     if (
       screenRef.current === 'adventurepantryshop'
-      || screenRef.current === 'adventurecuisinepick'
-      || screenRef.current === 'adventurepathpick'
+      || screenRef.current === 'adventurerecipepick'
     ) {
       if (adventureVoteRef.current?.('You', text)) return
     }
@@ -673,7 +665,6 @@ export default function App() {
         savedRunPreview={savedRunPreview ? {
           shift: savedRunPreview.run.currentShift,
           totalShifts: ADVENTURE_TOTAL_SHIFTS,
-          cuisine: savedRunPreview.run.startCuisine,
         } : null}
         onResumeSavedRun={handleResumeSavedRun}
         twitchChannel={twitchChannel}
@@ -735,22 +726,15 @@ export default function App() {
         twitchChannel={twitchChannel}
       />
     )
-  } else if (screen === 'adventurecuisinepick') {
+  } else if (screen === 'adventurerecipepick' && adventureRun?.pendingRecipeOffers) {
     content = (
-      <AdventureCuisinePick
-        rosterSize={adventureLobby?.length ?? 1}
-        onConfirm={handleCuisineConfirmed}
-        onBack={() => setScreen('adventurelobby')}
-        voteRef={adventureVoteRef}
-      />
-    )
-  } else if (screen === 'adventurepathpick' && adventureRun?.pendingPathCards) {
-    content = (
-      <AdventurePathPick
-        cards={adventureRun.pendingPathCards}
-        shiftNumber={adventureRun.currentShift + 1}
-        baseGoal={getAdventureGoal(adventureRun.currentShift + 1, adventureRun.participantCount)}
-        onConfirm={confirmPathCard}
+      <AdventureRecipePick
+        offers={adventureRun.pendingRecipeOffers}
+        shiftNumber={adventureRun.shiftResults.length === 0 ? 1 : adventureRun.currentShift + 1}
+        rosterSize={adventureLobby?.length ?? adventureRun.participantCount}
+        allowSkip={adventureRun.shiftResults.length > 0}
+        onConfirm={confirmRecipePick}
+        onSkip={skipRecipePick}
         voteRef={adventureVoteRef}
       />
     )
@@ -842,9 +826,8 @@ export default function App() {
         goalMoney={adventureRun!.currentGoal}
         served={finalStats.served}
         lost={finalStats.lost}
-        cashBonus={adventureRun!.shiftResults[adventureRun!.shiftResults.length - 1]?.cashBonusEarned ?? 0}
         playerStats={finalStats.playerStats}
-        onNext={openPathPick}
+        onNext={openRecipePick}
         onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('menu') }}
       />
     )

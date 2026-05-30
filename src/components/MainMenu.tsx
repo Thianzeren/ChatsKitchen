@@ -1,17 +1,6 @@
 import { useState } from 'react'
 import { TwitchStatus } from '../hooks/useTwitchChat'
-import { CuisineId } from '../state/types'
-import { RECIPE_SETS } from '../data/recipes'
 import styles from './MainMenu.module.css'
-
-const CUISINE_TO_SET_ID: Record<CuisineId, string> = {
-  western: 'western_classics',
-  chinese: 'chinese',
-  korean: 'korean',
-  japanese: 'japanese',
-  japanese_bakery: 'japanese_bakery',
-  sg: 'sg_hawker',
-}
 
 interface Props {
   onPlay: () => void
@@ -23,7 +12,7 @@ interface Props {
   onTutorial: () => void
   onStartTutorial: () => void
   onLocalPlay: () => void
-  savedRunPreview: { shift: number; totalShifts: number; cuisine: CuisineId } | null
+  savedRunPreview: { shift: number; totalShifts: number } | null
   onResumeSavedRun: () => void
   twitchChannel: string | null
   twitchStatus: TwitchStatus
@@ -214,27 +203,23 @@ export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeed
               </button>
             </div>
 
-            {savedRunPreview && (() => {
-              const set = RECIPE_SETS.find(s => s.id === CUISINE_TO_SET_ID[savedRunPreview.cuisine])
-              return (
-                <button
-                  type="button"
-                  className={styles.resumeRunPill}
-                  onClick={onResumeSavedRun}
-                  title="Resume your saved Adventure run"
-                >
-                  <span className={styles.resumeRunIcon}>📂</span>
-                  <span className={styles.resumeRunBody}>
-                    <span className={styles.resumeRunLabel}>Resume Adventure</span>
-                    <span className={styles.resumeRunMeta}>
-                      Shift {savedRunPreview.shift} / {savedRunPreview.totalShifts}
-                      {set && <> · {set.flag} {set.name}</>}
-                    </span>
+            {savedRunPreview && (
+              <button
+                type="button"
+                className={styles.resumeRunPill}
+                onClick={onResumeSavedRun}
+                title="Resume your saved Adventure run"
+              >
+                <span className={styles.resumeRunIcon}>📂</span>
+                <span className={styles.resumeRunBody}>
+                  <span className={styles.resumeRunLabel}>Resume Adventure</span>
+                  <span className={styles.resumeRunMeta}>
+                    Shift {savedRunPreview.shift} / {savedRunPreview.totalShifts}
                   </span>
-                  <span className={styles.resumeRunArrow}>→</span>
-                </button>
-              )
-            })()}
+                </span>
+                <span className={styles.resumeRunArrow}>→</span>
+              </button>
+            )}
 
             <div className={styles.modeBottomRow}>
               <button className={styles.modeOptions} onClick={onOptions}>Options</button>
