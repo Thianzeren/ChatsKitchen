@@ -211,85 +211,139 @@
 }
 
 .cardHero {
-  font-size: 72px;
+  font-size: 56px;
   line-height: 1;
-  margin-top: 14px;
+  margin-top: 4px;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
 }
 
-/* ── Per-card scrollable recipe list ────────────────────────────────────── */
+/* ── Stat tiles (complexity / reward / prep time) ───────────────────────── */
 
-.cardRecipeList {
+.statRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.statTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 6px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.statValue {
+  font-family: 'Lilita One', cursive;
+  font-size: 40px;
+  line-height: 1;
+  color: var(--text);
+  letter-spacing: 2px;
+}
+
+.statReward {
+  color: #c4a020;
+}
+
+.statLabel {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+}
+
+.pipsFilled { color: #e8943a; }
+.pipsEmpty  { color: rgba(255, 255, 255, 0.18); }
+
+/* ── Step flow (vertical, fills the card) ───────────────────────────────── */
+
+.steps {
   width: 100%;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px 6px;
-  text-align: left;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 10px;
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  /* Visible scrollbar so viewers know the panel scrolls */
-  scrollbar-color: rgba(196, 160, 32, 0.5) rgba(255, 255, 255, 0.05);
-  scrollbar-width: thin;
+  border-radius: 12px;
 }
 
-.cardRecipeList::-webkit-scrollbar           { width: 6px; }
-.cardRecipeList::-webkit-scrollbar-track     { background: rgba(255, 255, 255, 0.04); border-radius: 3px; }
-.cardRecipeList::-webkit-scrollbar-thumb     { background: rgba(196, 160, 32, 0.45); border-radius: 3px; }
-.cardRecipeList::-webkit-scrollbar-thumb:hover { background: rgba(196, 160, 32, 0.65); }
-
-.cardRecipeRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.025);
-  border-radius: 8px;
-  padding: 8px 10px;
-  flex-shrink: 0;
-}
-
-.cardRecipeEmoji {
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.cardRecipeBody {
-  flex: 1;
-  min-width: 0;
-}
-
-.cardRecipeHeader {
+.stepRow {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px 14px;
+  flex-shrink: 0;
 }
 
-.cardRecipeName {
+.stepNum {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Lilita One', cursive;
+  font-size: 16px;
+  color: #1a1a1a;
+  background: #c4a020;
+  border-radius: 50%;
+}
+
+.stepAction {
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
+  color: #e8943a;
+  text-transform: capitalize;
+}
+
+.stepTarget {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
   color: var(--text);
-  flex: 1;
   text-align: left;
 }
 
-.cardRecipeReward {
-  font-family: 'Space Mono', monospace;
-  font-size: 16px;
-  color: #c4a020;
-  font-weight: 700;
+.stepConnector {
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.cardRecipeSteps {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
+.connectorThen,
+.connectorAnd {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 12px;
+  border-radius: 6px;
+}
+
+.connectorThen {
+  color: #e8943a;
+  background: rgba(232, 148, 58, 0.12);
+}
+
+.connectorAnd {
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 /* ── Per-cuisine accent ringing (subtle border + glow tint) ─────────────── */
@@ -318,15 +372,6 @@
   color: var(--text);
 }
 
-.cardDescription {
-  font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
-  color: var(--text-muted);
-  line-height: 1.4;
-  max-width: 92%;
-  flex-shrink: 0;
-}
-
 .cardFooter {
   margin-top: 6px;
 }
@@ -349,29 +394,6 @@
   height: 100%;
   background: linear-gradient(90deg, #5a9ab0, #c4a020);
   transition: width 200ms ease;
-}
-
-/* ── Step chips (used inline within each card's recipe rows) ─────────────── */
-
-.stepSeparator,
-.stepArrow {
-  font-size: 14px;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.stepArrow {
-  color: var(--text-secondary);
-}
-
-.stepChip {
-  font-family: 'Space Mono', monospace;
-  font-size: 14px;
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-  padding: 1px 6px;
-  white-space: nowrap;
 }
 
 /* ── Actions ───────────────────────────────────────────────────────────── */

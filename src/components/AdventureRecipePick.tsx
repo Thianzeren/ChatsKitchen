@@ -3,15 +3,10 @@ import { useChoiceVote } from '../hooks/useChoiceVote'
 import { RECIPES } from '../data/recipes'
 import { getRecipeProfile } from '../data/recipeProfile'
 import { getAudioManager } from '../audio/AudioManager'
-import FoodIcon from './FoodIcon'
 import styles from './AdventureRecipePick.module.css'
 
 const VOTE_DURATION_MS = 45_000
 const VISIBLE = 3
-
-function pips(n: 1 | 2 | 3): string {
-  return '●'.repeat(n) + '○'.repeat(3 - n)
-}
 
 interface Props {
   offers: string[]                 // recipe keys (1–3)
@@ -94,28 +89,42 @@ export default function AdventureRecipePick({ offers, shiftNumber, rosterSize, a
                 <div className={styles.cardKey}>!{absoluteIdx + 1}</div>
                 <div className={styles.cardHero}>{r.emoji}</div>
                 <div className={styles.cardName}>{r.name}</div>
-                <div className={styles.cardDescription}>
-                  {pips(profile.complexityPips)} · ${profile.reward} · ~{Math.round(profile.prepTimeMs / 1000)}s
+
+                <div className={styles.statRow}>
+                  <div className={styles.statTile}>
+                    <div className={styles.statValue}>
+                      <span className={styles.pipsFilled}>{'●'.repeat(profile.complexityPips)}</span>
+                      <span className={styles.pipsEmpty}>{'○'.repeat(3 - profile.complexityPips)}</span>
+                    </div>
+                    <div className={styles.statLabel}>Complexity</div>
+                  </div>
+                  <div className={styles.statTile}>
+                    <div className={`${styles.statValue} ${styles.statReward}`}>${profile.reward}</div>
+                    <div className={styles.statLabel}>Reward</div>
+                  </div>
+                  <div className={styles.statTile}>
+                    <div className={styles.statValue}>~{Math.round(profile.prepTimeMs / 1000)}s</div>
+                    <div className={styles.statLabel}>Prep Time</div>
+                  </div>
                 </div>
 
-                <div className={styles.cardRecipeList}>
-                  <div className={styles.cardRecipeRow}>
-                    <FoodIcon icon={r.emoji} size={22} className={styles.cardRecipeEmoji} />
-                    <div className={styles.cardRecipeBody}>
-                      <div className={styles.cardRecipeSteps}>
-                        {r.steps.map((step, i) => (
-                          <Fragment key={i}>
-                            {i > 0 && (
-                              <span className={step.requires ? styles.stepArrow : styles.stepSeparator}>
-                                {step.requires ? '→' : '·'}
-                              </span>
-                            )}
-                            <code className={styles.stepChip}>{step.action} {step.target.replace(/_/g, ' ')}</code>
-                          </Fragment>
-                        ))}
+                <div className={styles.steps}>
+                  {r.steps.map((step, i) => (
+                    <Fragment key={i}>
+                      {i > 0 && (
+                        <div className={styles.stepConnector}>
+                          {step.requires
+                            ? <span className={styles.connectorThen}>↓ then</span>
+                            : <span className={styles.connectorAnd}>+ and</span>}
+                        </div>
+                      )}
+                      <div className={styles.stepRow}>
+                        <span className={styles.stepNum}>{i + 1}</span>
+                        <span className={styles.stepAction}>{step.action}</span>
+                        <span className={styles.stepTarget}>{step.target.replace(/_/g, ' ')}</span>
                       </div>
-                    </div>
-                  </div>
+                    </Fragment>
+                  ))}
                 </div>
 
                 <div className={styles.cardFooter}>
