@@ -108,7 +108,7 @@ export default function AdventureRecipePick({ offers, shiftNumber, rosterSize, a
                   </div>
                 </div>
 
-                <div className={styles.steps}>
+                <div className={`${styles.steps} ${r.steps.length >= 4 ? styles.stepsDense : ''}`}>
                   {r.steps.map((step, i) => (
                     <Fragment key={i}>
                       {i > 0 && (

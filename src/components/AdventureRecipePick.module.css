@@ -268,7 +268,7 @@
   width: 100%;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;            /* all steps must stay visible — never scroll (host may be away) */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -277,6 +277,35 @@
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid var(--border);
   border-radius: 12px;
+}
+
+/* Tighten spacing for the catalog's longest recipes (4 steps) so every step
+   stays visible without scrolling. ≤3-step recipes keep the generous sizing. */
+.stepsDense {
+  gap: 3px;
+  justify-content: space-evenly;
+}
+
+.stepsDense .stepRow {
+  padding: 7px 12px;
+  gap: 10px;
+}
+
+.stepsDense .stepNum {
+  width: 23px;
+  height: 23px;
+  font-size: 14px;
+}
+
+.stepsDense .stepAction,
+.stepsDense .stepTarget {
+  font-size: 16px;
+}
+
+.stepsDense .connectorThen,
+.stepsDense .connectorAnd {
+  font-size: 10px;
+  padding: 1px 9px;
 }
 
 .stepRow {
