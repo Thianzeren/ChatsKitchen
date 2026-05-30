@@ -250,16 +250,16 @@ export interface GameState {
   flatTipPerOrder?: number             // 0 default; flat $ added to each served reward
   bossMoneyMultiplier?: number         // 1 default; Picky Critic boss = 0.75
   cooldownMultiplier?: number          // 1 default; Understaffed boss = 1.5
-  choppingCookTimeMultiplier?: number  // 1 default; Precise Cuts = 0.6 (chop-station only); Sharp Knives overrides to 0
-  orderPatienceBonus?: number          // ms added to each new order's patienceMax + patienceLeft (Friendly Faces)
+  choppingCookTimeMultiplier?: number  // 1 default; Sharp Knives garnish sets it to 0 (instant chopping)
+  orderPatienceBonus?: number          // ms added to each new order's patienceMax + patienceLeft (Hangry Mob boss)
   // Periodic shift-timer effects (Recipe Roulette) — initialised lazily
   // on the first TICK after RESET so we don't need Date.now() in the reducer.
   activeBossDebuff?: string                        // mirrors path-card boss for TICK-side effects
   rouletteNextAt?: number                          // ms timestamp; when now ≥ this, rotate enabledRecipes
   // Triggered-garnish runtime state
   activeGarnishes?: string[]                  // garnish ids active for this shift
-  firstOrderServedThisShift?: boolean         // First Bite, Big Tippers — flips after first SERVE
-  overheatThreshold?: number                  // default 100; Glass Kitchen=60, Insulation=110
+  firstOrderServedThisShift?: boolean         // First Bite garnish — flips after first SERVE
+  overheatThreshold?: number                  // default 100; Glass Kitchen garnish = 60
   // ── Adventure content variety (Sub-project C) — new optional fields ──
   lostOrderPenalty?: number            // Bad Reviews boss — $ deducted per ORDER_EXPIRED
   teams?: Record<string, 'red' | 'blue'>

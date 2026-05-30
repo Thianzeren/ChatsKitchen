@@ -557,7 +557,7 @@ let matchedStep = null
               text: `🔥 ${STATION_DEFS[id].name} OVERHEATED! Type extinguish ${id} to restore it!`,
               type: 'system',
             })
-            // Bloodhound garnish: +$40 per overheat
+            // Bloodhound garnish: +$12 per overheat
             if ((state.activeGarnishes ?? []).includes('bloodhound')) {
               bloodhoundMoney += 12
               messages.push({
