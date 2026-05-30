@@ -20,9 +20,9 @@ export default function AdventureIntroModal({ onClose }: Props) {
 
         <div className={styles.scrollArea}>
           <p className={styles.blurb}>
-            An 8-shift run where chat builds up a kitchen across the night. Pick a cuisine,
-            survive each shift's goal, choose between paths, and shop for garnishes between
-            shifts. <strong>Miss any goal and the run ends.</strong>
+            An 8-shift run where chat builds up a kitchen across the night. Draft dishes to grow
+            your menu, survive each shift's goal, and shop for garnishes between shifts.
+            <strong> Miss any goal and the run ends.</strong>
           </p>
 
           <div className={styles.flow}>
@@ -36,15 +36,8 @@ export default function AdventureIntroModal({ onClose }: Props) {
             <div className={styles.step}>
               <div className={styles.stepIcon}>🍱</div>
               <div className={styles.stepBody}>
-                <strong>Pick Cuisine</strong>
-                <span>Chat votes <code>!1</code>–<code>!6</code> for a cuisine. You start with 1 recipe; another unlocks on shifts 2 and 3.</span>
-              </div>
-            </div>
-            <div className={styles.step}>
-              <div className={styles.stepIcon}>🛤️</div>
-              <div className={styles.stepBody}>
-                <strong>Choose Path</strong>
-                <span>After every shift, 2 cards appear. Easy = lower goal; Risk = cash bonus on pass. Vote <code>!1</code> or <code>!2</code>.</span>
+                <strong>Draft Recipes</strong>
+                <span>Chat votes <code>!1</code>–<code>!3</code> to add a dish from across all cuisines. The run opens with one mandatory pick; between every shift you add one more (or <code>!skip</code>). Orders come from your whole menu.</span>
               </div>
             </div>
             <div className={styles.step}>
@@ -58,7 +51,7 @@ export default function AdventureIntroModal({ onClose }: Props) {
               <div className={styles.stepIcon}>👹</div>
               <div className={styles.stepBody}>
                 <strong>Boss Shifts</strong>
-                <span>Shifts <strong>4</strong> and <strong>8</strong> are bosses. Both path cards are debuffs — pick the lesser evil. Clear shift 8 to win the run.</span>
+                <span>Shifts <strong>4</strong> and <strong>8</strong> throw an auto-assigned boss debuff at you, previewed on the briefing. Clear shift 8 to win the run.</span>
               </div>
             </div>
           </div>
