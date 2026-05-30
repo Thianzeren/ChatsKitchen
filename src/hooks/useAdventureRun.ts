@@ -371,7 +371,9 @@ export function useAdventureRun(
       if (prev.currentRunMoney < price) return prev
       rerollCountRef.current += 1
       success = true
-      const offers = generateShopOffers(prev.runSeed, prev.ownedGarnishes, prev.currentShift + 1, prev.participantCount, 4)
+      // Vary the seed per reroll so each reroll yields fresh offers (the initial
+      // shop uses the plain runSeed; rerolls append the reroll index).
+      const offers = generateShopOffers(`${prev.runSeed}::r${rerollCountRef.current}`, prev.ownedGarnishes, prev.currentShift + 1, prev.participantCount, 4)
       return {
         ...prev,
         currentRunMoney: prev.currentRunMoney - price,
