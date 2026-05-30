@@ -50,266 +50,43 @@ export type GarnishField =
 // validation slice. Stacking removed: every garnish can be bought at most once.
 
 export const GARNISHES: Record<string, GarnishDef> = {
-  // ── Common — stat boosts ──
-  quick_hands: {
-    id: 'quick_hands',
-    name: 'Quick Hands',
-    description: '+15% cooking speed.',
-    tier: 'common',
-    basePrice: 90,
-    icon: '⚡',
-    effects: [{ field: 'cookingSpeed', value: 0.15, mode: 'mul' }],
-  },
-  patient_diners: {
-    id: 'patient_diners',
-    name: 'Patient Diners',
-    description: 'Customer patience drains 20% slower.',
-    tier: 'common',
-    basePrice: 90,
-    icon: '🪑',
-    // orderSpeed: lower value = orders drain slower (recipe.patience / orderSpeed)
-    effects: [{ field: 'orderSpeed', value: -0.20, mode: 'mul' }],
-  },
-  slow_rush: {
-    id: 'slow_rush',
-    name: 'Slow Rush',
-    description: 'Orders spawn 15% slower.',
-    tier: 'common',
-    basePrice: 100,
-    icon: '🐢',
-    effects: [{ field: 'orderSpawnRate', value: -0.15, mode: 'mul' }],
-  },
-  heat_sink: {
-    id: 'heat_sink',
-    name: 'Heat Sink',
-    description: 'Cooling removes +30 more heat.',
-    tier: 'common',
-    basePrice: 110,
-    icon: '❄️',
-    effects: [{ field: 'coolAmountBonus', value: 30, mode: 'add' }],
-  },
-  tip_jar: {
-    id: 'tip_jar',
-    name: 'Tip Jar',
-    description: '+$8 flat tip on every served dish.',
-    tier: 'common',
-    basePrice: 110,
-    icon: '💵',
-    effects: [{ field: 'flatTipPerOrder', value: 8, mode: 'add' }],
-  },
-  precise_cuts: {
-    id: 'precise_cuts',
-    name: 'Precise Cuts',
-    description: 'Chopping board recipes take 40% less time.',
-    tier: 'common',
-    basePrice: 120,
-    icon: '🔪',
-    // 0.6 multiplier (mul-mode at value -0.4 means × (1 - 0.4) = × 0.6)
-    effects: [{ field: 'choppingCookTimeMultiplier', value: -0.40, mode: 'mul' }],
-  },
-  slow_burner: {
-    id: 'slow_burner',
-    name: 'Slow Burner',
-    description: 'Cooking stations heat up 25% slower.',
-    tier: 'common',
-    basePrice: 100,
-    icon: '🌡️',
-    effects: [{ field: 'heatPerCookMultiplier', value: -0.25, mode: 'mul' }],
-  },
-  insulation: {
-    id: 'insulation',
-    name: 'Insulation',
-    description: 'Stations overheat at 110 instead of 100.',
-    tier: 'common',
-    basePrice: 100,
-    icon: '🧱',
-    effects: [{ field: 'overheatThresholdDelta', value: 10, mode: 'add' }],
-  },
-  friendly_faces: {
-    id: 'friendly_faces',
-    name: 'Friendly Faces',
-    description: 'Every new order arrives with +10s of patience.',
-    tier: 'common',
-    basePrice: 130,
-    icon: '🪑',
-    effects: [{ field: 'orderPatienceBonus', value: 10_000, mode: 'add' }],
-  },
+  // ── 🟡 Premium ──
+  fine_dining:   { id: 'fine_dining',   name: 'Fine Dining',   description: 'Premium dishes earn +25%.',                 tier: 'common',    basePrice: 30,  icon: '🍽️', serveTrigger: { requiresTag: 'premium', rewardMultiplier: 1.25 } },
+  first_bite:    { id: 'first_bite',    name: 'First Bite',    description: 'The first dish served each shift sells for 3× its value.', tier: 'rare', basePrice: 55, icon: '🥢' },
+  michelin_star: { id: 'michelin_star', name: 'Michelin Star', description: 'Premium dishes earn +75%.',                 tier: 'legendary', basePrice: 110, icon: '⭐', serveTrigger: { requiresTag: 'premium', rewardMultiplier: 1.75 } },
 
-  // ── Common — new triggered ──
-  speed_demon: {
-    id: 'speed_demon',
-    name: 'Speed Demon',
-    description: 'Orders served within 20s of spawning earn +25% money.',
-    tier: 'common',
-    basePrice: 130,
-    icon: '💨',
-  },
-  pressure_tip: {
-    id: 'pressure_tip',
-    name: 'Pressure Tip',
-    description: 'Orders served with under 15% patience left earn +50% money.',
-    tier: 'common',
-    basePrice: 140,
-    icon: '⏳',
-  },
-  big_tippers: {
-    id: 'big_tippers',
-    name: 'Big Tippers',
-    description: 'The first dish served each shift earns +$30.',
-    tier: 'common',
-    basePrice: 80,
-    icon: '🤑',
-  },
+  // ── 🟢 Value ──
+  penny_pincher: { id: 'penny_pincher', name: 'Penny Pincher', description: 'Value dishes earn +$3.',  tier: 'common',    basePrice: 25, icon: '🪙', serveTrigger: { requiresTag: 'value', flatBonus: 3 } },
+  value_meal:    { id: 'value_meal',    name: 'Value Meal',    description: 'Value dishes earn +50%.', tier: 'rare',      basePrice: 50, icon: '🍟', serveTrigger: { requiresTag: 'value', rewardMultiplier: 1.5 } },
+  dollar_menu:   { id: 'dollar_menu',   name: 'Dollar Menu',   description: 'Value dishes earn +$8.',  tier: 'legendary', basePrice: 95, icon: '💵', serveTrigger: { requiresTag: 'value', flatBonus: 8 } },
 
-  // ── Rare ──
-  first_bite: {
-    id: 'first_bite',
-    name: 'First Bite',
-    description: 'The first order served each shift sells for 3× its value.',
-    tier: 'rare',
-    basePrice: 220,
-    icon: '🥢',
-  },
-  mise_en_place: {
-    id: 'mise_en_place',
-    name: 'Mise en Place',
-    description: 'Start each shift with 5 random prepped ingredients on the tray.',
-    tier: 'rare',
-    basePrice: 280,
-    icon: '🥗',
-  },
-  bloodhound: {
-    id: 'bloodhound',
-    name: 'Bloodhound',
-    description: 'Each station overheat earns $40 (you still lose the station).',
-    tier: 'rare',
-    basePrice: 240,
-    icon: '🩸',
-  },
-  combo_plate: {
-    id: 'combo_plate',
-    name: 'Combo Plate',
-    description: 'Serve 3 different recipes within 30s → +$50 bonus.',
-    tier: 'rare',
-    basePrice: 250,
-    icon: '🎴',
-  },
-  compost_bin: {
-    id: 'compost_bin',
-    name: 'Compost Bin',
-    description: 'Every expired order leaves behind 1 random prepped ingredient.',
-    tier: 'rare',
-    basePrice: 220,
-    icon: '🌱',
-  },
-  veterans_tip: {
-    id: 'veterans_tip',
-    name: "Veteran's Tip",
-    description: '+$15 to the run bank at the start of every shift after Shift 1.',
-    tier: 'rare',
-    basePrice: 200,
-    icon: '🎖️',
-  },
-  tea_break: {
-    id: 'tea_break',
-    name: 'Tea Break',
-    description: 'Every 60 seconds, order patience pauses for 5 seconds.',
-    tier: 'rare',
-    basePrice: 280,
-    icon: '☕',
-  },
+  // ── 💨 Fast ──
+  quick_bite:    { id: 'quick_bite',    name: 'Quick Bite',    description: 'Any dish served within 15s of the order earns +20%.', tier: 'common', basePrice: 30, icon: '💨', serveTrigger: { servedWithinMs: 15000, rewardMultiplier: 1.2 } },
+  drive_thru:    { id: 'drive_thru',    name: 'Drive-Thru',    description: 'Fast dishes earn +35%.', tier: 'rare', basePrice: 55, icon: '🚗', serveTrigger: { requiresTag: 'fast', rewardMultiplier: 1.35 } },
+  time_is_money: { id: 'time_is_money', name: 'Time Is Money', description: 'Dishes earn up to +50% more, scaled by patience left when served.', tier: 'legendary', basePrice: 100, icon: '⏱️' },
 
-  // ── Legendary ──
-  sharp_knives: {
-    id: 'sharp_knives',
-    name: 'Sharp Knives',
-    description: 'Chopping is instant — chopping board recipes finish in 0s.',
-    tier: 'legendary',
-    basePrice: 480,
-    icon: '🔪',
-  },
-  snowball: {
-    id: 'snowball',
-    name: 'Snowball',
-    description: '+8% cooking speed for every shift survived (Shift 8 = +56%).',
-    tier: 'legendary',
-    basePrice: 520,
-    icon: '⛄',
-  },
-  doppelganger: {
-    id: 'doppelganger',
-    name: 'Doppelgänger',
-    description: 'Every cooked ingredient has a 20% chance to produce a second copy.',
-    tier: 'legendary',
-    basePrice: 550,
-    icon: '👯',
-  },
-  glass_kitchen: {
-    id: 'glass_kitchen',
-    name: 'Glass Kitchen',
-    description: 'Stations overheat at 60 instead of 100, but every dish pays +50%.',
-    tier: 'legendary',
-    basePrice: 460,
-    icon: '💎',
-    effects: [{ field: 'overheatThresholdDelta', value: -40, mode: 'add' }],
-    // +50% money is handled inline in SERVE via activeGarnishes check
-  },
+  // ── 🐢 Slow ──
+  low_and_slow:   { id: 'low_and_slow',   name: 'Low & Slow',     description: 'Slow dishes earn +$5.',  tier: 'common',    basePrice: 30,  icon: '🍲', serveTrigger: { requiresTag: 'slow', flatBonus: 5 } },
+  slow_cooked:    { id: 'slow_cooked',    name: 'Slow-Cooked',    description: 'Slow dishes earn +50%.', tier: 'rare',      basePrice: 60,  icon: '🔥', serveTrigger: { requiresTag: 'slow', rewardMultiplier: 1.5 } },
+  worth_the_wait: { id: 'worth_the_wait', name: 'Worth the Wait', description: 'Slow dishes earn 2×.',   tier: 'legendary', basePrice: 115, icon: '⏳', serveTrigger: { requiresTag: 'slow', rewardMultiplier: 2 } },
 
-  // ── Sub-project C: new commons ──
-  loose_lid: {
-    id: 'loose_lid',
-    name: 'Loose Lid',
-    description: 'Heat above 75 dissipates passively at 4/sec.',
-    tier: 'common',
-    basePrice: 110,
-    icon: '🥘',
-    effects: [
-      { field: 'heatDecayAboveThreshold', value: 75, mode: 'add' },
-      { field: 'heatDecayRate', value: 4, mode: 'add' },
-    ],
-  },
-  repeat_customer: {
-    id: 'repeat_customer',
-    name: 'Repeat Customer',
-    description: 'Every 3rd consecutive dish of the same recipe earns +$25.',
-    tier: 'common',
-    basePrice: 130,
-    icon: '🔁',
-  },
-  side_salad: {
-    id: 'side_salad',
-    name: 'Side Salad',
-    description: 'Each new order arrives with 1 free prepped ingredient.',
-    tier: 'common',
-    basePrice: 120,
-    icon: '🥗',
-  },
+  // ── 🔪 Prep-Heavy ──
+  cold_kitchen:  { id: 'cold_kitchen',  name: 'Cold Kitchen',  description: 'Prep-heavy dishes earn +$4.',                 tier: 'common',    basePrice: 30,  icon: '🥗', serveTrigger: { requiresTag: 'prep_heavy', flatBonus: 4 } },
+  mise_en_place: { id: 'mise_en_place', name: 'Mise en Place', description: 'Start each shift with 5 random prepped ingredients.', tier: 'rare', basePrice: 65, icon: '🥪' },
+  sharp_knives:  { id: 'sharp_knives',  name: 'Sharp Knives',  description: 'Chopping is instant — chopping-board recipes finish in 0s.', tier: 'legendary', basePrice: 120, icon: '🔪', effects: [{ field: 'choppingCookTimeMultiplier', value: -1, mode: 'mul' }] },
 
-  // ── Sub-project C: new rares ──
-  phoenix_wing: {
-    id: 'phoenix_wing',
-    name: 'Phoenix Wing',
-    description: 'The first station overheat each shift is auto-extinguished (slots still lost).',
-    tier: 'rare',
-    basePrice: 240,
-    icon: '🪶',
-  },
-  apprentice: {
-    id: 'apprentice',
-    name: 'The Apprentice',
-    description: 'Every 35 seconds, one random prepped ingredient appears in the tray.',
-    tier: 'rare',
-    basePrice: 260,
-    icon: '👨‍🍳',
-  },
-  long_memory: {
-    id: 'long_memory',
-    name: 'Long Memory',
-    description: 'Every 5th dish served each shift earns +$40.',
-    tier: 'rare',
-    basePrice: 220,
-    icon: '📖',
-  },
+  // ── 🔥 Hot-Line ──
+  fire_whisperer: { id: 'fire_whisperer', name: 'Fire Whisperer', description: 'Hot-line dishes earn +30%.', tier: 'common', basePrice: 30, icon: '🌶️', serveTrigger: { requiresTag: 'hot_line', rewardMultiplier: 1.3 } },
+  bloodhound:     { id: 'bloodhound',     name: 'Bloodhound',     description: 'Each station overheat earns $12 (you still lose the station).', tier: 'rare', basePrice: 55, icon: '🩸' },
+  glass_kitchen:  { id: 'glass_kitchen',  name: 'Glass Kitchen',  description: 'Stations overheat at 60 instead of 100, but every dish pays +50%.', tier: 'legendary', basePrice: 110, icon: '💎', effects: [{ field: 'overheatThresholdDelta', value: -40, mode: 'add' }], serveTrigger: { rewardMultiplier: 1.5 } },
+
+  // ── ⚪ Neutrals ──
+  quick_hands:    { id: 'quick_hands',    name: 'Quick Hands',    description: '+15% cooking speed.',                tier: 'common',    basePrice: 30,  icon: '⚡', effects: [{ field: 'cookingSpeed', value: 0.15, mode: 'mul' }] },
+  patient_diners: { id: 'patient_diners', name: 'Patient Diners', description: 'Customer patience drains 20% slower.', tier: 'common',   basePrice: 30,  icon: '🪑', effects: [{ field: 'orderSpeed', value: -0.20, mode: 'mul' }] },
+  tip_jar:        { id: 'tip_jar',        name: 'Tip Jar',        description: '+$2 flat tip on every served dish.', tier: 'common',    basePrice: 25,  icon: '💵', effects: [{ field: 'flatTipPerOrder', value: 2, mode: 'add' }] },
+  heat_sink:      { id: 'heat_sink',      name: 'Heat Sink',      description: 'Cooling removes +30 more heat.',     tier: 'common',    basePrice: 30,  icon: '❄️', effects: [{ field: 'coolAmountBonus', value: 30, mode: 'add' }] },
+  snowball:       { id: 'snowball',       name: 'Snowball',       description: '+8% cooking speed for every shift survived.', tier: 'legendary', basePrice: 120, icon: '⛄' },
+  doppelganger:   { id: 'doppelganger',   name: 'Doppelgänger',   description: 'Every cooked ingredient has a 20% chance to produce a second copy.', tier: 'legendary', basePrice: 125, icon: '👯' },
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
