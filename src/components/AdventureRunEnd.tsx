@@ -3,7 +3,7 @@ import { AdventureRun, AdventureBestRun, calcPlayerScore } from '../state/types'
 import { RECIPES, NAME_COLORS, hashStr } from '../data/recipes'
 import { GARNISHES } from '../data/adventureGarnishes'
 import { BOSSES, BossId } from '../data/adventureBosses'
-import { getCuisineRecipeSet, ADVENTURE_TOTAL_SHIFTS } from '../data/adventureMode'
+import { ADVENTURE_TOTAL_SHIFTS } from '../data/adventureMode'
 import FoodIcon from './FoodIcon'
 import AdventureSuccessOverlay from './AdventureSuccessOverlay'
 import styles from './AdventureRunEnd.module.css'
@@ -35,10 +35,6 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
   const mvpEntry = leaderboard[0]
   const mvpName  = mvpEntry ? mvpEntry[0] : null
   const mvpScore = mvpEntry ? calcPlayerScore(mvpEntry[1]) : null
-
-  const cuisineSet  = getCuisineRecipeSet(run.startCuisine)
-  const cuisineFlag = cuisineSet?.flag ?? ''
-  const cuisineName = cuisineSet?.name ?? ''
 
   return (
     <div className={`${styles.screen} ${isWon ? styles.screenWon : ''}`}>
@@ -182,8 +178,7 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
       {showOverlay && (
         <AdventureSuccessOverlay
           shiftCount={ADVENTURE_TOTAL_SHIFTS}
-          cuisineFlag={cuisineFlag}
-          cuisineName={cuisineName}
+          dishCount={run.currentRecipes.length}
           mvpName={mvpName}
           mvpScore={mvpScore}
           onDismiss={() => setShowOverlay(false)}

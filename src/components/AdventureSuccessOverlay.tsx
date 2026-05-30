@@ -5,8 +5,7 @@ import styles from './AdventureSuccessOverlay.module.css'
 
 interface Props {
   shiftCount: number
-  cuisineFlag: string
-  cuisineName: string
+  dishCount: number
   mvpName: string | null
   mvpScore: number | null
   onDismiss: () => void
@@ -17,8 +16,7 @@ const FADE_OUT_MS = 400
 
 export default function AdventureSuccessOverlay({
   shiftCount,
-  cuisineFlag,
-  cuisineName,
+  dishCount,
   mvpName,
   mvpScore,
   onDismiss,
@@ -87,9 +85,9 @@ export default function AdventureSuccessOverlay({
           <div className={styles.sub}>The kitchen prevails. The feast is yours.</div>
 
           <div className={styles.cuisineRow}>
-            <span className={styles.cuisineLabel}>Recipe Mastered ·</span>
-            <span className={styles.cuisineFlag}>{cuisineFlag}</span>
-            <span className={styles.cuisineName}>{cuisineName}</span>
+            <span className={styles.cuisineLabel}>Menu Mastered ·</span>
+            <span className={styles.cuisineFlag}>🍽️</span>
+            <span className={styles.cuisineName}>{dishCount} Dishes</span>
           </div>
         </div>
 
