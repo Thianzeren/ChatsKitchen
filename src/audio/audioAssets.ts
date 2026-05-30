@@ -30,6 +30,7 @@ export const SFX: Record<string, SfxDef> = {
   'take-item':         { src: ['/audio/sfx/take-item.mp3'],         volume: 0.5 },
   'countdown-beep':    { src: ['/audio/sfx/countdown-beep.mp3'],    volume: 0.6 },
   'round-over':        { src: ['/audio/sfx/round-over.mp3'],        volume: 0.3 },
+  'adventure-victory': { src: ['/audio/sfx/victory.mp3'],           volume: 0.7 },
 }
 
 // One-shot event stings (success / fail)
