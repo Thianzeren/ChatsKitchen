@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { TwitchStatus } from '../hooks/useTwitchChat'
 import styles from './MainMenu.module.css'
+
 interface Props {
   onPlay: () => void
   onPvp: () => void
@@ -11,6 +12,8 @@ interface Props {
   onTutorial: () => void
   onStartTutorial: () => void
   onLocalPlay: () => void
+  savedRunPreview: { shift: number; totalShifts: number } | null
+  onResumeSavedRun: () => void
   twitchChannel: string | null
   twitchStatus: TwitchStatus
   twitchError: string | undefined
@@ -18,7 +21,7 @@ interface Props {
   onTwitchDisconnect: () => void
 }
 
-export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeedback, onCredits, onTutorial, onStartTutorial, onLocalPlay, twitchChannel, twitchStatus, twitchError, onTwitchConnect, onTwitchDisconnect }: Props) {
+export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeedback, onCredits, onTutorial, onStartTutorial, onLocalPlay, savedRunPreview, onResumeSavedRun, twitchChannel, twitchStatus, twitchError, onTwitchConnect, onTwitchDisconnect }: Props) {
   const [twitchInput, setTwitchInput] = useState(twitchChannel || '')
   const isConnected = twitchStatus === 'connected'
   const isConnecting = twitchStatus === 'connecting'
@@ -199,6 +202,24 @@ export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeed
                 <div className={styles.lvArrow}>⚔️</div>
               </button>
             </div>
+
+            {savedRunPreview && (
+              <button
+                type="button"
+                className={styles.resumeRunPill}
+                onClick={onResumeSavedRun}
+                title="Resume your saved Adventure run"
+              >
+                <span className={styles.resumeRunIcon}>📂</span>
+                <span className={styles.resumeRunBody}>
+                  <span className={styles.resumeRunLabel}>Resume Adventure</span>
+                  <span className={styles.resumeRunMeta}>
+                    Shift {savedRunPreview.shift} / {savedRunPreview.totalShifts}
+                  </span>
+                </span>
+                <span className={styles.resumeRunArrow}>→</span>
+              </button>
+            )}
 
             <div className={styles.modeBottomRow}>
               <button className={styles.modeOptions} onClick={onOptions}>Options</button>

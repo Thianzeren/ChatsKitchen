@@ -1,7 +1,8 @@
 import { useReducer, useCallback, useState, useEffect, useRef } from 'react'
 import { useTutorialState } from './hooks/useTutorialState'
 import { usePvpLobby } from './hooks/usePvpLobby'
-import { useAdventureRun } from './hooks/useAdventureRun'
+import { useAdventureLobby } from './hooks/useAdventureLobby'
+import { useAdventureRun, loadSavedAdventureRun, SavedAdventureRun } from './hooks/useAdventureRun'
 import { useGameSession } from './hooks/useGameSession'
 import { gameReducer, createInitialState } from './state/gameReducer'
 import { parseCommand } from './state/commandProcessor'
@@ -22,6 +23,10 @@ import Countdown from './components/Countdown'
 import ShiftEnd from './components/ShiftEnd'
 import GameOver from './components/GameOver'
 import AdventureBriefing from './components/AdventureBriefing'
+import AdventureRecipePick from './components/AdventureRecipePick'
+import AdventureIntroModal from './components/AdventureIntroModal'
+import AdventureLobby from './components/AdventureLobby'
+import AdventurePantryShop from './components/AdventurePantryShop'
 import AdventureRunEnd from './components/AdventureRunEnd'
 import AdventureShiftPassed from './components/AdventureShiftPassed'
 import TutorialModal from './components/TutorialModal'
@@ -34,7 +39,7 @@ import CreditsScreen from './components/CreditsScreen'
 import Toast from './components/Toast'
 import PlaysetPicker from './components/PlaysetPicker'
 import { DIFFICULTY_PRESETS, type Playset, type Difficulty } from './data/playsets'
-import { mergePlayerStats } from './data/adventureMode'
+import { mergePlayerStats, ADVENTURE_TOTAL_SHIFTS } from './data/adventureMode'
 import GameplayScreen from './components/GameplayScreen'
 import LocalPlayScreen from './components/LocalPlayScreen'
 import { DEFAULT_GAME_OPTIONS } from './state/defaultOptions'
@@ -58,17 +63,13 @@ export default function App() {
       const saved = localStorage.getItem('chatsKitchen_gameOptions')
       if (!saved) return DEFAULT_GAME_OPTIONS
       const parsed = JSON.parse(saved) as Partial<GameOptions>
-      return {
-        ...DEFAULT_GAME_OPTIONS,
-        ...parsed,
-        stationCapacity: { ...DEFAULT_GAME_OPTIONS.stationCapacity, ...(parsed.stationCapacity ?? {}) }
-      }
+      return { ...DEFAULT_GAME_OPTIONS, ...parsed }
     } catch {
       return DEFAULT_GAME_OPTIONS
     }
   })
   const [state, dispatch] = useReducer(gameReducer, undefined, () =>
-    createInitialState(gameOptions.shiftDuration, gameOptions.cookingSpeed, gameOptions.orderSpeed, gameOptions.orderSpawnRate, gameOptions.stationCapacity)
+    createInitialState(gameOptions.shiftDuration, gameOptions.cookingSpeed, gameOptions.orderSpeed, gameOptions.orderSpawnRate)
   )
   const [botsEnabled, setBotsEnabled] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
@@ -103,6 +104,7 @@ export default function App() {
   const screenRef = useRef<Screen>('menu')
   const gameOptionsRef = useRef(gameOptions)
   const [showNoTwitchPrompt, setShowNoTwitchPrompt] = useState(false)
+  const [adventureIntroOpen, setAdventureIntroOpen] = useState(false)
   const pendingActionRef = useRef<(() => void) | null>(null)
   const [chatMode, setChatMode] = useState<'local' | 'twitch' | 'room'>('local')
   const [roomPlayers, setRoomPlayers] = useState<Array<{ id: string; nickname: string; disconnected?: boolean }>>([])
@@ -120,12 +122,6 @@ export default function App() {
     resetSession,
   } = useGameSession()
 
-  const {
-    adventureRun, setAdventureRun, adventureRunRef, adventureBestRun,
-    isNewBestAdventureRun, startAdventure,
-    handleShiftPassedNext, handleShiftEndDone, resetAdventureBestRun,
-  } = useAdventureRun(dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, finalStatsRef)
-
   // Keep refs in sync so stable callbacks can read current values
   screenRef.current = screen
   gameOptionsRef.current = gameOptions
@@ -135,6 +131,31 @@ export default function App() {
     setToast(message)
     toastTimerRef.current = setTimeout(() => setToast(null), 2500)
   }, [])
+
+  const {
+    adventureLobby, setAdventureLobby, adventureLobbyRef,
+    openAdventureLobby, clearAdventureLobby, kickPlayer: kickAdventurePlayer,
+    handleLobbyJoin: handleAdventureLobbyJoin,
+    handleLobbyMetaCommand: handleAdventureLobbyMetaCommand,
+  } = useAdventureLobby(setScreen, showToast)
+
+  const {
+    adventureRun, setAdventureRun, adventureRunRef, adventureBestRun,
+    isNewBestAdventureRun, startAdventure,
+    handleShiftEndDone, resetAdventureBestRun,
+    openRecipePick, confirmRecipePick, skipRecipePick, purchaseGarnish, rerollShopOffers, closeShop, getRerollPrice,
+    resumeAdventureRun, hydrateAdventureRun, clearSavedAdventureRun,
+  } = useAdventureRun(dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, finalStatsRef, adventureLobbyRef)
+
+  // Saved-run preview for the Main Menu's Resume pill. Loaded once on mount;
+  // refreshed locally whenever the user resumes or clears the save. The Resume
+  // pill renders from this; the live `adventureRun` state is only populated
+  // after the user opts in.
+  const [savedRunPreview, setSavedRunPreview] = useState<SavedAdventureRun | null>(() => loadSavedAdventureRun())
+
+  // Vote-screen chat interception: the active vote-driven screen (e.g. PantryShop)
+  // registers its registerVote handler here so chat messages routing can find it.
+  const adventureVoteRef = useRef<((user: string, text: string) => boolean) | null>(null)
 
   const { pvpLobby, setPvpLobby, pvpLobbyRef, startPvp, startPvpGame, balanceLobby, handleLobbyMetaCommand, handleLobbyJoin } = usePvpLobby(setScreen, showToast)
 
@@ -169,8 +190,6 @@ export default function App() {
       cookingSpeed: opts.cookingSpeed,
       orderSpeed: opts.orderSpeed,
       orderSpawnRate: opts.orderSpawnRate,
-      stationCapacity: opts.stationCapacity,
-      restrictSlots: opts.restrictSlots,
       enabledRecipes: opts.enabledRecipes,
       teams,
       participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.filter(p => !p.disconnected).length : 0,
@@ -215,8 +234,6 @@ export default function App() {
       cookingSpeed:    1.0,
       orderSpeed:      preset.orderSpeed,
       orderSpawnRate:  preset.orderSpawnRate,
-      stationCapacity: DEFAULT_GAME_OPTIONS.stationCapacity,
-      restrictSlots:   false,
       enabledRecipes:  playset.recipes,
       teams: {},
       participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.filter(p => !p.disconnected).length : 0,
@@ -262,8 +279,41 @@ export default function App() {
   }, [checkTwitch])
 
   const handleMenuAdventure = useCallback(() => {
-    checkTwitch(startAdventure)
-  }, [checkTwitch, startAdventure])
+    checkTwitch(openAdventureLobby)
+  }, [checkTwitch, openAdventureLobby])
+
+  // !start from the lobby (or the on-screen Start button) either starts a new
+  // run (opening recipe draft) or resumes an existing one if the host had stepped
+  // back to the lobby mid-run via the briefing's "Manage Lobby" button.
+  const handleAdventureLobbyStart = useCallback(() => {
+    const roster = adventureLobbyRef.current ?? []
+    if (roster.length === 0) return
+    if (adventureRunRef.current) {
+      resumeAdventureRun()
+      return
+    }
+    startAdventure()
+  }, [adventureLobbyRef, adventureRunRef, resumeAdventureRun, startAdventure])
+
+  // Briefing → lobby (preserves the active run; lobby's "Resume" button calls
+  // resumeAdventureRun to return).
+  const handleManageLobby = useCallback(() => {
+    setScreen('adventurelobby')
+  }, [setScreen])
+
+  // Main Menu "Resume Adventure" pill → restore the saved run and jump to its briefing.
+  const handleResumeSavedRun = useCallback(() => {
+    const saved = savedRunPreview
+    if (!saved) return
+    setAdventureLobby(saved.lobby)
+    hydrateAdventureRun(saved)
+  }, [savedRunPreview, setAdventureLobby, hydrateAdventureRun])
+
+  // "Play Again" from the run-end screen reopens the lobby so the host can adjust the roster.
+  const handleAdventurePlayAgain = useCallback(() => {
+    setAdventureRun(null)
+    openAdventureLobby()
+  }, [openAdventureLobby, setAdventureRun])
 
   const handleMenuPvp = useCallback(() => {
     checkTwitch(startPvp)
@@ -413,11 +463,33 @@ export default function App() {
       handleLobbyMetaCommand(user, text, isMod)
       return
     }
+    // Adventure lobby: !join / !leave for everyone, !kick / !start for mods + broadcaster.
+    if (screenRef.current === 'adventurelobby') {
+      if (handleAdventureLobbyJoin(user, text.trim().toLowerCase())) return
+      const result = handleAdventureLobbyMetaCommand(user, text, isMod)
+      if (result === 'start') handleAdventureLobbyStart()
+      return
+    }
+    // Adventure choice-vote screens: route !1/!2/... to the active vote handler.
+    if (
+      screenRef.current === 'adventurepantryshop'
+      || screenRef.current === 'adventurerecipepick'
+    ) {
+      if (adventureVoteRef.current?.(user, text)) return
+    }
+    // Adventure run is in progress: !leave / !kick still update the roster; the
+    // shrunken count applies at the next shift boundary inside closeShop.
+    if (adventureRunRef.current) {
+      if (handleAdventureLobbyJoin(user, text.trim().toLowerCase())) {
+        // Allow the command to fall through so it doesn't block any in-game side-effects
+      }
+      handleAdventureLobbyMetaCommand(user, text, isMod)
+    }
     handleEventCommand(user, text)
     handleTutorialEventCommand(text)
     handleMetaCommand(user, text, isMod)
     if (!isTutorialRef.current) handleCommand(user, text)
-  }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin])
+  }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin, handleAdventureLobbyJoin, handleAdventureLobbyMetaCommand, handleAdventureLobbyStart, adventureRunRef])
 
   // Keep Twitch connected regardless of chatMode so streamers can still see chat while using Local Play
   const effectiveTwitchChannel = twitchChannel
@@ -451,16 +523,57 @@ export default function App() {
       handleLobbyMetaCommand('You', text, true)
       return
     }
+    if (screenRef.current === 'adventurelobby') {
+      if (handleAdventureLobbyJoin('You', text.trim().toLowerCase())) return
+      const result = handleAdventureLobbyMetaCommand('You', text, true)
+      if (result === 'start') handleAdventureLobbyStart()
+      return
+    }
+    if (
+      screenRef.current === 'adventurepantryshop'
+      || screenRef.current === 'adventurerecipepick'
+    ) {
+      if (adventureVoteRef.current?.('You', text)) return
+    }
+    if (adventureRunRef.current) {
+      handleAdventureLobbyJoin('You', text.trim().toLowerCase())
+      handleAdventureLobbyMetaCommand('You', text, true)
+    }
     handleEventCommand('You', text)
     handleTutorialEventCommand(text)
     handleMetaCommand('You', text, true)
     handleCommand('You', text)
-  }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin])
+  }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin, handleAdventureLobbyJoin, handleAdventureLobbyMetaCommand, handleAdventureLobbyStart, adventureRunRef])
 
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', audioSettings.darkMode ? 'dark' : 'light')
   }, [audioSettings.darkMode])
+
+  // Refresh the saved-run preview whenever the user lands on the menu, so the
+  // Resume pill reflects the latest persisted state (e.g. cleared on run end,
+  // refreshed after starting a new run).
+  useEffect(() => {
+    if (screen === 'menu') {
+      setSavedRunPreview(loadSavedAdventureRun())
+    }
+  }, [screen])
+
+  // Auto-open the Adventure intro the first time the user lands on the lobby.
+  // Returning visitors (or those who already dismissed) won't see it.
+  useEffect(() => {
+    if (screen !== 'adventurelobby') return
+    try {
+      if (localStorage.getItem('chatsKitchen_adventureIntroSeen') !== 'true') {
+        setAdventureIntroOpen(true)
+      }
+    } catch { /* ignore storage failures */ }
+  }, [screen])
+
+  const closeAdventureIntro = useCallback(() => {
+    setAdventureIntroOpen(false)
+    try { localStorage.setItem('chatsKitchen_adventureIntroSeen', 'true') } catch { /* ignore */ }
+  }, [])
 
   const handleAudioChange = useCallback((settings: AudioSettings) => {
     setAudioSettings(settings)
@@ -484,19 +597,24 @@ export default function App() {
     resetSession()
     handleTwitchChannelChange(null)
     resetTutorial()
+    setAdventureIntroOpen(false)
+    clearSavedAdventureRun()
+    setSavedRunPreview(null)
 
     try {
       localStorage.setItem('chatsKitchen_audioSettings', JSON.stringify(DEFAULT_AUDIO_SETTINGS))
       localStorage.removeItem('chatsKitchen_adventureBestRun')
       localStorage.removeItem('chatsKitchen_gameOptions')
       localStorage.removeItem('chatsKitchen_hideTutorialPrompt')
+      localStorage.removeItem('chatsKitchen_adventureIntroSeen')
+      localStorage.removeItem('chatsKitchen_savedAdventureRun')
       localStorage.removeItem('chatsKitchen_preparedItemsShowNames')
       localStorage.removeItem('chatsKitchen_diningRoomSimpleTickets')
       localStorage.removeItem('chatsKitchen_kitchenShowCommands')
     } catch {
       // Ignore storage failures and keep the in-memory reset behavior.
     }
-  }, [handleTwitchChannelChange, resetTutorial, resetAdventureBestRun, resetSession])
+  }, [handleTwitchChannelChange, resetTutorial, resetAdventureBestRun, resetSession, clearSavedAdventureRun])
 
   useEffect(() => {
     if (chatMode !== 'room') return
@@ -544,6 +662,11 @@ export default function App() {
         onTutorial={handleMenuTutorial}
         onStartTutorial={startTutorial}
         onLocalPlay={handleLocalPlay}
+        savedRunPreview={savedRunPreview ? {
+          shift: savedRunPreview.run.currentShift,
+          totalShifts: ADVENTURE_TOTAL_SHIFTS,
+        } : null}
+        onResumeSavedRun={handleResumeSavedRun}
         twitchChannel={twitchChannel}
         twitchStatus={twitchChat.status}
         twitchError={twitchChat.error}
@@ -587,13 +710,42 @@ export default function App() {
         onNext={startPvpGame}
       />
     )
+  } else if (screen === 'adventurelobby') {
+    content = (
+      <AdventureLobby
+        roster={adventureLobby ?? []}
+        onKick={kickAdventurePlayer}
+        onClear={() => setAdventureLobby([])}
+        onStart={handleAdventureLobbyStart}
+        onBack={adventureRun
+          ? () => setScreen('adventurebriefing')
+          : () => { clearAdventureLobby(); setScreen('menu') }}
+        onShowIntro={() => setAdventureIntroOpen(true)}
+        activeShift={adventureRun?.currentShift}
+        twitchStatus={twitchChat.status}
+        twitchChannel={twitchChannel}
+      />
+    )
+  } else if (screen === 'adventurerecipepick' && adventureRun?.pendingRecipeOffers) {
+    content = (
+      <AdventureRecipePick
+        offers={adventureRun.pendingRecipeOffers}
+        shiftNumber={adventureRun.shiftResults.length === 0 ? 1 : adventureRun.currentShift + 1}
+        rosterSize={adventureLobby?.length ?? adventureRun.participantCount}
+        allowSkip={adventureRun.shiftResults.length > 0}
+        onConfirm={confirmRecipePick}
+        onSkip={skipRecipePick}
+        voteRef={adventureVoteRef}
+      />
+    )
   } else if (screen === 'adventurebriefing') {
     content = (
       <AdventureBriefing
         run={adventureRun!}
         bestRun={adventureBestRun}
         onStart={() => setScreen('countdown')}
-        onMenu={() => { setAdventureRun(null); setScreen('menu') }}
+        onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('menu') }}
+        onManageLobby={handleManageLobby}
         twitchStatus={twitchChat.status}
         twitchChannel={twitchChannel}
       />
@@ -675,8 +827,19 @@ export default function App() {
         served={finalStats.served}
         lost={finalStats.lost}
         playerStats={finalStats.playerStats}
-        onNext={handleShiftPassedNext}
-        onMenu={() => { setAdventureRun(null); setScreen('menu') }}
+        onNext={openRecipePick}
+        onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('menu') }}
+      />
+    )
+  } else if (screen === 'adventurepantryshop') {
+    content = (
+      <AdventurePantryShop
+        run={adventureRun!}
+        onPurchase={purchaseGarnish}
+        onReroll={rerollShopOffers}
+        onClose={closeShop}
+        voteRef={adventureVoteRef}
+        rerollPrice={getRerollPrice()}
       />
     )
   } else if (screen === 'adventurerunend') {
@@ -685,8 +848,8 @@ export default function App() {
         run={adventureRun!}
         bestRun={adventureBestRun}
         isNewBestRun={isNewBestAdventureRun}
-        onPlayAgain={startAdventure}
-        onMenu={() => { setAdventureRun(null); setScreen('menu') }}
+        onPlayAgain={handleAdventurePlayAgain}
+        onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('menu') }}
       />
     )
   } else {
@@ -744,6 +907,9 @@ export default function App() {
           onClose={() => setTutorialOpen(false)}
           onStartCooking={handleTutorialStartCooking}
         />
+      )}
+      {adventureIntroOpen && screen === 'adventurelobby' && (
+        <AdventureIntroModal onClose={closeAdventureIntro} />
       )}
     </>
   )

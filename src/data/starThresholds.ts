@@ -1,5 +1,5 @@
 import { GameOptions, EventType } from '../state/types'
-import { RECIPES, getEnabledStations, HEAT_EXEMPT_STATIONS } from './recipes'
+import { RECIPES, getEnabledStations } from './recipes'
 
 const BASE_SPAWN_INTERVAL_MS = 14000
 const MIN_SPAWN_INTERVAL_MS  = 5000   // floor from shift progression (Math.max(5000, 14000 - shift*1000))
@@ -18,7 +18,7 @@ const OPP_TYPES: EventType[] = [
 export function computeStarThresholds(options: GameOptions, playerCount: number): [number, number, number] {
   const {
     shiftDuration, cookingSpeed, orderSpeed, orderSpawnRate,
-    enabledRecipes, stationCapacity,
+    enabledRecipes,
     kitchenEventsEnabled, enabledKitchenEvents,
   } = options
 
@@ -41,18 +41,19 @@ export function computeStarThresholds(options: GameOptions, playerCount: number)
   const completionTime = REACTION_TIME_MS + effectiveCookTime
   const patienceFactor = Math.min(1.0, Math.max(0.15, effectivePatience / (completionTime * 1.5)))
 
+  // Saturation point = the number of parallel work-streams the kitchen offers.
+  // Stations have no slot cap, so a single station can host unlimited concurrent
+  // cooks — the real limit on useful concurrency is the count of active stations
+  // (roughly one productive cook per station). Surplus players past that add only
+  // diminishing coordination value, and well past it just accelerate order spawn.
   const enabledStations = getEnabledStations(enabledRecipes)
-  const stationSlots = enabledStations.reduce(
-    (sum, id) => sum + (HEAT_EXEMPT_STATIONS.has(id) ? stationCapacity.chopping : stationCapacity.cooking),
-    0
-  )
-  const surplusRatio = playerCount / Math.max(1, stationSlots)
+  const surplusRatio = playerCount / Math.max(1, enabledStations.length)
   const coordinationEfficiency = COORD_FLOOR + COORD_RANGE * Math.min(1.0, surplusRatio)
 
   // Player surplus drives shift-counter acceleration: more players → serve faster →
   // shift counter ticks up faster → spawn interval tightens toward MIN_SPAWN_INTERVAL_MS.
   // Modelled as a logarithmic blend from base toward max spawn total,
-  // reaching full acceleration at surplusRatio ≈ 3 (3× more players than slots).
+  // reaching full acceleration at surplusRatio ≈ 3 (3× the kitchen's saturation point).
   const spawnAccelFactor = surplusRatio > 1.0
     ? Math.min(1.0, Math.log(surplusRatio) / Math.log(3))
     : 0.0

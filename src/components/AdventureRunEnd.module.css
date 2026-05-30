@@ -46,6 +46,79 @@
   text-align: center;
 }
 
+/* ── Garnishes-collected panel ─────────────────────────────────────────── */
+
+.garnishesPanel {
+  background: var(--station-bg);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  max-width: 460px;
+}
+
+.garnishesTitle {
+  font-family: 'Lilita One', cursive;
+  font-size: 22px;
+  color: var(--text-warm);
+  margin-bottom: 10px;
+}
+
+.garnishChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.garnishChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.garnishChipIcon {
+  font-size: 18px;
+}
+
+.tier_common {
+  border-color: rgba(106, 170, 94, 0.5);
+}
+
+.tier_rare {
+  border-color: rgba(200, 133, 216, 0.5);
+}
+
+.tier_legendary {
+  border-color: rgba(232, 160, 42, 0.6);
+  box-shadow: 0 0 12px rgba(232, 160, 42, 0.18);
+}
+
+/* Boss icon in shift history ─────────────────────────────────────────── */
+
+.historyBoss {
+  font-size: 22px;
+  margin-right: 4px;
+  filter: drop-shadow(0 2px 4px rgba(217, 79, 79, 0.4));
+}
+
+.historyBonus {
+  font-family: 'Space Mono', monospace;
+  font-size: 16px;
+  color: #c4a020;
+  font-weight: 700;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid rgba(196, 160, 32, 0.45);
+  border-radius: 6px;
+  background: rgba(196, 160, 32, 0.08);
+}
+
 .statValue {
   font-family: 'Lilita One', cursive;
   font-size: 36px;
@@ -54,7 +127,7 @@
 
 .statLabel {
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-secondary);
   margin-top: 4px;
 }
@@ -74,7 +147,7 @@
 
 .bestChip {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-muted);
 }
 
@@ -90,7 +163,7 @@
 
 .panelTitle {
   font-family: 'Lilita One', cursive;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-warm);
   text-align: center;
   margin-bottom: 10px;
@@ -106,7 +179,7 @@
 
 .historyHeader span {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-muted);
   font-weight: 700;
 }
@@ -129,7 +202,7 @@
 
 .historyShift {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-secondary);
   width: 32px;
   text-align: center;
@@ -138,7 +211,7 @@
 
 .historyRecipes {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-muted);
   flex: 1;
   overflow: hidden;
@@ -148,7 +221,7 @@
 
 .historyGoal {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-muted);
   width: 76px;
   text-align: right;
@@ -157,7 +230,7 @@
 
 .historyEarned {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: #c4a020;
   font-weight: 700;
   width: 76px;
@@ -167,7 +240,7 @@
 
 .historyResult {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   width: 52px;
   text-align: right;
@@ -177,7 +250,7 @@
 .resultPass {
   color: #5cb85c;
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   width: 52px;
   text-align: right;
@@ -187,7 +260,7 @@
 .resultFail {
   color: #d94f4f;
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   width: 52px;
   text-align: right;
@@ -208,7 +281,7 @@
   border-radius: 10px;
   padding: 14px 24px;
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   background: #d87428;
   color: #fff;
@@ -226,7 +299,7 @@
   border-radius: 10px;
   padding: 14px 24px;
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   background: var(--border);
   color: var(--text);
@@ -253,7 +326,7 @@
 
 .lbEmpty {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-muted);
   text-align: center;
   padding: 12px 0;
@@ -269,7 +342,7 @@
 
 .lbTitle {
   font-family: 'Lilita One', cursive;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-warm);
   text-align: center;
   padding-bottom: 8px;
@@ -287,7 +360,7 @@
 
 .lbHeader span {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-muted);
   font-weight: 700;
 }
@@ -311,7 +384,7 @@
 
 .lbRank {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-secondary);
   font-weight: 700;
   width: 32px;
@@ -321,7 +394,7 @@
 
 .lbName {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   flex: 1;
   overflow: hidden;
@@ -332,7 +405,7 @@
 
 .lbDetail {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   color: var(--text-secondary);
   width: 40px;
   text-align: center;
@@ -341,10 +414,105 @@
 
 .lbTotal {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: var(--base-fs);
   font-weight: 700;
   color: #c4a020;
   width: 60px;
   text-align: right;
   flex-shrink: 0;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   .screenWon — applied to the root .screen when run.runWon === true
+   Recolors existing elements to a warm parchment / gold theme.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.screenWon {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 178, 70, 0.10) 0%, transparent 55%),
+    var(--bg);
+}
+
+/* ── Completed banner (above title) ── */
+
+.completedBanner {
+  align-self: flex-start;
+  font-family: 'Lilita One', cursive;
+  font-size: 18px;
+  letter-spacing: 5px;
+  color: #1a140e;
+  background: linear-gradient(180deg, #d4a155 0%, #b87333 100%);
+  border: 1px solid #6b3a18;
+  border-radius: 4px;
+  padding: 6px 18px;
+  box-shadow: 0 0 18px rgba(255, 178, 70, 0.30);
+}
+
+/* ── Title recolor when won ── */
+
+.screenWon .title {
+  color: #f0c850;
+  text-shadow: 0 2px 0 #6b3a18, 0 0 18px rgba(240, 200, 80, 0.45);
+}
+
+/* ── Hero stat treatment (Shifts Survived) ── */
+
+.statHero {
+  position: relative;
+  background: linear-gradient(180deg, rgba(212, 161, 85, 0.30) 0%, rgba(107, 58, 24, 0.40) 100%);
+  border: 1px solid #d4a155;
+  border-radius: 10px;
+  padding: 12px 18px;
+  box-shadow: inset 0 0 16px rgba(255, 178, 70, 0.25), 0 0 14px rgba(240, 200, 80, 0.20);
+}
+
+.statHero::before,
+.statHero::after {
+  content: '✦';
+  position: absolute;
+  top: 4px;
+  color: #f0c850;
+  font-size: 14px;
+  text-shadow: 0 0 8px #ffb060;
+}
+.statHero::before { left: 6px; }
+.statHero::after  { right: 6px; }
+
+.statHero .statValue {
+  font-size: 48px;
+  color: #f0c850;
+  text-shadow: 0 2px 0 #6b3a18;
+}
+
+/* ── Panel borders pick up the amber theme when won ── */
+
+.screenWon .historyPanel,
+.screenWon .leaderboard {
+  border-color: #6b3a18;
+}
+
+.screenWon .panelTitle,
+.screenWon .lbTitle {
+  color: #d4a155;
+}
+
+/* ── Leaderboard MVP row ── */
+
+.lbMvp {
+  background: rgba(240, 200, 80, 0.12) !important;
+  border: 1px solid rgba(212, 161, 85, 0.45);
+}
+
+.lbMvp .lbRank {
+  color: #f0c850;
+  text-shadow: 0 0 8px rgba(255, 178, 70, 0.5);
+}
+
+/* ── Play Again button — amber gradient when won ── */
+
+.screenWon .playAgainBtn {
+  background: linear-gradient(180deg, #d4a155 0%, #b87333 100%);
+  color: #1a140e;
+  border: 1px solid #6b3a18;
+  box-shadow: 0 2px 10px rgba(255, 178, 70, 0.25);
 }

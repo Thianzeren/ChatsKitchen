@@ -1,8 +1,11 @@
-import { GameState, Station, Order, ChatMessage, StationSlot, PlayerStats, StationCapacity } from './types'
+import { GameState, Station, Order, ChatMessage, StationSlot, PlayerStats } from './types'
 import { RECIPES, STATION_DEFS, HEAT_EXEMPT_STATIONS } from '../data/recipes'
+import { getRecipeProfile } from '../data/recipeProfile'
+import { pickMiseEnPlaceIngredients, applyServeTriggers } from '../data/adventureGarnishes'
 
 export const HEAT_PER_COOK = 20   // kept for reference; actual value is random 10–20 per slot
 export const COOL_AMOUNT   = 50   // midpoint reference only — actual value rolled randomly 40–60 on each use
+export const SERVE_TIME_BONUS_MAX = 9   // max $ bonus for serving at full patience (cafe scale; was 30)
 
 export type GameAction =
   | { type: 'TICK'; delta: number; now: number }
@@ -12,7 +15,30 @@ export type GameAction =
   | { type: 'COOL'; user: string; stationId: string }
   | { type: 'SPAWN_ORDER'; now: number }
   | { type: 'ADD_CHAT'; username: string; text: string; msgType: ChatMessage['type'] }
-  | { type: 'RESET'; shiftDuration: number; cookingSpeed: number; orderSpeed: number; orderSpawnRate: number; stationCapacity: StationCapacity; restrictSlots: boolean; enabledRecipes: string[]; teams?: Record<string, 'red' | 'blue'>; participantCount?: number }
+  | {
+      type: 'RESET'
+      shiftDuration: number
+      cookingSpeed: number
+      orderSpeed: number
+      orderSpawnRate: number
+      enabledRecipes: string[]
+      teams?: Record<string, 'red' | 'blue'>
+      participantCount?: number
+      // Adventure-mode garnish/debuff knobs (optional; left undefined = default)
+      heatPerCookMultiplier?: number
+      coolAmountBonus?: number
+      flatTipPerOrder?: number
+      bossMoneyMultiplier?: number
+      cooldownMultiplier?: number
+      choppingCookTimeMultiplier?: number
+      orderPatienceBonus?: number
+      overheatThreshold?: number
+      disabledStations?: string[]
+      activeGarnishes?: string[]
+      activeBossDebuff?: string
+      // ── Adventure content variety (Sub-project C) — new RESET fields ──
+      lostOrderPenalty?: number           // Bad Reviews boss
+    }
   | { type: 'SET_STATION_HEAT'; stationId: string; heat: number }
   | { type: 'OVERHEAT_STATION'; stationId: string }
   | { type: 'REMOVE_PREPARED_ITEMS'; count: number; message?: string }
@@ -29,8 +55,6 @@ export function createInitialState(
   cookingSpeed = 1,
   orderSpeed = 1,
   orderSpawnRate = 1,
-  stationCapacity: StationCapacity = { chopping: 3, cooking: 2 },
-  restrictSlots = false,
   enabledRecipes: string[] = Object.keys(RECIPES),
   teams: Record<string, 'red' | 'blue'> = {},
   participantCount = 0
@@ -49,8 +73,6 @@ export function createInitialState(
     cookingSpeed,
     orderSpeed,
     orderSpawnRate,
-    stationCapacity,
-    restrictSlots,
     enabledRecipes,
     stations,
     orders: [],
@@ -90,12 +112,6 @@ const EMPTY_STATS: PlayerStats = { cooked: 0, served: 0, moneyEarned: 0, extingu
 function addStat(state: GameState, user: string, stat: keyof PlayerStats, amount: number): GameState {
   const prev = state.playerStats[user] || { ...EMPTY_STATS }
   return { ...state, playerStats: { ...state.playerStats, [user]: { ...prev, [stat]: prev[stat] + amount } } }
-}
-
-export function getStationCapacity(stationId: string, capacity: StationCapacity, restricted: boolean): number {
-  if (!restricted) return Infinity
-  if (HEAT_EXEMPT_STATIONS.has(stationId)) return capacity.chopping
-  return capacity.cooking
 }
 
 const PAST_TENSE: Record<string, string> = {
@@ -144,8 +160,44 @@ function setTeamPrepSources(state: GameState, user: string, sources: string[]): 
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
-    case 'RESET':
-      return createInitialState(action.shiftDuration, action.cookingSpeed, action.orderSpeed, action.orderSpawnRate, action.stationCapacity, action.restrictSlots, action.enabledRecipes, action.teams ?? {}, action.participantCount ?? 0)
+    case 'RESET': {
+      const base = createInitialState(action.shiftDuration, action.cookingSpeed, action.orderSpeed, action.orderSpawnRate, action.enabledRecipes, action.teams ?? {}, action.participantCount ?? 0)
+      const active = action.activeGarnishes ?? []
+
+      // Mise en Place: seed 5 random prepped ingredients from the enabled recipes.
+      let preparedItems = base.preparedItems
+      let preparedItemSources = base.preparedItemSources
+      if (active.includes('mise_en_place')) {
+        const seeded = pickMiseEnPlaceIngredients(action.enabledRecipes, RECIPES, 5)
+        preparedItems = [...preparedItems, ...seeded]
+        preparedItemSources = [...preparedItemSources, ...seeded.map(() => '')]
+      }
+
+      return {
+        ...base,
+        preparedItems,
+        preparedItemSources,
+        heatPerCookMultiplier: action.heatPerCookMultiplier,
+        coolAmountBonus: action.coolAmountBonus,
+        flatTipPerOrder: action.flatTipPerOrder,
+        bossMoneyMultiplier: action.bossMoneyMultiplier,
+        cooldownMultiplier: action.cooldownMultiplier,
+        choppingCookTimeMultiplier: action.choppingCookTimeMultiplier,
+        orderPatienceBonus: action.orderPatienceBonus,
+        overheatThreshold: action.overheatThreshold,
+        disabledStations: action.disabledStations && action.disabledStations.length > 0
+          ? action.disabledStations
+          : undefined,
+        activeGarnishes: active.length > 0 ? active : undefined,
+        activeBossDebuff: action.activeBossDebuff,
+        firstOrderServedThisShift: false,
+        // Ticker timers are initialised lazily on the first TICK to avoid
+        // referencing Date.now() in the reducer at RESET time.
+        rouletteNextAt: undefined,
+        // ── Sub-project C — content variety fields ──
+        lostOrderPenalty: action.lostOrderPenalty,
+      }
+    }
 
     case 'ADD_CHAT':
       return addMsg(state, action.username, action.text, action.msgType)
@@ -168,7 +220,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         const totalPlayers = Math.max(state.participantCount, Object.keys(state.playerStats).length, 1)
         needed = Math.max(1, Math.ceil(totalPlayers * 0.5))
       }
-      let withStat = addStat(state, user, 'extinguished', 1)
+      const withStat = addStat(state, user, 'extinguished', 1)
 
       if (newVotes.length >= needed) {
         // extinguish base stat (×2 in calcScore) already rewards coordination — no extra bonus needed
@@ -198,9 +250,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (isUserBusy(state, user)) return addMsg(state, 'KITCHEN', `${user} is busy cooking and can't cool right now!`, 'error')
 
       const cooldown = state.userCooldowns[user] ?? 0
-      if (Date.now() - cooldown < 1500) return addMsg(state, 'KITCHEN', `${user} is on cooldown!`, 'error')
+      const coolCooldownMs = 1500 * (state.cooldownMultiplier ?? 1)
+      if (Date.now() - cooldown < coolCooldownMs) return addMsg(state, 'KITCHEN', `${user} is on cooldown!`, 'error')
 
-      const coolAmount = 40 + Math.floor(Math.random() * 21)  // 40–60
+      const coolAmount = (40 + (state.coolAmountBonus ?? 0)) + Math.floor(Math.random() * 21)  // 40–60 + bonus
       const newHeat = Math.max(0, station.heat - coolAmount)
       const newStations = { ...state.stations, [stationId]: { ...station, heat: newHeat, lastCooledAt: Date.now(), lastCooledBy: user } }
       const withCooldown = { ...state, stations: newStations, userCooldowns: { ...state.userCooldowns, [user]: Date.now() } }
@@ -243,10 +296,26 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newOrders = state.orders.map((o, i) =>
         i === orderIdx ? { ...o, served: true, outcome: 'served' as const, completedAt: Date.now(), servedBy: user } : o
       )
-      const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * 30))
+      const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * SERVE_TIME_BONUS_MAX))
       const baseReward = recipe.reward + timeBonus
-      const multiplier = state.moneyMultiplier?.multiplier ?? 1
-      const reward = Math.round(baseReward * multiplier)
+      const bossMoneyMul = state.bossMoneyMultiplier ?? 1
+
+      // ── Garnish-driven reward effects ──
+      const active = state.activeGarnishes ?? []
+      const isFirstOrder = !state.firstOrderServedThisShift
+      const elapsedSinceSpawn = Date.now() - order.spawnTime
+      const patienceFraction = order.patienceMax > 0 ? order.patienceLeft / order.patienceMax : 0
+
+      const profile = getRecipeProfile(recipe)
+      const trig = applyServeTriggers(active, profile, { elapsedSinceSpawn })
+      let multiplier = (state.moneyMultiplier?.multiplier ?? 1) * bossMoneyMul * trig.multiplier
+      // First Bite (bespoke): the first dish served each shift sells 3×.
+      if (isFirstOrder && active.includes('first_bite')) multiplier *= 3
+      // Time Is Money (bespoke): up to +50% scaled by patience remaining.
+      if (active.includes('time_is_money')) multiplier *= 1 + 0.5 * patienceFraction
+
+      const tip = (state.flatTipPerOrder ?? 0) + trig.flatBonus
+      const reward = Math.round(baseReward * multiplier) + tip
 
       let withStats = addStat(state, user, 'served', 1)
       withStats = addStat(withStats, user, 'moneyEarned', reward)
@@ -266,8 +335,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       return addMsg(
-        { ...afterPool, orders: newOrders, money: afterPool.money + reward, served: afterPool.served + 1 },
-        'KITCHEN', `${user} served ${recipe.emoji} ${recipe.name}! +$${reward}`, 'success'
+        {
+          ...afterPool,
+          orders: newOrders,
+          money: afterPool.money + reward,
+          served: afterPool.served + 1,
+          firstOrderServedThisShift: true,
+        },
+        'KITCHEN',
+        `${user} served ${recipe.emoji} ${recipe.name}! +$${reward}`,
+        'success',
       )
     }
 
@@ -275,7 +352,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const { user, action: cookAction, target, now } = action
 
       // Cooldown check
-      if (state.userCooldowns[user] && now - state.userCooldowns[user] < 1500) return state
+      const cookCooldownMs = 1500 * (state.cooldownMultiplier ?? 1)
+      if (state.userCooldowns[user] && now - state.userCooldowns[user] < cookCooldownMs) return state
       const withCooldown = { ...state, userCooldowns: { ...state.userCooldowns, [user]: now } }
 
       // Per-user busy check (belt-and-suspenders: also scan station slots in case activeUsers is stale)
@@ -299,13 +377,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return addMsg(withCooldown, 'KITCHEN', `The ${STATION_DEFS[stationId].name} is offline! Help restore power!`, 'error')
       }
 
-      // Station capacity check
-      const maxSlots = getStationCapacity(stationId, state.stationCapacity, state.restrictSlots)
-      if (station.slots.length >= maxSlots) {
-        return addMsg(withCooldown, 'KITCHEN', `The ${STATION_DEFS[stationId].name} is full! Try again later.`, 'error')
-      }
-
-      let matchedStep = null
+let matchedStep = null
       for (const recipe of Object.values(RECIPES)) {
         for (const step of recipe.steps) {
           if (step.action === cookAction && step.target === target) { matchedStep = step; break }
@@ -313,6 +385,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         if (matchedStep) break
       }
       if (!matchedStep) return addMsg(withCooldown, 'KITCHEN', `Can't ${cookAction} ${(target || '').replace(/_/g, ' ')} there!`, 'error')
+
+      // ── Chopping-station garnish modifier ──
+      // Sharp Knives composes via applyAllGarnishes to a choppingCookTimeMultiplier of 0 (instant chopping).
+      let effectiveDuration = matchedStep.duration
+      if (cookAction === 'chop') {
+        effectiveDuration *= state.choppingCookTimeMultiplier ?? 1
+      }
 
       // Check ingredient prerequisite
       let afterRequire = withCooldown
@@ -334,13 +413,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         target: matchedStep.target,
         produces: matchedStep.produces,
         elapsedMs: 0,
-        cookDuration: matchedStep.duration / (speed * (state.cookingSpeedModifier?.multiplier ?? 1)),
+        cookDuration: effectiveDuration / (speed * (state.cookingSpeedModifier?.multiplier ?? 1)),
         heatApplied: 0,
-        heatPerCook: 10 + Math.floor(Math.random() * 11),  // 10–20
+        heatPerCook: (10 + Math.floor(Math.random() * 11)) * (state.heatPerCookMultiplier ?? 1),  // 10–20 × multiplier
         state: 'cooking',
       }
 
-      if (matchedStep.duration === 0) {
+      if (effectiveDuration === 0) {
         const withStat = addStat(afterRequire, user, 'cooked', 1)
         const instantItems = [...teamPrepItems(withStat, user), matchedStep.produces]
         const instantSources = [...teamPrepSources(withStat, user), user]
@@ -376,7 +455,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const dish = dishKeys[Math.floor(Math.random() * dishKeys.length)]
       const recipe = RECIPES[dish]
 
-      const patience = recipe.patience / state.orderSpeed
+      // Friendly Faces garnish: +ms to every new order's patience pool.
+      const patience = (recipe.patience / state.orderSpeed) + (state.orderPatienceBonus ?? 0)
 
       const order: Order = {
         id: state.nextOrderId,
@@ -387,7 +467,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         spawnTime: action.now,
       }
       return addMsg(
-        { ...state, orders: [...state.orders, order], nextOrderId: state.nextOrderId + 1 },
+        {
+          ...state,
+          orders: [...state.orders, order],
+          nextOrderId: state.nextOrderId + 1,
+        },
         'CUSTOMER', `Order #${order.id}: ${recipe.emoji} ${recipe.name}!`, 'system'
       )
     }
@@ -405,6 +489,34 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newRedPreparedItemSources = state.teams ? [...(state.redPreparedItemSources ?? [])] : []
       const newBluePreparedItemSources = state.teams ? [...(state.bluePreparedItemSources ?? [])] : []
       let newPlayerStats = { ...state.playerStats }
+      let bloodhoundMoney = 0
+      let badReviewsPenaltyTotal = 0
+
+      // ── Periodic shift-timer effects (Recipe Roulette) ──
+      let rouletteNextAt = state.rouletteNextAt
+
+      // Lazy-init on the first TICK that sees an active effect.
+      if (state.activeBossDebuff === 'recipe_roulette' && !rouletteNextAt) rouletteNextAt = now + 45_000
+
+      // Fire Recipe Roulette — swap one active recipe with a random dish from the catalog.
+      let newEnabledRecipes = state.enabledRecipes
+      if (rouletteNextAt && now >= rouletteNextAt) {
+        const candidates = Object.keys(RECIPES).filter(r => !state.enabledRecipes.includes(r))
+        if (candidates.length > 0 && state.enabledRecipes.length > 0) {
+          const removedIdx = Math.floor(Math.random() * state.enabledRecipes.length)
+          const removed = state.enabledRecipes[removedIdx]
+          const added = candidates[Math.floor(Math.random() * candidates.length)]
+          newEnabledRecipes = state.enabledRecipes.map((r, i) => i === removedIdx ? added : r)
+          messages.push({
+            id: nextMsgId++,
+            username: 'KITCHEN',
+            text: `🎲 Recipe Roulette! ${RECIPES[removed]?.name ?? removed} → ${RECIPES[added]?.name ?? added}`,
+            type: 'system',
+          })
+        }
+        rouletteNextAt = now + 45_000
+      }
+
       // Update all station slots
       for (const [id, station] of Object.entries(newStations)) {
         if (station.overheated || station.slots.length === 0) continue
@@ -428,8 +540,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           }
           const updatedSlot: StationSlot = { ...slot, elapsedMs: elapsed, heatApplied: newHeatApplied }
 
-          // Step B: Check overheat
-          if (currentHeat >= 100) {
+          // Step B: Check overheat (threshold may be raised by Insulation or lowered by Glass Kitchen)
+          const overheatLimit = state.overheatThreshold ?? 100
+          if (currentHeat >= overheatLimit) {
             // Penalise every player cooking at this station, not just the one whose slot tipped it over
             for (const s of station.slots) {
               const statSnap = addStat({ ...state, playerStats: newPlayerStats }, s.user, 'firesCaused', 1)
@@ -437,26 +550,56 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             }
             // Free all users assigned to all slots on this station
             for (const s of newStations[id].slots) delete newActiveUsers[s.user]
-            newStations[id] = { ...newStations[id], slots: [], heat: 100, overheated: true, extinguishVotes: [] }
+            newStations[id] = { ...newStations[id], slots: [], heat: overheatLimit, overheated: true, extinguishVotes: [] }
             messages.push({
               id: nextMsgId++,
               username: 'KITCHEN',
               text: `🔥 ${STATION_DEFS[id].name} OVERHEATED! Type extinguish ${id} to restore it!`,
               type: 'system',
             })
+            // Bloodhound garnish: +$12 per overheat
+            if ((state.activeGarnishes ?? []).includes('bloodhound')) {
+              bloodhoundMoney += 12
+              messages.push({
+                id: nextMsgId++,
+                username: 'KITCHEN',
+                text: `🩸 Bloodhound earned $12 from the overheat!`,
+                type: 'success',
+              })
+            }
             break // station is locked, skip remaining slots
           }
 
           // Step C: Check completion (no heat addition — already applied incrementally)
           if (slot.state === 'cooking' && elapsed >= slot.cookDuration) {
+            // Doppelgänger garnish: 20% chance to produce a second copy of the ingredient
+            const doppelgangerActive = (state.activeGarnishes ?? []).includes('doppelganger')
+            const extraCopy = doppelgangerActive && Math.random() < 0.2
             if (state.teams) {
               const team = state.teams[slot.user]
-              if (team === 'red') { newRedPreparedItems.push(slot.produces); newRedPreparedItemSources.push(slot.user) }
-              else if (team === 'blue') { newBluePreparedItems.push(slot.produces); newBluePreparedItemSources.push(slot.user) }
+              if (team === 'red') {
+                newRedPreparedItems.push(slot.produces); newRedPreparedItemSources.push(slot.user)
+                if (extraCopy) { newRedPreparedItems.push(slot.produces); newRedPreparedItemSources.push(slot.user) }
+              } else if (team === 'blue') {
+                newBluePreparedItems.push(slot.produces); newBluePreparedItemSources.push(slot.user)
+                if (extraCopy) { newBluePreparedItems.push(slot.produces); newBluePreparedItemSources.push(slot.user) }
+              }
               // else: unregistered player in PvP — item dropped
             } else {
               newPreparedItems.push(slot.produces)
               newPreparedItemSources.push(slot.user)
+              if (extraCopy) {
+                newPreparedItems.push(slot.produces)
+                newPreparedItemSources.push(slot.user)
+              }
+            }
+            if (extraCopy) {
+              messages.push({
+                id: nextMsgId++,
+                username: 'KITCHEN',
+                text: `✨ Doppelgänger! Bonus ${slot.produces.replace(/_/g, ' ')}!`,
+                type: 'success',
+              })
             }
             delete newActiveUsers[slot.user]
             messages.push({
@@ -486,6 +629,17 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         if (newPatience <= 0) {
           lost++
           messages.push({ id: nextMsgId++, username: 'CUSTOMER', text: `Order #${order.id} expired! Lost a ${RECIPES[order.dish].emoji}!`, type: 'error' })
+          // Bad Reviews boss — flat $ deducted per expired order.
+          // Lost orders aren't team-tagged, so PvP charges BOTH teams equally.
+          if (state.lostOrderPenalty !== undefined) {
+            badReviewsPenaltyTotal += state.lostOrderPenalty
+            messages.push({
+              id: nextMsgId++,
+              username: 'KITCHEN',
+              text: `⭐ Bad Reviews · −$${state.lostOrderPenalty}`,
+              type: 'error',
+            })
+          }
           return { ...order, served: true, patienceLeft: 0, outcome: 'lost' as const, completedAt: now }
         }
         return { ...order, patienceLeft: newPatience }
@@ -521,6 +675,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         nextMessageId: nextMsgId,
         cookingSpeedModifier,
         moneyMultiplier,
+        money: state.money + bloodhoundMoney - badReviewsPenaltyTotal,
+        redMoney: state.teams && state.redMoney !== undefined
+          ? state.redMoney - badReviewsPenaltyTotal
+          : state.redMoney,
+        blueMoney: state.teams && state.blueMoney !== undefined
+          ? state.blueMoney - badReviewsPenaltyTotal
+          : state.blueMoney,
+        enabledRecipes: newEnabledRecipes,
+        rouletteNextAt,
       }
     }
 

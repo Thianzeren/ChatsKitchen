@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { GameState, AudioSettings } from '../state/types'
+import { GameState, AudioSettings, Screen } from '../state/types'
 import { getAudioManager } from './AudioManager'
-
-type Screen = 'menu' | 'localplay' | 'pvplobby' | 'adventurebriefing' | 'options' | 'playsetpicker' | 'freeplaysetup' | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'adventureshiftpassed' | 'adventurerunend' | 'credits'
 
 export function useGameAudio(screen: Screen, state: GameState, audioSettings: AudioSettings) {
   const audio = getAudioManager()
@@ -23,7 +21,10 @@ export function useGameAudio(screen: Screen, state: GameState, audioSettings: Au
   useEffect(() => {
     switch (screen) {
       case 'menu':
+      case 'adventurelobby':
       case 'adventurebriefing':
+      case 'adventurepantryshop':
+      case 'adventurerecipepick':
       case 'adventurerunend':
       case 'options':
       case 'freeplaysetup':

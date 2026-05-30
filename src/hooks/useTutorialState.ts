@@ -53,8 +53,6 @@ export function useTutorialState(
       cookingSpeed: 2,
       orderSpeed: 0.05,
       orderSpawnRate: 0.001,
-      stationCapacity: { chopping: 3, cooking: 2 },
-      restrictSlots: false,
       enabledRecipes: ['fries'],
     })
     setShowTutorialPrompt(false)

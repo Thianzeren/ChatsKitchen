@@ -1,5 +1,4 @@
 import { RECIPES } from '../data/recipes'
-import { getStationCapacity } from './gameReducer'
 import type { GameState } from './types'
 import type { SharedSnapshot } from '../shared/protocol'
 
@@ -32,7 +31,6 @@ export function gameStateToSnapshot(state: GameState, phase: SharedSnapshot['pha
       heatPct: s.heat / 100,
       overheated: s.overheated,
       busySlots: s.slots.length,
-      maxSlots: getStationCapacity(s.id, state.stationCapacity, state.restrictSlots),
     })),
   }
 }

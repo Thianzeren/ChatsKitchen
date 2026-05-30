@@ -1,0 +1,245 @@
+/* ── Backdrop & layering ────────────────────────────────────────────────── */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 270;
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 400ms ease;
+  background:
+    radial-gradient(ellipse at 50% 38%, rgba(255, 178, 70, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 8% 100%, rgba(255, 140, 50, 0.25) 0%, transparent 40%),
+    radial-gradient(ellipse at 92% 100%, rgba(255, 140, 50, 0.25) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 0%, rgba(0, 0, 0, 0.55), transparent 50%),
+    linear-gradient(180deg, #1a140e 0%, #0c0805 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.exiting {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stone {
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,0.06) 1px, transparent 2px),
+    radial-gradient(circle at 70% 60%, rgba(255,255,255,0.04) 1px, transparent 2px),
+    radial-gradient(circle at 40% 80%, rgba(0,0,0,0.4) 1px, transparent 2px),
+    radial-gradient(circle at 80% 20%, rgba(0,0,0,0.4) 1px, transparent 2px);
+  background-size: 24px 24px, 32px 32px, 28px 28px, 36px 36px;
+}
+
+/* ── Embers ─────────────────────────────────────────────────────────────── */
+
+.embers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ember {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffd47a 0%, #f0892f 50%, transparent 70%);
+  box-shadow: 0 0 8px #f0a040, 0 0 14px rgba(255, 170, 60, 0.6);
+  animation: emberRise 3.2s ease-in infinite;
+  opacity: 0.85;
+}
+
+.emberLg {
+  width: 5px;
+  height: 5px;
+  box-shadow: 0 0 12px #ffb060, 0 0 22px rgba(255, 170, 60, 0.7);
+}
+
+@keyframes emberRise {
+  0%   { transform: translateY(0)      scale(1);   opacity: 0;   }
+  20%  { opacity: 0.85; }
+  80%  { opacity: 0.6;  }
+  100% { transform: translateY(-60vh)  scale(0.4); opacity: 0;   }
+}
+
+/* ── Parchment scroll ───────────────────────────────────────────────────── */
+
+.scrollWrap {
+  position: relative;
+  text-align: center;
+  padding: 0 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.scroll {
+  position: relative;
+  padding: 28px 56px 26px;
+  background: linear-gradient(180deg, #ecd9a5 0%, #d9b56a 100%);
+  color: #3a230e;
+  border: 2px solid #6b3a18;
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 36px rgba(120, 70, 20, 0.30),
+    inset 0 0 0 5px #c89c4f,
+    0 0 60px rgba(255, 178, 70, 0.45),
+    0 10px 30px rgba(0, 0, 0, 0.6);
+  min-width: 380px;
+  animation: scrollGlow 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes scrollGlow {
+  from { box-shadow: inset 0 0 36px rgba(120, 70, 20, 0.30),
+                     inset 0 0 0 5px #c89c4f,
+                     0 0 50px rgba(255, 178, 70, 0.35),
+                     0 10px 30px rgba(0, 0, 0, 0.6); }
+  to   { box-shadow: inset 0 0 36px rgba(120, 70, 20, 0.30),
+                     inset 0 0 0 5px #c89c4f,
+                     0 0 80px rgba(255, 178, 70, 0.65),
+                     0 10px 30px rgba(0, 0, 0, 0.6); }
+}
+
+/* Rolled top & bottom edges */
+.scroll::before,
+.scroll::after {
+  content: '';
+  position: absolute;
+  left: -10px;
+  right: -10px;
+  height: 10px;
+  background: linear-gradient(90deg, #6b3a18 0%, #c89c4f 6%, #ecd9a5 50%, #c89c4f 94%, #6b3a18 100%);
+  border: 1px solid #6b3a18;
+  border-radius: 4px;
+}
+.scroll::before { top: -12px; }
+.scroll::after  { bottom: -12px; }
+
+/* ── Corner flourishes ──────────────────────────────────────────────────── */
+
+.flourish {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: #c89c4f;
+  transform: rotate(45deg);
+  box-shadow: inset 0 0 0 1px #6b3a18;
+}
+.flourishTL { top: 8px;    left: 10px;  }
+.flourishTR { top: 8px;    right: 10px; }
+.flourishBL { bottom: 8px; left: 10px;  }
+.flourishBR { bottom: 8px; right: 10px; }
+
+/* ── Scroll typography ──────────────────────────────────────────────────── */
+
+.eyebrow {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 13px;
+  letter-spacing: 5px;
+  color: #6b3a18;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  opacity: 0.85;
+}
+
+.title {
+  font-family: 'Lilita One', cursive;
+  font-size: 56px;
+  color: #6b3a18;
+  text-shadow: 1px 1px 0 #c89c4f, 0 0 12px rgba(255, 178, 70, 0.35);
+  letter-spacing: 5px;
+  line-height: 0.95;
+  margin: 0;
+  font-weight: 800;
+}
+
+.divider {
+  margin: 14px auto 8px;
+  width: 80%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #6b3a18;
+  opacity: 0.55;
+  font-size: 16px;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+}
+
+.sub {
+  font-family: 'Fredoka', sans-serif;
+  font-style: italic;
+  font-size: 16px;
+  color: #5a3818;
+  opacity: 0.88;
+  margin-top: 4px;
+}
+
+.cuisineRow {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cuisineLabel {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: #6b3a18;
+  opacity: 0.75;
+  text-transform: uppercase;
+}
+
+.cuisineFlag {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.cuisineName {
+  font-family: 'Lilita One', cursive;
+  font-size: 20px;
+  color: #6b3a18;
+  letter-spacing: 1.5px;
+  font-weight: 800;
+}
+
+/* ── MVP chip ───────────────────────────────────────────────────────────── */
+
+.mvpChip {
+  font-family: 'Lilita One', cursive;
+  font-size: 14px;
+  letter-spacing: 1.5px;
+  color: #f0c850;
+  background: rgba(40, 28, 14, 0.7);
+  border: 1px solid #c89c4f;
+  border-radius: 999px;
+  padding: 6px 16px;
+  box-shadow: 0 0 14px rgba(255, 178, 70, 0.20);
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .ember { animation: none; opacity: 0; }
+  .scroll { animation: none; }
+  .backdrop { transition-duration: 0ms; }
+}

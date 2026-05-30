@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { PlayerStats, calcPlayerScore } from '../state/types'
 import { NAME_COLORS, hashStr } from '../data/recipes'
 import AdventureExitConfirm from './AdventureExitConfirm'
+import AdventureProgressDots from './AdventureProgressDots'
 import styles from './AdventureShiftPassed.module.css'
 
 interface Props {
@@ -27,6 +28,8 @@ export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, se
       <div className={styles.leftCol}>
         <h1 className={styles.title}>Shift {shiftNumber} Passed!</h1>
 
+        <AdventureProgressDots currentShift={shiftNumber} />
+
         <div className={styles.goalLine}>
           <span className={styles.goalPassed}>✓ PASSED</span>
           <span className={styles.goalText}>${money} / ${goalMoney}</span>
@@ -47,8 +50,12 @@ export default function AdventureShiftPassed({ shiftNumber, money, goalMoney, se
           </div>
         </div>
 
+        <div className={styles.earnedNote}>
+          Earnings carry into the run bank — spend them in the Pantry next.
+        </div>
+
         <div className={styles.buttons}>
-          <button className={styles.nextBtn} onClick={onNext}>Start Next Shift</button>
+          <button className={styles.nextBtn} onClick={onNext}>Add a Recipe →</button>
           <button className={styles.menuBtn} onClick={() => setConfirmExit(true)}>Main Menu</button>
         </div>
       </div>
