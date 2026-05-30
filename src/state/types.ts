@@ -252,7 +252,6 @@ export interface GameState {
   cooldownMultiplier?: number          // 1 default; Understaffed boss = 1.5
   choppingCookTimeMultiplier?: number  // 1 default; Precise Cuts = 0.6 (chop-station only); Sharp Knives overrides to 0
   orderPatienceBonus?: number          // ms added to each new order's patienceMax + patienceLeft (Friendly Faces)
-  recentServes?: { dish: string; at: number }[]   // rolling log of recent serves; Combo Plate checks 3 distinct dishes in 30s
   // Periodic shift-timer effects (Tea Break, Recipe Roulette) — initialised lazily
   // on the first TICK after RESET so we don't need Date.now() in the reducer.
   activeBossDebuff?: string                        // mirrors path-card boss for TICK-side effects
@@ -268,11 +267,6 @@ export interface GameState {
   heatDecayRate?: number               // Loose Lid garnish — points/sec decayed (e.g. 4)
   autoExtinguishCharges?: number       // Phoenix Wing garnish — first overheat per shift auto-restores
   apprenticeTimerMs?: number           // The Apprentice garnish — TICK accumulator for periodic ingredient drip
-  repeatCustomerStreak?: {             // Repeat Customer garnish — per-shift streak tracker
-    user: string
-    recipe: string
-    count: number
-  }
   lostOrderPenalty?: number            // Bad Reviews boss — $ deducted per ORDER_EXPIRED
   teams?: Record<string, 'red' | 'blue'>
   redPreparedItems?: string[]

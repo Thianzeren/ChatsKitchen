@@ -1,6 +1,7 @@
 import { GameState, Station, Order, ChatMessage, StationSlot, PlayerStats } from './types'
 import { RECIPES, STATION_DEFS, HEAT_EXEMPT_STATIONS } from '../data/recipes'
-import { pickMiseEnPlaceIngredients } from '../data/adventureGarnishes'
+import { getRecipeProfile } from '../data/recipeProfile'
+import { pickMiseEnPlaceIngredients, applyServeTriggers } from '../data/adventureGarnishes'
 
 export const HEAT_PER_COOK = 20   // kept for reference; actual value is random 10–20 per slot
 export const COOL_AMOUNT   = 50   // midpoint reference only — actual value rolled randomly 40–60 on each use
@@ -205,7 +206,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         autoExtinguishCharges: action.autoExtinguishCharges,
         apprenticeTimerMs: action.apprenticeTimerMs,
         lostOrderPenalty: action.lostOrderPenalty,
-        repeatCustomerStreak: undefined,
       }
     }
 
@@ -309,69 +309,23 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * SERVE_TIME_BONUS_MAX))
       const baseReward = recipe.reward + timeBonus
       const bossMoneyMul = state.bossMoneyMultiplier ?? 1
-      let multiplier = (state.moneyMultiplier?.multiplier ?? 1) * bossMoneyMul
 
-      // ── Triggered garnish multipliers (multiplicative with each other) ──
+      // ── Garnish-driven reward effects ──
       const active = state.activeGarnishes ?? []
       const isFirstOrder = !state.firstOrderServedThisShift
-      if (isFirstOrder && active.includes('first_bite')) {
-        multiplier *= 3
-      }
       const elapsedSinceSpawn = Date.now() - order.spawnTime
-      if (active.includes('speed_demon') && elapsedSinceSpawn < 20_000) {
-        multiplier *= 1.25
-      }
       const patienceFraction = order.patienceMax > 0 ? order.patienceLeft / order.patienceMax : 0
-      if (active.includes('pressure_tip') && patienceFraction < 0.15) {
-        multiplier *= 1.5
-      }
-      if (active.includes('glass_kitchen')) {
-        multiplier *= 1.5
-      }
 
-      let tip = state.flatTipPerOrder ?? 0
-      if (isFirstOrder && active.includes('big_tippers')) {
-        tip += 30
-      }
+      const profile = getRecipeProfile(recipe)
+      const trig = applyServeTriggers(active, profile, { elapsedSinceSpawn })
+      let multiplier = (state.moneyMultiplier?.multiplier ?? 1) * bossMoneyMul * trig.multiplier
+      // First Bite (bespoke): the first dish served each shift sells 3×.
+      if (isFirstOrder && active.includes('first_bite')) multiplier *= 3
+      // Time Is Money (bespoke): up to +50% scaled by patience remaining.
+      if (active.includes('time_is_money')) multiplier *= 1 + 0.5 * patienceFraction
 
-      // Combo Plate: rolling 30s window of distinct served dishes — +$50 when 3+ unique.
-      const now = Date.now()
-      let recentServes = (state.recentServes ?? []).filter(s => now - s.at < 30_000)
-      recentServes = [...recentServes, { dish: order.dish, at: now }]
-      let comboBonus = 0
-      if (active.includes('combo_plate')) {
-        const distinct = new Set(recentServes.map(s => s.dish))
-        if (distinct.size >= 3) {
-          comboBonus = 50
-          recentServes = []  // reset the window after awarding so the next combo has to rebuild
-        }
-      }
-
-      // ── Long Memory garnish — every 5th dish served (shift-wide) earns +$40 ──
-      let longMemoryBonus = 0
-      if (active.includes('long_memory') && (state.served + 1) % 5 === 0) {
-        longMemoryBonus = 40
-      }
-
-      // ── Repeat Customer garnish — every 3rd consecutive same-recipe by same user earns +$25 ──
-      let repeatCustomerBonus = 0
-      let nextRepeatCustomerStreak = state.repeatCustomerStreak
-      if (active.includes('repeat_customer')) {
-        const cur = state.repeatCustomerStreak
-        if (cur && cur.user === user && cur.recipe === order.dish) {
-          const nextCount = cur.count + 1
-          if (nextCount >= 3) {
-            repeatCustomerBonus = 25
-            nextRepeatCustomerStreak = { user, recipe: order.dish, count: 0 }
-          } else {
-            nextRepeatCustomerStreak = { user, recipe: order.dish, count: nextCount }
-          }
-        } else {
-          nextRepeatCustomerStreak = { user, recipe: order.dish, count: 1 }
-        }
-      }
-
-      const reward = Math.round(baseReward * multiplier) + tip + comboBonus + longMemoryBonus + repeatCustomerBonus
+      const tip = (state.flatTipPerOrder ?? 0) + trig.flatBonus
+      const reward = Math.round(baseReward * multiplier) + tip
 
       let withStats = addStat(state, user, 'served', 1)
       withStats = addStat(withStats, user, 'moneyEarned', reward)
@@ -390,13 +344,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           : { ...afterPool, blueMoney: (afterPool.blueMoney ?? 0) + reward, blueServed: (afterPool.blueServed ?? 0) + 1 }
       }
 
-      // Compose a chat message that mentions any of the new triggered bonuses that fired.
-      const bonusTags: string[] = []
-      if (comboBonus > 0) bonusTags.push(`Combo Plate +$${comboBonus}`)
-      if (longMemoryBonus > 0) bonusTags.push(`Long Memory +$${longMemoryBonus}`)
-      if (repeatCustomerBonus > 0) bonusTags.push(`Repeat Customer +$${repeatCustomerBonus}`)
-      const bonusSuffix = bonusTags.length > 0 ? ` (${bonusTags.join(', ')}!)` : ''
-
       return addMsg(
         {
           ...afterPool,
@@ -404,11 +351,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           money: afterPool.money + reward,
           served: afterPool.served + 1,
           firstOrderServedThisShift: true,
-          recentServes,
-          repeatCustomerStreak: nextRepeatCustomerStreak,
         },
         'KITCHEN',
-        `${user} served ${recipe.emoji} ${recipe.name}! +$${reward}${bonusSuffix}`,
+        `${user} served ${recipe.emoji} ${recipe.name}! +$${reward}`,
         'success',
       )
     }
@@ -684,11 +629,11 @@ let matchedStep = null
             })
             // Bloodhound garnish: +$40 per overheat
             if ((state.activeGarnishes ?? []).includes('bloodhound')) {
-              bloodhoundMoney += 40
+              bloodhoundMoney += 12
               messages.push({
                 id: nextMsgId++,
                 username: 'KITCHEN',
-                text: `🩸 Bloodhound earned $40 from the overheat!`,
+                text: `🩸 Bloodhound earned $12 from the overheat!`,
                 type: 'success',
               })
             }
