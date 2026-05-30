@@ -103,7 +103,7 @@ export function applyBossDebuff(bossId: string | undefined, disabledStationId?: 
     case 'hangry_mob':
       return { options: {}, state: { orderPatienceBonus: -15000 } }
     case 'bad_reviews':
-      return { options: {}, state: { lostOrderPenalty: 20 } }
+      return { options: {}, state: { lostOrderPenalty: 5 } }
   }
 }
 

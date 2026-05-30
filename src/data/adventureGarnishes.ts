@@ -41,9 +41,6 @@ export type GarnishField =
   | 'flatTipPerOrder'
   | 'orderPatienceBonus'   // Friendly Faces — +ms to each new order's patienceMax/patienceLeft
   | 'overheatThresholdDelta'   // Insulation +10, Glass Kitchen -40 (additive to base 100)
-  // ── Sub-project C — content variety ──
-  | 'heatDecayAboveThreshold'   // Loose Lid — heat above this threshold dissipates
-  | 'heatDecayRate'              // Loose Lid — heat points per second dissipated
 
 // ── Catalog ───────────────────────────────────────────────────────────────────
 // Tier shape: 5 common stat-boosts (PR-1, doubled & one-shot) + 1 new triggered
@@ -233,8 +230,6 @@ export function applyAllGarnishes(
   let flatTipPerOrder = 0
   let orderPatienceBonus = 0
   let overheatThreshold = OVERHEAT_THRESHOLD_BASE
-  let heatDecayAboveThreshold: number | undefined = undefined
-  let heatDecayRate: number | undefined = undefined
 
   // Stat-effect aggregation
   for (const entry of owned) {
@@ -274,12 +269,6 @@ export function applyAllGarnishes(
         case 'overheatThresholdDelta':
           overheatThreshold += effect.value
           break
-        case 'heatDecayAboveThreshold':
-          heatDecayAboveThreshold = effect.value
-          break
-        case 'heatDecayRate':
-          heatDecayRate = effect.value
-          break
       }
     }
   }
@@ -305,8 +294,6 @@ export function applyAllGarnishes(
       flatTipPerOrder:            flatTipPerOrder       === 0 ? undefined : flatTipPerOrder,
       orderPatienceBonus:         orderPatienceBonus    === 0 ? undefined : orderPatienceBonus,
       overheatThreshold:          overheatThreshold     === OVERHEAT_THRESHOLD_BASE ? undefined : overheatThreshold,
-      heatDecayAboveThreshold,
-      heatDecayRate,
     },
   }
 }

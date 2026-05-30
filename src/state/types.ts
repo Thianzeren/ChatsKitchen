@@ -252,21 +252,15 @@ export interface GameState {
   cooldownMultiplier?: number          // 1 default; Understaffed boss = 1.5
   choppingCookTimeMultiplier?: number  // 1 default; Precise Cuts = 0.6 (chop-station only); Sharp Knives overrides to 0
   orderPatienceBonus?: number          // ms added to each new order's patienceMax + patienceLeft (Friendly Faces)
-  // Periodic shift-timer effects (Tea Break, Recipe Roulette) — initialised lazily
+  // Periodic shift-timer effects (Recipe Roulette) — initialised lazily
   // on the first TICK after RESET so we don't need Date.now() in the reducer.
   activeBossDebuff?: string                        // mirrors path-card boss for TICK-side effects
-  teaBreakNextAt?: number                          // ms timestamp; when now ≥ this, fire Tea Break
-  patiencePausedUntil?: number                     // ms timestamp; while now < this, patience doesn't drain
   rouletteNextAt?: number                          // ms timestamp; when now ≥ this, rotate enabledRecipes
   // Triggered-garnish runtime state
   activeGarnishes?: string[]                  // garnish ids active for this shift
   firstOrderServedThisShift?: boolean         // First Bite, Big Tippers — flips after first SERVE
   overheatThreshold?: number                  // default 100; Glass Kitchen=60, Insulation=110
   // ── Adventure content variety (Sub-project C) — new optional fields ──
-  heatDecayAboveThreshold?: number    // Loose Lid garnish — heat above this dissipates passively
-  heatDecayRate?: number               // Loose Lid garnish — points/sec decayed (e.g. 4)
-  autoExtinguishCharges?: number       // Phoenix Wing garnish — first overheat per shift auto-restores
-  apprenticeTimerMs?: number           // The Apprentice garnish — TICK accumulator for periodic ingredient drip
   lostOrderPenalty?: number            // Bad Reviews boss — $ deducted per ORDER_EXPIRED
   teams?: Record<string, 'red' | 'blue'>
   redPreparedItems?: string[]

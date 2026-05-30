@@ -70,7 +70,7 @@ function clearSavedAdventureRun(): void {
 
 // ── Shop reroll pricing ──────────────────────────────────────────────────────
 
-const REROLL_BASE_PRICE = 100
+const REROLL_BASE_PRICE = 25
 
 // Reroll price scales with reroll count (doubles each time) and with crew size,
 // keeping the cost-per-team-member roughly constant across solo vs big-chat runs.
@@ -103,9 +103,6 @@ function buildShiftReset(
   const heatMul = (delta.state.heatPerCookMultiplier ?? 1) * (bossDelta.state.heatPerCookMultiplier ?? 1)
   const coolBonus = (delta.state.coolAmountBonus ?? 0) + (bossDelta.state.coolAmountBonus ?? 0)
 
-  const ownsPhoenixWing = run.ownedGarnishes.some(g => g.garnishId === 'phoenix_wing')
-  const ownsApprentice  = run.ownedGarnishes.some(g => g.garnishId === 'apprentice')
-
   const orderPatienceBonusCombined =
     (delta.state.orderPatienceBonus ?? 0) + (bossDelta.state.orderPatienceBonus ?? 0)
 
@@ -129,10 +126,6 @@ function buildShiftReset(
     disabledStations: bossDelta.state.disabledStations,
     activeGarnishes: run.ownedGarnishes.map(g => g.garnishId),
     activeBossDebuff: boss?.id,
-    heatDecayAboveThreshold: delta.state.heatDecayAboveThreshold,
-    heatDecayRate: delta.state.heatDecayRate,
-    autoExtinguishCharges: ownsPhoenixWing ? 1 : undefined,
-    apprenticeTimerMs: ownsApprentice ? 0 : undefined,
     lostOrderPenalty: bossDelta.state.lostOrderPenalty,
   }
 }
@@ -402,16 +395,12 @@ export function useAdventureRun(
         ? pickBossForShift(prev.runSeed, nextShift, prev.currentRecipes)
         : undefined
 
-      // Veteran's Tip garnish: +$15 to the bank at the start of every shift after S1.
-      const veteransTipActive = prev.ownedGarnishes.some(g => g.garnishId === 'veterans_tip')
-      const veteransTipBonus = veteransTipActive && nextShift > 1 ? 15 * Math.max(1, nextParticipantCount) : 0
-
       const updatedRun: AdventureRun = {
         ...prev,
         currentShift: nextShift,
         currentGoal,
         participantCount: nextParticipantCount,
-        currentRunMoney: prev.currentRunMoney + veteransTipBonus,
+        currentRunMoney: prev.currentRunMoney,
         currentBoss,
         pendingShopOffers: undefined,
       }
