@@ -327,7 +327,7 @@ export function useAdventureRun(
       }
       // Between-shift pick → set up the Pantry shop offers for the upcoming shift.
       rerollCountRef.current = 0
-      const offers = generateShopOffers(updated.ownedGarnishes, updated.currentShift + 1, updated.participantCount, 4)
+      const offers = generateShopOffers(updated.runSeed, updated.ownedGarnishes, updated.currentShift + 1, updated.participantCount, 4)
       return { ...updated, pendingShopOffers: offers }
     })
     setScreen(isOpeningDraft ? 'adventurebriefing' : 'adventurepantryshop')
@@ -371,7 +371,7 @@ export function useAdventureRun(
       if (prev.currentRunMoney < price) return prev
       rerollCountRef.current += 1
       success = true
-      const offers = generateShopOffers(prev.ownedGarnishes, prev.currentShift + 1, prev.participantCount, 4)
+      const offers = generateShopOffers(prev.runSeed, prev.ownedGarnishes, prev.currentShift + 1, prev.participantCount, 4)
       return {
         ...prev,
         currentRunMoney: prev.currentRunMoney - price,

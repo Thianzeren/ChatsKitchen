@@ -1,5 +1,6 @@
 import { GameOptions, GameState, OwnedGarnish, ShopOffer, GarnishTier } from '../state/types'
 import { RecipeTag, RecipeProfile } from './recipeProfile'
+import { hashStringToSeed, mulberry32 } from './seededRng'
 
 // ── GarnishDef ────────────────────────────────────────────────────────────────
 
@@ -137,17 +138,62 @@ export function getGarnishPrice(garnishId: string, shift: number, participantCou
 
 // ── Shop offer generation ────────────────────────────────────────────────────
 
-// Pick up to `count` distinct garnishes the run does not already own.
-// PR-3 may refine to 2C + 2R + 1L tier distribution; for now it's a flat shuffle.
+type Tier = 'common' | 'rare' | 'legendary'
+
+// Tier weights by the UPCOMING shift (the shop runs after shift N, for shift N+1).
+// Rises across the run; boss shops (4 & 8) spike rare/legendary so chat can gear up.
+const TIER_WEIGHTS: Record<number, [number, number, number]> = {
+  // [common, rare, legendary]
+  2: [80, 18, 2],
+  3: [70, 25, 5],
+  4: [50, 35, 15],   // boss
+  5: [60, 30, 10],
+  6: [50, 35, 15],
+  7: [40, 40, 20],
+  8: [30, 40, 30],   // boss
+}
+
+function rollTier(rng: () => number, shift: number): Tier {
+  const w = TIER_WEIGHTS[Math.min(8, Math.max(2, shift))] ?? [70, 25, 5]
+  const total = w[0] + w[1] + w[2]
+  const r = rng() * total
+  if (r < w[0]) return 'common'
+  if (r < w[0] + w[1]) return 'rare'
+  return 'legendary'
+}
+
+// Roll `count` distinct un-owned garnishes, tier-weighted by the upcoming shift,
+// seeded by runSeed+shift for determinism. Falls back across tiers when a tier is
+// exhausted of un-owned garnishes.
 export function generateShopOffers(
+  runSeed: string,
   owned: OwnedGarnish[],
   shift: number,
   participantCount: number = 1,
   count: number = 4,
 ): ShopOffer[] {
+  const rng = mulberry32(hashStringToSeed(`${runSeed}::shop::${shift}`))
   const available = Object.values(GARNISHES).filter(g => !isOwned(owned, g.id))
-  const shuffled = [...available].sort(() => Math.random() - 0.5)
-  return shuffled.slice(0, count).map(g => ({
+  const byTier: Record<Tier, GarnishDef[]> = { common: [], rare: [], legendary: [] }
+  for (const g of available) byTier[g.tier].push(g)
+
+  const chosen: GarnishDef[] = []
+  const tierFallback: Record<Tier, Tier[]> = {
+    common:    ['common', 'rare', 'legendary'],
+    rare:      ['rare', 'common', 'legendary'],
+    legendary: ['legendary', 'rare', 'common'],
+  }
+  for (let i = 0; i < count && chosen.length < available.length; i++) {
+    const wanted = rollTier(rng, shift)
+    let pick: GarnishDef | undefined
+    for (const tier of tierFallback[wanted]) {
+      const pool = byTier[tier].filter(g => !chosen.includes(g))
+      if (pool.length > 0) { pick = pool[Math.floor(rng() * pool.length)]; break }
+    }
+    if (pick) chosen.push(pick)
+  }
+
+  return chosen.map(g => ({
     garnishId: g.id,
     price: getGarnishPrice(g.id, shift, participantCount),
     rarity: g.tier,
