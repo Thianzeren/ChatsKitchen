@@ -386,14 +386,11 @@ let matchedStep = null
       }
       if (!matchedStep) return addMsg(withCooldown, 'KITCHEN', `Can't ${cookAction} ${(target || '').replace(/_/g, ' ')} there!`, 'error')
 
-      // ── Chopping-station garnish modifiers ──
-      // Precise Cuts trims chopping cook time; Sharp Knives overrides to instant.
+      // ── Chopping-station garnish modifier ──
+      // Sharp Knives composes via applyAllGarnishes to a choppingCookTimeMultiplier of 0 (instant chopping).
       let effectiveDuration = matchedStep.duration
       if (cookAction === 'chop') {
         effectiveDuration *= state.choppingCookTimeMultiplier ?? 1
-        if ((state.activeGarnishes ?? []).includes('sharp_knives')) {
-          effectiveDuration = 0
-        }
       }
 
       // Check ingredient prerequisite
@@ -469,22 +466,11 @@ let matchedStep = null
         patienceLeft: patience,
         spawnTime: action.now,
       }
-      // ── Side Salad garnish — seed 1 free prepped ingredient from this order's recipe ──
-      let sideSaladPreparedItems = state.preparedItems
-      let sideSaladPreparedItemSources = state.preparedItemSources
-      if ((state.activeGarnishes ?? []).includes('side_salad') && recipe.steps.length > 0) {
-        const step = recipe.steps[Math.floor(Math.random() * recipe.steps.length)]
-        sideSaladPreparedItems = [...sideSaladPreparedItems, step.produces]
-        sideSaladPreparedItemSources = [...sideSaladPreparedItemSources, '']
-      }
-
       return addMsg(
         {
           ...state,
           orders: [...state.orders, order],
           nextOrderId: state.nextOrderId + 1,
-          preparedItems: sideSaladPreparedItems,
-          preparedItemSources: sideSaladPreparedItemSources,
         },
         'CUSTOMER', `Order #${order.id}: ${recipe.emoji} ${recipe.name}!`, 'system'
       )
@@ -635,7 +621,6 @@ let matchedStep = null
       }
 
       // Update order patience + expire
-      const compostActive = (state.activeGarnishes ?? []).includes('compost_bin')
       let orders = [...state.orders]
       let lost = state.lost
       orders = orders.map(order => {
@@ -654,21 +639,6 @@ let matchedStep = null
               text: `⭐ Bad Reviews · −$${state.lostOrderPenalty}`,
               type: 'error',
             })
-          }
-          // Compost Bin garnish: turn the lost order into 1 random prepped ingredient
-          if (compostActive) {
-            const expiredRecipe = RECIPES[order.dish]
-            if (expiredRecipe && expiredRecipe.steps.length > 0) {
-              const salvageStep = expiredRecipe.steps[Math.floor(Math.random() * expiredRecipe.steps.length)]
-              newPreparedItems.push(salvageStep.produces)
-              newPreparedItemSources.push('')
-              messages.push({
-                id: nextMsgId++,
-                username: 'KITCHEN',
-                text: `🌱 Compost Bin salvaged ${salvageStep.produces.replace(/_/g, ' ')}.`,
-                type: 'system',
-              })
-            }
           }
           return { ...order, served: true, patienceLeft: 0, outcome: 'lost' as const, completedAt: now }
         }
