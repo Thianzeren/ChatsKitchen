@@ -138,7 +138,7 @@ Every shift's goal is **per-player**, then multiplied by the crew size:
 shift goal = perPlayerGoal[shift] × participantCount
 ```
 
-This keeps the pressure-per-person constant whether one person or fifty are cooking. The per-player baselines are `[20, 35, 50, 70, 85, 110, 140, 200]`. The two boss shifts (4 and 8) bake a **×1.5 multiplier** into their baseline.
+This keeps the pressure-per-person constant whether one person or fifty are cooking. The per-player baselines are `[20, 35, 50, 70, 85, 110, 140, 200]` — a monotonic ramp on the cafe price scale. Boss shifts (4 and 8) are elevated points on that ramp, but the curve never dips after them; bosses apply their own debuffs rather than a baked-in goal multiplier.
 
 Participant count is read from the Adventure lobby roster at run start, and re-counted at each shift boundary so mid-run `!join` / `!leave` / `!kick` changes are reflected in the next goal.
 

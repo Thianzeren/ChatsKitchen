@@ -121,7 +121,7 @@ Most run-level state lives in `useAdventureRun.ts` (`AdventureRun` shape in `typ
 - Run opens with a **mandatory recipe draft**: chat picks 1 dish from 3 all-cuisine options (no skip). Between every cleared shift, chat adds 1 more dish from 3 all-cuisine options, or votes `!skip`. The menu grows from 1 dish up to 8; all owned recipes are active and orders spawn from the entire menu.
 - Cuisine tags are **cosmetic flavor** — they appear on dish cards but have no mechanical role.
 - Bosses on shifts 4 & 8 are **auto-assigned** (no vote) and previewed on the shift briefing.
-- Goal = `PER_PLAYER_GOALS[shift-1] × participantCount` (per-player scaling). Baselines: `[20, 35, 50, 70, 85, 110, 140, 200]`. S4 & S8 baselines already bake in the ×1.5 boss multiplier.
+- Goal = `PER_PLAYER_GOALS[shift-1] × participantCount` (per-player scaling). Baselines: `[20, 35, 50, 70, 85, 110, 140, 200]` — a monotonic cafe-scale ramp. Bosses apply their own debuffs; no ×1.5 goal multiplier is baked into the table.
 
 **Lobby** — Only the local "You" auto-joins; broadcaster and viewers must `!join` themselves. `!leave`, `!kick @name`, and `!clear` (mod only) for roster management. Mid-run `!leave` / `!kick` re-counts participants at the next shift boundary in `closeShop`.
 
