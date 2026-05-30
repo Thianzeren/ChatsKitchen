@@ -190,20 +190,40 @@ The chosen boss's debuff is previewed on the briefing screen (e.g. the Health In
 
 ### The Pantry Shop & Garnishes
 
-After every path pick, chat visits the **Pantry** to spend the shared run bank on **garnishes** — permanent, run-long upgrades. The shop offers **4 garnishes per visit**, drawn from a tier-graded catalog:
+After every path pick, chat visits the **Pantry** to spend the shared run bank on **garnishes** — permanent, run-long upgrades. The shop offers **4 garnishes per visit**, drawn from a 24-garnish, tier-graded catalog (common / rare / legendary).
 
-- **Common** — straightforward stat boosts and small triggered bonuses (Quick Hands +15% cooking speed, Tip Jar +$8/dish, Heat Sink +30 cooling, Precise Cuts −40% chop time, Friendly Faces +10s patience, etc.)
-- **Rare** — stronger or conditional effects (First Bite sells the shift's first dish at 3×, Mise en Place starts each shift with 5 prepped ingredients, Bloodhound pays $40 per overheat, Phoenix Wing auto-extinguishes the first fire, etc.)
-- **Legendary** — build-defining swings (Sharp Knives makes chopping instant, Snowball compounds +8% cooking speed per shift survived, Doppelgänger 20% chance to duplicate any cooked item, Glass Kitchen lowers the overheat threshold to 60 but pays +50% on every dish)
+#### Archetype-build system
 
-Key rules:
+Garnishes are designed around six **recipe archetype tags** that describe the dishes chat has drafted into the menu:
+
+| Tag | Dishes it targets | Example garnishes |
+|-----|------------------|-------------------|
+| `premium` | High-value dishes | Fine Dining (+25% premium reward), Michelin Star (+75% premium reward) |
+| `value` | Low-cost accessible dishes | Penny Pincher (+$3 flat per value dish) |
+| `fast` | Quick-cooking dishes | Drive-Thru (+35% fast dish reward) |
+| `slow` | Long-cook dishes | Worth the Wait (2× reward for slow dishes) |
+| `prep_heavy` | Multi-step dishes | Cold Kitchen (+$4 per prep-heavy dish) |
+| `hot_line` | Grill/fry-forward dishes | Fire Whisperer (+30% hot-line reward) |
+
+Neutral garnishes benefit any build: Quick Hands (cooking speed), Patient Diners (patience), Tip Jar (flat tip), Heat Sink (cooling), Snowball (compound speed per shift survived), Doppelgänger (20% ingredient duplicate).
+
+The key strategic tension: chat's between-shift **recipe draft** shapes which archetype tags are represented on the menu, and the garnish shop rewards leaning into those tags. A run that drafts premium and slow dishes gets far more out of Michelin Star and Worth the Wait than a run that goes wide.
+
+#### Shop rules
 
 - Every garnish is **one-shot** — it can be bought only once and never reappears in the shop.
 - Purchases are **not** replenished within a visit; buying one leaves the other three offers on the menu.
-- Garnish prices scale with shift (+15% per shift past the first) and linearly with crew size, matching goal scaling.
-- Chat can **reroll** the offers for a fresh set of 4. Reroll cost is `$100 × 2^(rerolls this visit) × participantCount` — it doubles each time and resets when the shop reopens.
+- Prices are on a cafe scale: common ~$25–30, rare ~$50–65, legendary ~$95–125 (scaled linearly with crew size).
+- Shop offers are **tier-weighted by the upcoming shift** — mostly common early, rising rare/legendary as the run deepens. **Boss shops** (before shifts 4 & 8) spike toward rare and legendary to give chat a meaningful power jump before the hardest shifts.
+- Chat can **reroll** the offers for a fresh set of 4. Reroll cost is `$25 × 2^(rerolls this visit) × participantCount` — it doubles each time and resets when the shop reopens.
 
-Garnish effects **compose**, and they stack on top of the active boss debuff. For example, a Slow Burner garnish (−25% heat) partially counteracts a Heatwave boss (+50% heat). Triggered garnishes (First Bite, Phoenix Wing, the Apprentice, etc.) fire from runtime hooks during the shift rather than as flat stat changes.
+#### Effect mechanisms
+
+Garnish effects fire via three mechanisms and compose on top of the active boss debuff:
+
+1. **`applyServeTriggers`** — data-driven serve-triggers keyed off `getRecipeProfile`. Tag- and timing-gated reward multipliers and flat bonuses that fire at the moment a dish is served (e.g. Fine Dining, Drive-Thru, Worth the Wait).
+2. **`applyAllGarnishes`** — stat effects applied at shift setup: cooking speed, patience duration, cooling amount, flat tip per dish, chopping time reduction, overheat threshold adjustment.
+3. **Bespoke hooks** — one-of-a-kind triggered effects: First Bite (3× first dish per shift), Time Is Money (patience-scaled reward), Bloodhound ($12 per overheat event), Doppelgänger (20% chance to duplicate a cooked ingredient), Mise en Place (shift starts with prepped ingredients), Glass Kitchen (lower overheat threshold + dish bonus), Snowball (compounding speed per shift survived).
 
 ### Kitchen Events in Adventure
 
@@ -562,7 +582,7 @@ See the **Adventure Mode** section above for the full run design (8 shifts, reci
 | Recipes | Opens with 1 drafted dish; chat adds 1 per cleared shift (or skips); grows up to 8 |
 | Cuisine tags | Cosmetic flavour only — no mechanical effect |
 | Kitchen events | Off for S1–2, on from S3 (Chaos Mode boss tightens cadence) |
-| Shop | 4 garnishes/visit, one-shot, reroll `$100 × 2^n × crew` |
+| Shop | 4 garnishes/visit, one-shot, tier-weighted by shift (boss-shop spikes), reroll `$25 × 2^n × crew` |
 | Win / lose | Clear S8 to win; miss any goal to end the run |
 | Persistence | Best run + won-run count saved; full run auto-saved at shift boundaries for resume |
 
