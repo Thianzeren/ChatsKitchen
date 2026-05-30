@@ -1,6 +1,14 @@
 import { GameOptions, GameState, OwnedGarnish, ShopOffer, GarnishTier } from '../state/types'
+import { RecipeTag, RecipeProfile } from './recipeProfile'
 
 // ── GarnishDef ────────────────────────────────────────────────────────────────
+
+export interface ServeTrigger {
+  requiresTag?: RecipeTag        // served dish must carry this archetype tag
+  servedWithinMs?: number        // elapsed since the order spawned must be below this
+  rewardMultiplier?: number      // multiplicative on base reward (scale-independent)
+  flatBonus?: number             // cafe-scaled $ added after multipliers
+}
 
 export interface GarnishDef {
   id: string
@@ -12,6 +20,7 @@ export interface GarnishDef {
   // Stat-boost effects, applied at shift RESET time. Optional — triggered garnishes
   // (First Bite, Bloodhound, etc.) have empty effects and are handled by ID at runtime.
   effects?: GarnishEffect[]
+  serveTrigger?: ServeTrigger
 }
 
 export interface GarnishEffect {
@@ -311,6 +320,31 @@ export function getGarnish(id: string): GarnishDef | null {
 
 export function isOwned(owned: OwnedGarnish[], garnishId: string): boolean {
   return owned.some(g => g.garnishId === garnishId)
+}
+
+export interface ServeTriggerContext {
+  elapsedSinceSpawn: number
+}
+
+// Resolve all tag/timing-gated on-serve garnish effects for a served dish.
+// Multipliers multiply together; flat bonuses add. Garnishes without a
+// serveTrigger (stat or bespoke ones) are skipped.
+export function applyServeTriggers(
+  activeIds: string[],
+  profile: RecipeProfile,
+  ctx: ServeTriggerContext,
+): { multiplier: number; flatBonus: number } {
+  let multiplier = 1
+  let flatBonus = 0
+  for (const id of activeIds) {
+    const t = GARNISHES[id]?.serveTrigger
+    if (!t) continue
+    if (t.requiresTag && !profile.tags.includes(t.requiresTag)) continue
+    if (t.servedWithinMs !== undefined && !(ctx.elapsedSinceSpawn < t.servedWithinMs)) continue
+    if (t.rewardMultiplier !== undefined) multiplier *= t.rewardMultiplier
+    if (t.flatBonus !== undefined) flatBonus += t.flatBonus
+  }
+  return { multiplier, flatBonus }
 }
 
 // Price scales with shift (+15%/shift past 1) and linearly with participant count.
