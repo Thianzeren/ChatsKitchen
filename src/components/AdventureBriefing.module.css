@@ -263,6 +263,37 @@
   margin-bottom: 12px;
 }
 
+.menuHeader {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.menuHeader .panelTitle {
+  margin-bottom: 0;
+}
+
+.stepsToggle {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: 1px solid rgba(240, 200, 80, 0.3);
+  border-radius: 4px;
+  padding: 2px 10px;
+  font-family: 'Space Mono', monospace;
+  font-size: var(--base-fs);
+  color: #9a8e82;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.stepsToggle:hover {
+  color: var(--text-warm);
+  border-color: rgba(240, 200, 80, 0.6);
+}
+
 .recipeCard {
   padding: 12px 16px;
 }

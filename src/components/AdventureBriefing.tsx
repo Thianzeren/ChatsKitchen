@@ -26,6 +26,13 @@ interface Props {
 
 export default function AdventureBriefing({ run, bestRun, onStart, onMenu, onManageLobby, twitchStatus, twitchChannel }: Props) {
   const [confirmExit, setConfirmExit] = useState(false)
+  const [hideSteps, setHideSteps] = useState(() => localStorage.getItem('chatsKitchen_adventureBriefingHideSteps') === 'true')
+
+  const toggleHideSteps = () => setHideSteps(h => {
+    const next = !h
+    localStorage.setItem('chatsKitchen_adventureBriefingHideSteps', String(next))
+    return next
+  })
 
   const lastResult = run.shiftResults.length > 0
     ? run.shiftResults[run.shiftResults.length - 1]
@@ -109,7 +116,12 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, onMan
       {/* ── RIGHT ── */}
       <div className={styles.rightCol}>
         <div className={styles.menuPanel}>
-          <div className={styles.panelTitle}>This Shift's Menu</div>
+          <div className={styles.menuHeader}>
+            <div className={styles.panelTitle}>This Shift's Menu</div>
+            <button className={styles.stepsToggle} onClick={toggleHideSteps}>
+              {hideSteps ? 'Show steps' : 'Hide steps'}
+            </button>
+          </div>
           {run.currentRecipes.map((key, i) => {
             const recipe = RECIPES[key]
             if (!recipe) return null
@@ -126,18 +138,20 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, onMan
                     {tags.map(t => <ArchetypeChip key={t} tag={t} />)}
                   </div>
                 )}
-                <div className={styles.recipeSteps}>
-                  {orderStepsForDisplay(recipe.steps).map((step, si) => (
-                    <Fragment key={si}>
-                      {si > 0 && (
-                        <span className={step.requires ? styles.stepArrow : styles.stepSeparator}>
-                          {step.requires ? '→' : '·'}
-                        </span>
-                      )}
-                      <code className={styles.stepCmd}>{step.action} {step.target.replace(/_/g, ' ')}</code>
-                    </Fragment>
-                  ))}
-                </div>
+                {!hideSteps && (
+                  <div className={styles.recipeSteps}>
+                    {orderStepsForDisplay(recipe.steps).map((step, si) => (
+                      <Fragment key={si}>
+                        {si > 0 && (
+                          <span className={step.requires ? styles.stepArrow : styles.stepSeparator}>
+                            {step.requires ? '→' : '·'}
+                          </span>
+                        )}
+                        <code className={styles.stepCmd}>{step.action} {step.target.replace(/_/g, ' ')}</code>
+                      </Fragment>
+                    ))}
+                  </div>
+                )}
               </div>
             )
           })}
