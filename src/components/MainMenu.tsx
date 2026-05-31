@@ -137,6 +137,18 @@ export default function MainMenu({
                 </div>
               </div>
             </div>
+            {roomPlayers.length > 0 && (
+              <div className={styles.localPlayerList}>
+                {roomPlayers.map(p => (
+                  <span
+                    key={p.id}
+                    className={`${styles.localPlayerChip} ${p.disconnected ? styles.localPlayerChipOffline : ''}`}
+                  >
+                    {p.disconnected ? '🔄' : '👤'} {p.nickname}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
