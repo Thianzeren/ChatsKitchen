@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef } from 'react'
 import { AdventureRun, ShopOffer } from '../state/types'
 import { useChoiceVote } from '../hooks/useChoiceVote'
 import { GARNISHES } from '../data/adventureGarnishes'
+import { getMenuTagCounts, TAG_ORDER } from '../data/recipeProfile'
+import ArchetypeChip from './ArchetypeChip'
 import { getAudioManager } from '../audio/AudioManager'
 import styles from './AdventurePantryShop.module.css'
 
@@ -18,6 +20,7 @@ interface Props {
 
 export default function AdventurePantryShop({ run, onPurchase, onReroll, onClose, voteRef, rerollPrice }: Props) {
   const offers = useMemo(() => run.pendingShopOffers ?? [], [run.pendingShopOffers])
+  const menuTagCounts = useMemo(() => getMenuTagCounts(run.currentRecipes), [run.currentRecipes])
 
   const { state: voteState, registerVote, reset: resetVote, forceResolve, togglePause } = useChoiceVote(
     { numOptions: Math.max(1, offers.length), durationMs: VOTE_DURATION_MS, allowDoneCommand: true },
@@ -101,6 +104,15 @@ export default function AdventurePantryShop({ run, onPurchase, onReroll, onClose
         <div className={styles.subtitle}>Spend earnings on garnishes. Type <code>!1</code>, <code>!2</code>… to vote, or <code>!done</code> to leave.</div>
         <div className={styles.cashBadge}>${run.currentRunMoney}</div>
       </div>
+
+      {menuTagCounts.size > 0 && (
+        <div className={styles.menuTags}>
+          <span className={styles.menuTagsLabel}>Your menu:</span>
+          {TAG_ORDER.filter(t => menuTagCounts.has(t)).map(t => (
+            <ArchetypeChip key={t} tag={t} count={menuTagCounts.get(t)!} />
+          ))}
+        </div>
+      )}
 
       <div className={`${styles.timerBar} ${voteState.paused ? styles.timerBarPaused : ''}`}>
         <div className={styles.timerFill} style={{ width: `${timerPct}%` }} />
