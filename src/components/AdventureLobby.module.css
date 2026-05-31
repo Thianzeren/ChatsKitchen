@@ -80,7 +80,7 @@
 .title {
   font-family: 'Lilita One', cursive;
   font-size: 48px;
-  color: #fff;
+  color: var(--text);
   margin: 0;
   text-shadow: 0 0 40px rgba(255, 255, 255, 0.15);
 }
