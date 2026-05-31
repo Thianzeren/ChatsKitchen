@@ -112,7 +112,7 @@ export default function MainMenu({
             {isDisconnected && (
               <div className={styles.twitchStatusDisconnected}>
                 <span className={styles.twitchDotDisconnected} />
-                Optional — connect a channel to let chat play too
+                Connect a channel to let chat play too!
               </div>
             )}
           </div>
