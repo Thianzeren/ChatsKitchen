@@ -43,6 +43,7 @@ import { mergePlayerStats, ADVENTURE_TOTAL_SHIFTS } from './data/adventureMode'
 import GameplayScreen from './components/GameplayScreen'
 import LocalPlayScreen from './components/LocalPlayScreen'
 import ModeHub from './components/ModeHub'
+import RoomQRModal from './components/RoomQRModal'
 import { DEFAULT_GAME_OPTIONS } from './state/defaultOptions'
 
 const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
@@ -105,6 +106,7 @@ export default function App() {
   const screenRef = useRef<Screen>('menu')
   const gameOptionsRef = useRef(gameOptions)
   const [adventureIntroOpen, setAdventureIntroOpen] = useState(false)
+  const [roomQrOpen, setRoomQrOpen] = useState(false)
   // Jackbox-style co-play: a Local Play room is always live (its QR is shown on
   // the menu); Twitch chat, when a channel is connected, plays alongside it.
   // chatMode stays 'room' for the whole session — there is no connection switch.
@@ -647,7 +649,7 @@ export default function App() {
         connectionLabel={connectionLabel}
         roomCode={room.code}
         roomPlayerCount={roomPlayers.filter(p => !p.disconnected).length}
-        onShowRoom={() => { roomRef.current.unlockJoins(); setScreen('localplay') }}
+        onShowRoom={() => { roomRef.current.unlockJoins(); setRoomQrOpen(true) }}
         onFreePlay={hubFreePlay}
         onAdventure={hubAdventure}
         onPvp={hubPvp}
@@ -875,6 +877,13 @@ export default function App() {
       {content}
       {toast && <Toast message={toast} />}
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
+      {roomQrOpen && (
+        <RoomQRModal
+          code={room.code}
+          players={roomPlayers}
+          onClose={() => setRoomQrOpen(false)}
+        />
+      )}
       {tutorialOpen && (
         <TutorialModal
           onClose={() => setTutorialOpen(false)}

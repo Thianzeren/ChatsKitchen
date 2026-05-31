@@ -1,0 +1,131 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 60;
+}
+
+.modal {
+  position: relative;
+  background: var(--surface);
+  border: 2px solid var(--accent-secondary);
+  border-radius: 16px;
+  padding: 36px 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.closeBtn:hover { color: var(--text); }
+
+.label {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--accent-secondary);
+}
+
+.qrWrap {
+  width: 280px;
+  height: 280px;
+  border-radius: 10px;
+  background: #f0e5c8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin: 4px 0;
+}
+
+.qr { display: block; }
+
+.placeholder {
+  font-family: 'Space Mono', monospace;
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+.codeLabel {
+  font-family: 'Space Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.code {
+  font-family: 'Lilita One', cursive;
+  font-size: 56px;
+  letter-spacing: 0.14em;
+  color: var(--text);
+  line-height: 1;
+}
+
+.url {
+  font-family: 'Space Mono', monospace;
+  font-size: 20px;
+  color: var(--text-secondary);
+}
+
+.players {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent-secondary);
+  margin-top: 8px;
+}
+
+.playerList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 420px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(66, 160, 94, 0.14);
+  border: 1px solid rgba(66, 160, 94, 0.4);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.chipOffline {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
