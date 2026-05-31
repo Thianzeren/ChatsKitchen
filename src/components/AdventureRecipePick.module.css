@@ -476,3 +476,11 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  margin: 2px 0 6px;
+}

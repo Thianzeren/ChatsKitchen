@@ -1,7 +1,8 @@
 import { useEffect, useState, Fragment } from 'react'
 import { useChoiceVote } from '../hooks/useChoiceVote'
 import { RECIPES } from '../data/recipes'
-import { getRecipeProfile } from '../data/recipeProfile'
+import { getRecipeProfile, orderedTags } from '../data/recipeProfile'
+import ArchetypeChip from './ArchetypeChip'
 import { orderStepsForDisplay } from '../data/recipeSteps'
 import { getAudioManager } from '../audio/AudioManager'
 import styles from './AdventureRecipePick.module.css'
@@ -90,6 +91,12 @@ export default function AdventureRecipePick({ offers, shiftNumber, rosterSize, a
                 <div className={styles.cardKey}>!{absoluteIdx + 1}</div>
                 <div className={styles.cardHero}>{r.emoji}</div>
                 <div className={styles.cardName}>{r.name}</div>
+
+                {profile.tags.length > 0 && (
+                  <div className={styles.tagRow}>
+                    {orderedTags(profile.tags).map(t => <ArchetypeChip key={t} tag={t} />)}
+                  </div>
+                )}
 
                 <div className={styles.statRow}>
                   <div className={styles.statTile}>
