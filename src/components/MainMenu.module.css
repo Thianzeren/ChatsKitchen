@@ -11,7 +11,7 @@
 
 .body {
   display: grid;
-  grid-template-columns: minmax(440px, 520px) 1fr;
+  grid-template-columns: minmax(600px, 660px) 1fr;
   height: 100%;
   overflow: hidden;
 }
@@ -58,8 +58,7 @@
   letter-spacing: 1.2px;
   margin-top: 12px;
   position: relative;
-  max-width: 360px;
-  line-height: 1.5;
+  white-space: nowrap;
 }
 
 /* ── Left column ── */
@@ -79,7 +78,7 @@
   gap: 14px;
   flex: 1;
   justify-content: center;
-  max-width: 380px;
+  max-width: 460px;
 }
 
 /* Play — primary torch-flame, the featured action */
