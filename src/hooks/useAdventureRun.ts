@@ -421,14 +421,16 @@ export function useAdventureRun(
   // ── hydrateAdventureRun: restore from a saved snapshot ─────────────────────
   // Caller is responsible for restoring the lobby roster (owned by useAdventureLobby).
   // This sets up the run state, dispatches RESET so the GameState matches the
-  // briefing, and navigates to the briefing screen.
+  // briefing, and lands on the lobby (Manage the Crew) so players can re-join
+  // before resuming. The lobby's "RESUME · SHIFT N" button then proceeds to the
+  // briefing via resumeAdventureRun.
   const hydrateAdventureRun = useCallback((saved: SavedAdventureRun) => {
     setAdventureRun(saved.run)
     setIsNewBestAdventureRun(false)
     dispatch(buildShiftReset(saved.run, saved.run.currentBoss))
     setActiveEventOptions(pickEventOptions(saved.run.currentShift, saved.run.currentBoss?.id))
     activeGameOptionsRef.current = null
-    setScreen('adventurebriefing')
+    setScreen('adventurelobby')
   }, [dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef])
 
   // ── resumeAdventureRun: re-enter the briefing after lobby management ───────

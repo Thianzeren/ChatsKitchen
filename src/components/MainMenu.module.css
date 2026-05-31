@@ -11,12 +11,12 @@
 
 .body {
   display: grid;
-  grid-template-columns: 580px 1fr;
+  grid-template-columns: minmax(600px, 660px) 1fr;
   height: 100%;
   overflow: hidden;
 }
 
-/* ── Banner (inside left column) ── */
+/* ── Banner ── */
 
 .banner {
   position: relative;
@@ -51,171 +51,122 @@
 
 .bannerTagline {
   font-family: 'Space Mono', monospace;
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 400;
   color: #c4a020;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  margin-top: 10px;
+  letter-spacing: 1px;
+  margin-top: 14px;
   position: relative;
   white-space: nowrap;
 }
 
+/* ── Left column ── */
+
 .leftCol {
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  padding: 40px 48px;
+  padding: 48px 48px;
   border-right: 1px solid var(--border);
-  overflow-y: auto;
-  min-height: 0;
-}
-
-.rightCol {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 36px 48px 36px 36px;
   overflow: hidden;
   min-height: 0;
 }
 
-.divider {
-  height: 1px;
-  background: var(--border);
-  flex-shrink: 0;
-}
-
-/* ── Left panel — How to play ── */
-
-.sectionLabel {
-  font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-
-.steps {
+.menuButtons {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.step {
-  display: flex;
   gap: 14px;
-  align-items: flex-start;
+  flex: 1;
+  justify-content: center;
+  max-width: 460px;
 }
 
-.stepNum {
-  background: #d87428;
-  color: #f5ead8;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
+/* Play — primary torch-flame, the featured action */
+.playBtn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  margin-top: 2px;
-  flex-shrink: 0;
+  justify-content: space-between;
+  background: var(--accent);
+  border: none;
+  border-radius: 12px;
+  padding: 24px 32px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--accent-deep);
+  transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
 }
 
-.stepContent {
-  flex: 1;
+.playBtn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
 }
 
-.stepTitle {
+.playBtn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--accent-deep);
+}
+
+.playLabel {
   font-family: 'Fredoka', sans-serif;
-  font-size: 20px;
+  font-size: 40px;
   font-weight: 700;
   color: var(--text);
+  line-height: 1;
+  letter-spacing: -0.5px;
 }
 
-.stepDesc {
-  font-family: 'Space Mono', monospace;
-  font-size: 18px;
-  color: var(--text-muted);
-  margin-top: 3px;
+.playArrow {
+  font-size: 28px;
+  color: rgba(245, 234, 216, 0.55);
 }
 
-/* ── Cheatsheet ── */
-
-.cheatsheet {
-  background: #141210;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 12px 14px;
-  margin-top: 10px;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 5px 16px;
-  align-items: baseline;
-}
-
-.csSection {
-  font-family: 'Space Mono', monospace;
-  font-size: 18px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-faint);
-  grid-column: 1 / -1;
-  margin-bottom: 2px;
-}
-
-.csCmd {
-  font-family: 'Space Mono', monospace;
-  font-size: 18px;
+/* Secondary ghost buttons */
+.menuBtn {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 26px;
+  text-align: left;
+  cursor: pointer;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 26px;
   font-weight: 700;
-  color: #c4a020;
-}
-
-.csDesc {
-  font-family: 'Space Mono', monospace;
-  font-size: 18px;
-  color: var(--text-muted);
-}
-
-.csDivider {
-  height: 1px;
-  background: #2b2520;
-  grid-column: 1 / -1;
-  margin: 4px 0;
-}
-
-/* ── Left panel — Streamer section ── */
-
-.streamerSection {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.streamerDesc {
-  font-family: 'Space Mono', monospace;
-  font-size: 18px;
-  color: var(--text-muted);
-  margin: 0;
-  line-height: 1.5;
-}
-
-.streamerDesc strong {
   color: var(--text-secondary);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 
-/* ── Left panel — footer ── */
+.menuBtn:hover {
+  border-color: #5a5248;
+  color: var(--text-dim);
+  background: var(--surface-2);
+}
 
 .leftFooter {
   font-family: 'Space Mono', monospace;
   font-size: 18px;
   color: var(--text-faint);
-  margin-top: auto;
+  flex-shrink: 0;
+}
+
+/* ── Right column ── */
+
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 48px 48px;
+  overflow-y: auto;
+  min-height: 0;
+  justify-content: center;
+}
+
+.joinHeading {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 /* ── Twitch card ── */
@@ -224,10 +175,10 @@
   background: #1a1228;
   border: 1.5px solid #9146ff;
   border-radius: 12px;
-  padding: 14px 18px;
+  padding: 18px 22px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   flex-shrink: 0;
 }
 
@@ -243,7 +194,7 @@
 
 .twitchLabel {
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 700;
   color: #9146ff;
   letter-spacing: 0.5px;
@@ -259,88 +210,67 @@
   background: #2a1f3d;
   border: 1.5px solid #9146ff;
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   color: #fff;
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: 24px;
   outline: none;
 }
 
-.twitchInput:focus {
-  border-color: #bf94ff;
-}
-
-.twitchInput:disabled {
-  opacity: 0.6;
-}
+.twitchInput:focus { border-color: #bf94ff; }
+.twitchInput:disabled { opacity: 0.6; }
 
 .twitchConnectBtn {
   background: #9146ff;
   border: none;
   border-radius: 8px;
-  padding: 10px 22px;
+  padding: 12px 26px;
   color: #fff;
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 700;
   cursor: pointer;
   transition: filter 0.15s;
   white-space: nowrap;
 }
 
-.twitchConnectBtn:hover:not(:disabled) {
-  filter: brightness(1.15);
-}
-
-.twitchConnectBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+.twitchConnectBtn:hover:not(:disabled) { filter: brightness(1.15); }
+.twitchConnectBtn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .twitchDisconnectBtn {
   background: #3d2e55;
   border: 1.5px solid #9146ff;
   border-radius: 8px;
-  padding: 10px 18px;
+  padding: 12px 20px;
   color: #bf94ff;
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 700;
   cursor: pointer;
   transition: filter 0.15s;
   white-space: nowrap;
 }
 
-.twitchDisconnectBtn:hover {
-  filter: brightness(1.15);
-}
+.twitchDisconnectBtn:hover { filter: brightness(1.15); }
 
 .twitchStatus {
   display: flex;
   align-items: center;
   gap: 6px;
   font-family: 'Fredoka', sans-serif;
-  font-size: 18px;
+  font-size: 22px;
   color: var(--text-secondary);
 }
 
-.twitchStatusWarning {
-  color: #d8b07c;
-}
+.twitchStatusWarning { color: #d8b07c; }
 
 .twitchDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #5cb85c;
-  flex-shrink: 0;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #5cb85c; flex-shrink: 0;
   animation: twitchPulse 1.5s infinite;
 }
 
-.twitchDotWarning {
-  background: #d94f4f;
-  animation: twitchPulse 1.5s infinite;
-}
+.twitchDotWarning { background: #d94f4f; animation: twitchPulse 1.5s infinite; }
 
 @keyframes twitchPulse {
   0%, 100% { opacity: 1; }
@@ -352,344 +282,130 @@
   align-items: center;
   gap: 6px;
   font-family: 'Fredoka', sans-serif;
-  font-size: 16px;
-  color: #d94f4f;
+  font-size: 20px;
+  color: var(--text-muted);
 }
 
 .twitchDotDisconnected {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #d94f4f;
-  flex-shrink: 0;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--text-muted); flex-shrink: 0;
   animation: twitchPulse 2s ease-in-out infinite;
 }
 
-.twitchChannel {
-  color: #9146ff;
-  font-weight: 700;
-  font-size: 18px;
-}
+.twitchChannel { color: #9146ff; font-weight: 700; }
 
-/* ── Game modes ── */
+/* ── Local Play card ── */
 
-.modes {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  flex: 1;
-  min-height: 0;
-}
-
-.modePlayRow {
-  display: flex;
-  gap: 10px;
-  flex: 1.6;
-  min-height: 0;
-}
-
-/* Free Play — featured */
-.modeFreePlay {
-  background: #d87428;
-  border: none;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32px;
-  cursor: pointer;
-  transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
-  flex: 1;
-  min-height: 0;
-  box-shadow: 0 4px 0 #8e4e18;
-  text-align: left;
-}
-
-.modeFreePlay:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
-}
-
-.modeFreePlay:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #8e4e18;
-}
-
-.fpName {
-  font-family: 'Fredoka', sans-serif;
-  font-size: 42px;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: -0.5px;
-  line-height: 1;
-}
-
-.fpDesc {
-  font-family: 'Space Mono', monospace;
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.6);
-  margin-top: 6px;
-}
-
-.fpArrow {
-  font-size: 36px;
-  color: rgba(255, 255, 255, 0.4);
-  flex-shrink: 0;
-}
-
-/* Local Play button */
-.modeLocalPlay {
+.localCard {
   background: var(--surface);
-  border: 2px solid #c4a020;
+  border: 1.5px solid var(--accent-secondary);
   border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  cursor: pointer;
-  transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
-  flex: 1;
-  min-height: 0;
-  box-shadow: 0 4px 0 rgba(196, 160, 32, 0.4);
-  text-align: left;
-}
-
-.modeLocalPlay:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
-}
-
-.modeLocalPlay:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 rgba(196, 160, 32, 0.4);
-}
-
-.lpName {
-  font-family: 'Fredoka', sans-serif;
-  font-size: 30px;
-  font-weight: 700;
-  color: #c4a020;
-  line-height: 1;
-}
-
-.lpDesc {
-  font-family: 'Space Mono', monospace;
-  font-size: 15px;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-.lpArrow {
-  font-size: 28px;
-  color: rgba(196, 160, 32, 0.4);
-  flex-shrink: 0;
-}
-
-/* Adventures */
-.modeAdventures {
-  background: #4e3a8a;
-  border: none;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 28px;
-  cursor: pointer;
-  transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
-  flex: 1;
-  min-height: 0;
-  box-shadow: 0 4px 0 #321e5e;
-  text-align: left;
-}
-
-.modeAdventures:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
-}
-
-.modeAdventures:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #321e5e;
-}
-
-/* PvP */
-.modePvp {
-  background: linear-gradient(135deg, rgba(192,56,48,0.25) 0%, rgba(120,88,204,0.25) 100%);
-  border: 1px solid rgba(192,56,48,0.45);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 28px;
-  cursor: pointer;
-  transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
-  flex: 1;
-  min-height: 0;
-  box-shadow: 0 4px 0 #321e5e;
-  text-align: left;
-}
-
-.modePvp:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
-}
-
-.modePvp:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #321e5e;
-}
-
-.lvName {
-  font-family: 'Fredoka', sans-serif;
-  font-size: 30px;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1;
-}
-
-.lvDesc {
-  font-family: 'Space Mono', monospace;
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 4px;
-}
-
-.lvArrow {
-  font-size: 28px;
-  color: rgba(255, 255, 255, 0.3);
-  flex-shrink: 0;
-}
-
-/* Adventure + PvP side-by-side */
-.modeRow {
-  display: flex;
-  gap: 10px;
-  flex: 1;
-  min-height: 0;
-}
-
-/* Resume Adventure pill (shown when a saved run exists) */
-.resumeRunPill {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  border: 2px solid rgba(196, 160, 32, 0.55);
-  background: linear-gradient(135deg, rgba(196, 160, 32, 0.14) 0%, rgba(216, 116, 40, 0.10) 100%);
-  border-radius: 12px;
-  padding: 12px 18px;
-  cursor: pointer;
-  transition: transform 0.12s, filter 0.12s, box-shadow 0.15s, border-color 0.15s;
-  text-align: left;
-  font: inherit;
-  color: inherit;
-  flex-shrink: 0;
-}
-
-.resumeRunPill:hover {
-  transform: translateX(2px);
-  filter: brightness(1.12);
-  border-color: rgba(196, 160, 32, 0.8);
-  box-shadow: 0 4px 16px rgba(196, 160, 32, 0.22);
-}
-
-.resumeRunIcon {
-  font-size: 28px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.resumeRunBody {
-  flex: 1;
+  padding: 18px 22px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.localLabel {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent-secondary);
+  letter-spacing: 0.5px;
+}
+
+.localBody {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.localQrWrap {
+  width: 180px;
+  height: 180px;
+  border-radius: 8px;
+  background: #f0e5c8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.localQr { display: block; }
+
+.localQrPlaceholder {
+  font-family: 'Space Mono', monospace;
+  font-size: 18px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.localInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   min-width: 0;
 }
 
-.resumeRunLabel {
-  font-family: 'Lilita One', cursive;
-  font-size: 22px;
-  color: #c4a020;
-}
-
-.resumeRunMeta {
-  font-family: 'Fredoka', sans-serif;
+.localCodeLabel {
+  font-family: 'Space Mono', monospace;
   font-size: 16px;
-  color: var(--text-secondary);
-}
-
-.resumeRunArrow {
-  font-family: 'Lilita One', cursive;
-  font-size: 24px;
-  color: #c4a020;
-  flex-shrink: 0;
-}
-
-/* Tutorial + Options row */
-.modeBottomRow {
-  display: flex;
-  gap: 10px;
-  flex: 0 0 64px;
-}
-
-.modeTutorial {
-  background: #c4a020;
-  border: none;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex: 1;
-  transition: filter 0.15s;
-  font-family: 'Fredoka', sans-serif;
-  font-size: 22px;
   font-weight: 700;
-  color: #1a1512;
-}
-
-.modeTutorial:hover {
-  filter: brightness(1.07);
-}
-
-.modeHowToPlay {
-  background: transparent;
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex: 1;
-  transition: border-color 0.15s, color 0.15s;
-  font-family: 'Fredoka', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
+  letter-spacing: 1px;
   color: var(--text-muted);
 }
 
-.modeHowToPlay:hover {
-  border-color: #524538;
-  color: var(--text-secondary);
+.localCode {
+  font-family: 'Lilita One', cursive;
+  font-size: 52px;
+  letter-spacing: 0.14em;
+  color: var(--text);
+  line-height: 1;
 }
 
-.modeOptions {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex: 1;
-  transition: border-color 0.15s;
+.localUrl {
+  font-family: 'Space Mono', monospace;
+  font-size: 20px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.localPlayers {
   font-family: 'Fredoka', sans-serif;
   font-size: 22px;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: var(--accent-secondary);
+  margin-top: 10px;
 }
 
-.modeOptions:hover {
-  border-color: #5a5248;
+.localPlayerList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.localPlayerChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(66, 160, 94, 0.14);
+  border: 1px solid rgba(66, 160, 94, 0.4);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.localPlayerChipOffline {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-muted);
 }

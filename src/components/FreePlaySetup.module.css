@@ -43,7 +43,7 @@
   flex: 1;
   font-family: 'Lilita One', cursive;
   font-size: 28px;
-  color: var(--accent);
+  color: var(--text);
   margin: 0;
 }
 

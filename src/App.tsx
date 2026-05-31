@@ -6,13 +6,15 @@ import { useAdventureRun, loadSavedAdventureRun, SavedAdventureRun } from './hoo
 import { useGameSession } from './hooks/useGameSession'
 import { gameReducer, createInitialState } from './state/gameReducer'
 import { parseCommand } from './state/commandProcessor'
-import { AudioSettings, GameOptions, Screen, TutorialDestination, ActiveEventOptions, toActiveEventOptions } from './state/types'
+import { AudioSettings, GameOptions, Screen, ActiveEventOptions, toActiveEventOptions } from './state/types'
 import { computeStarThresholds } from './data/starThresholds'
 import { useGameLoop } from './hooks/useGameLoop'
 import { useBotSimulation } from './hooks/useBotSimulation'
 import { useTwitchChat } from './hooks/useTwitchChat'
 import { useRoomHost } from './hooks/useRoomHost'
-import { gameStateToSnapshot } from './state/snapshot'
+import { gameStateToSnapshot, pvpLobbySnapshot, pvpLobbyPerPlayer } from './state/snapshot'
+import { classifyRoomCommand } from './state/roomCommandRouting'
+import { connectedNicknames, unassignedPool } from './state/roomRoster'
 import { useGameAudio } from './audio/useGameAudio'
 import { useViewportScale } from './hooks/useViewportScale'
 import MainMenu from './components/MainMenu'
@@ -30,8 +32,6 @@ import AdventurePantryShop from './components/AdventurePantryShop'
 import AdventureRunEnd from './components/AdventureRunEnd'
 import AdventureShiftPassed from './components/AdventureShiftPassed'
 import TutorialModal from './components/TutorialModal'
-import TutorialPrompt from './components/TutorialPrompt'
-import NoTwitchPrompt from './components/NoTwitchPrompt'
 import { TUTORIAL_STEPS } from './data/tutorialData'
 import FeedbackModal from './components/FeedbackModal'
 import { useKitchenEvents } from './hooks/useKitchenEvents'
@@ -41,7 +41,8 @@ import PlaysetPicker from './components/PlaysetPicker'
 import { DIFFICULTY_PRESETS, type Playset, type Difficulty } from './data/playsets'
 import { mergePlayerStats, ADVENTURE_TOTAL_SHIFTS } from './data/adventureMode'
 import GameplayScreen from './components/GameplayScreen'
-import LocalPlayScreen from './components/LocalPlayScreen'
+import ModeHub from './components/ModeHub'
+import RoomQRModal from './components/RoomQRModal'
 import { DEFAULT_GAME_OPTIONS } from './state/defaultOptions'
 
 const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
@@ -103,10 +104,12 @@ export default function App() {
   const [autoRestartSignal, setAutoRestartSignal] = useState(0)
   const screenRef = useRef<Screen>('menu')
   const gameOptionsRef = useRef(gameOptions)
-  const [showNoTwitchPrompt, setShowNoTwitchPrompt] = useState(false)
   const [adventureIntroOpen, setAdventureIntroOpen] = useState(false)
-  const pendingActionRef = useRef<(() => void) | null>(null)
-  const [chatMode, setChatMode] = useState<'local' | 'twitch' | 'room'>('local')
+  const [roomQrOpen, setRoomQrOpen] = useState(false)
+  // Jackbox-style co-play: a Local Play room is always live (its QR is shown on
+  // the menu); Twitch chat, when a channel is connected, plays alongside it.
+  // chatMode stays 'room' for the whole session — there is no connection switch.
+  const [chatMode] = useState<'local' | 'twitch' | 'room'>('room')
   const [roomPlayers, setRoomPlayers] = useState<Array<{ id: string; nickname: string; disconnected?: boolean }>>([])
   const chatModeRef = useRef(chatMode)
   chatModeRef.current = chatMode
@@ -162,11 +165,10 @@ export default function App() {
   const tutorial = useTutorialState(dispatch, setScreen, setActiveEventOptions, activeGameOptionsRef, setChatOpen)
   const {
     tutorialStep, setTutorialStep, tutorialResetKey, tutorialEvent, tutorialEventResolved,
-    tutorialOpen, setTutorialOpen, showTutorialPrompt, setShowTutorialPrompt,
-    tutorialDestination, setTutorialDestination, hideTutorialPrompt, isTutorial,
+    tutorialOpen, setTutorialOpen, isTutorial,
     startTutorial, handleTutorialNext, handleTutorialBack,
     handleTutorialComplete, handleTutorialRepeat, handleTutorialEventCommand,
-    handleMenuTutorial, tutorialGameOver, persistHideTutorialPrompt, resetTutorial,
+    tutorialGameOver, resetTutorial,
   } = tutorial
 
   const startFreePlay = useCallback((replay = false) => {
@@ -198,13 +200,6 @@ export default function App() {
     if (chatModeRef.current === 'room') roomRef.current.lockJoins()
     setScreen('countdown')
   }, [gameOptions, pvpLobbyRef, setAdventureRun, setStarThresholds])
-
-  const handleLocalPlay = useCallback(() => {
-    setChatMode('room')
-    setRoomPlayers([])
-    roomRef.current.unlockJoins()
-    setScreen('localplay')
-  }, [])
 
   const startFromPlayset = useCallback((playset: Playset, difficulty: Difficulty) => {
     const preset = DIFFICULTY_PRESETS[difficulty]
@@ -245,43 +240,6 @@ export default function App() {
 
 
 
-  const checkTwitch = useCallback((action: () => void) => {
-    if (!twitchChannel) {
-      pendingActionRef.current = action
-      setShowNoTwitchPrompt(true)
-      return
-    }
-    action()
-  }, [twitchChannel])
-
-  const confirmNoTwitch = useCallback(() => {
-    setShowNoTwitchPrompt(false)
-    const action = pendingActionRef.current
-    pendingActionRef.current = null
-    action?.()
-  }, [])
-
-  const cancelNoTwitch = useCallback(() => {
-    setShowNoTwitchPrompt(false)
-    pendingActionRef.current = null
-  }, [])
-
-  const continueFromTutorial = useCallback((destination: TutorialDestination) => {
-    if (destination === 'playsetpicker') {
-      checkTwitch(() => setScreen('playsetpicker'))
-      return
-    }
-    if (destination === 'freeplaysetup') {
-      checkTwitch(() => setScreen('freeplaysetup'))
-      return
-    }
-    setScreen('menu')
-  }, [checkTwitch])
-
-  const handleMenuAdventure = useCallback(() => {
-    checkTwitch(openAdventureLobby)
-  }, [checkTwitch, openAdventureLobby])
-
   // !start from the lobby (or the on-screen Start button) either starts a new
   // run (opening recipe draft) or resumes an existing one if the host had stepped
   // back to the lobby mid-run via the briefing's "Manage Lobby" button.
@@ -315,34 +273,10 @@ export default function App() {
     openAdventureLobby()
   }, [openAdventureLobby, setAdventureRun])
 
-  const handleMenuPvp = useCallback(() => {
-    checkTwitch(startPvp)
-  }, [checkTwitch, startPvp])
-
-  const dismissTutorialPrompt = useCallback(() => {
-    setShowTutorialPrompt(false)
-    continueFromTutorial(tutorialDestination)
-  }, [continueFromTutorial, tutorialDestination, setShowTutorialPrompt])
-
-  const disableTutorialPrompt = useCallback(() => {
-    persistHideTutorialPrompt(true)
-    setShowTutorialPrompt(false)
-    continueFromTutorial(tutorialDestination)
-  }, [continueFromTutorial, tutorialDestination, persistHideTutorialPrompt, setShowTutorialPrompt])
-
-  const handleMenuPlay = useCallback((destination: TutorialDestination) => {
-    if (!hideTutorialPrompt) {
-      setTutorialDestination(destination)
-      setShowTutorialPrompt(true)
-      return
-    }
-    continueFromTutorial(destination)
-  }, [continueFromTutorial, hideTutorialPrompt, setTutorialDestination, setShowTutorialPrompt])
-
   const handleTutorialStartCooking = useCallback(() => {
     setTutorialOpen(false)
-    continueFromTutorial(tutorialDestination)
-  }, [continueFromTutorial, tutorialDestination, setTutorialOpen])
+    setScreen('menu')
+  }, [setTutorialOpen])
 
   const handleCommand = useCallback((user: string, text: string) => {
     if (pausedRef.current) return
@@ -455,8 +389,9 @@ export default function App() {
 
   const handleTwitchMessage = useCallback((user: string, text: string, isMod: boolean) => {
     dispatch({ type: 'ADD_CHAT', username: user, text, msgType: 'normal' })
-    // In Local Play (room mode) Twitch chat is view-only — messages are logged but don't drive the game
-    if (chatModeRef.current === 'room') return
+    // Co-play: when a Twitch channel is connected, chat plays alongside the
+    // always-on Local Play room. Twitch messages drive the game through the same
+    // lobby/vote/game routing as room players.
     // PvP lobby: intercept !red / !blue / !join / !leave and lobby mod commands
     if (screenRef.current === 'pvplobby') {
       if (handleLobbyJoin(user, text.trim().toLowerCase())) return
@@ -500,6 +435,15 @@ export default function App() {
     // Room player commands bypass handleTwitchMessage so they always drive the game in Local Play
     onPlayerCommand: (nickname, command) => {
       dispatch({ type: 'ADD_CHAT', username: nickname, text: command, msgType: 'normal' })
+      const target = classifyRoomCommand(screenRef.current)
+      if (target === 'pvpLobby') {
+        if (handleLobbyJoin(nickname, command.trim().toLowerCase())) return
+      } else if (target === 'adventureLobby') {
+        if (handleAdventureLobbyJoin(nickname, command.trim().toLowerCase())) return
+        if (handleAdventureLobbyMetaCommand(nickname, command, false) !== false) return
+      } else if (target === 'adventureVote') {
+        if (adventureVoteRef.current?.(nickname, command)) return
+      }
       handleEventCommand(nickname, command)
       handleTutorialEventCommand(command)
       handleMetaCommand(nickname, command, false)
@@ -515,6 +459,15 @@ export default function App() {
   })
   const roomRef = useRef(room)
   roomRef.current = room
+
+  // Menu "Play" → mode hub. The room is already live (always-on), so there is
+  // no connection step; players join via QR or Twitch from the menu.
+  const goToHub = useCallback(() => setScreen('modehub'), [])
+
+  // Mode hub buttons
+  const hubFreePlay  = useCallback(() => setScreen('playsetpicker'), [])
+  const hubAdventure = useCallback(() => openAdventureLobby(), [openAdventureLobby])
+  const hubPvp       = useCallback(() => startPvp(), [startPvp])
 
   const handleChatSend = useCallback((text: string) => {
     dispatch({ type: 'ADD_CHAT', username: 'You', text, msgType: 'normal' })
@@ -620,6 +573,14 @@ export default function App() {
     if (chatMode !== 'room') return
     const interval = setInterval(() => {
       const currentScreen = screenRef.current
+      if (currentScreen === 'pvplobby') {
+        // Always re-send (team assignments change without GameState changing).
+        roomRef.current.sendSnapshot(
+          pvpLobbySnapshot(),
+          pvpLobbyPerPlayer(roomPlayersRef.current, pvpLobbyRef.current?.red ?? [], pvpLobbyRef.current?.blue ?? []),
+        )
+        return
+      }
       const phase: 'lobby' | 'playing' | 'gameover' =
         currentScreen === 'playing' ? 'playing'
         : (currentScreen === 'shiftend' || currentScreen === 'gameover') ? 'gameover'
@@ -631,11 +592,24 @@ export default function App() {
       roomRef.current.sendSnapshot(gameStateToSnapshot(s, phase))
     }, 300)
     return () => clearInterval(interval)
-  }, [chatMode])
+  }, [chatMode, pvpLobbyRef])
 
   useEffect(() => {
     if (chatMode !== 'room') setRoomPlayers([])
   }, [chatMode])
+
+  // In Local Play, the connected room roster IS the Adventure roster.
+  // Mirror room players into the adventure lobby whenever it is active.
+  useEffect(() => {
+    if (chatMode !== 'room') return
+    if (adventureLobby == null) return // adventure not active
+    const connected = connectedNicknames(roomPlayers)
+    // Preserve 'You' (the host) if present, then append connected room players.
+    const next = ['You', ...connected.filter(n => n !== 'You')]
+    const sameLength = adventureLobby.length === next.length
+    const same = sameLength && adventureLobby.every((u, i) => u === next[i])
+    if (!same) setAdventureLobby(next)
+  }, [chatMode, roomPlayers, adventureLobby, setAdventureLobby])
 
   const isPlaying = screen === 'playing'
   useGameLoop(state, dispatch, isPlaying ? (isTutorial ? tutorialGameOver : handleGameOver) : undefined, paused, tutorialResetKey)
@@ -653,41 +627,45 @@ export default function App() {
   if (screen === 'menu') {
     content = (
       <MainMenu
-        onPlay={() => handleMenuPlay('playsetpicker')}
-        onPvp={handleMenuPvp}
-        onAdventure={handleMenuAdventure}
+        onPlay={goToHub}
+        onTutorial={startTutorial}
         onOptions={() => setScreen('options')}
         onFeedback={() => setShowFeedback(true)}
         onCredits={() => setScreen('credits')}
-        onTutorial={handleMenuTutorial}
-        onStartTutorial={startTutorial}
-        onLocalPlay={handleLocalPlay}
-        savedRunPreview={savedRunPreview ? {
-          shift: savedRunPreview.run.currentShift,
-          totalShifts: ADVENTURE_TOTAL_SHIFTS,
-        } : null}
-        onResumeSavedRun={handleResumeSavedRun}
         twitchChannel={twitchChannel}
         twitchStatus={twitchChat.status}
         twitchError={twitchChat.error}
-        onTwitchConnect={(ch) => { setTwitchChannel(ch); setChatMode('twitch') }}
-        onTwitchDisconnect={() => { setTwitchChannel(null); setChatMode('local') }}
+        onTwitchConnect={(ch) => setTwitchChannel(ch)}
+        onTwitchDisconnect={() => setTwitchChannel(null)}
+        roomCode={room.code}
+        roomPlayers={roomPlayers}
       />
     )
-  } else if (screen === 'localplay') {
+  } else if (screen === 'modehub') {
+    const connectionLabel = twitchChannel ? `Twitch · ${twitchChannel}` : 'Local Play'
     content = (
-      <LocalPlayScreen
-        code={room.code}
-        players={roomPlayers}
-        onBack={() => { roomRef.current.closeRoom(); setChatMode('local'); setScreen('menu') }}
-        onStart={() => setScreen('playsetpicker')}
+      <ModeHub
+        connectionLabel={connectionLabel}
+        roomCode={room.code}
+        roomPlayerCount={roomPlayers.filter(p => !p.disconnected).length}
+        onShowRoom={() => { roomRef.current.unlockJoins(); setRoomQrOpen(true) }}
+        onFreePlay={hubFreePlay}
+        onAdventure={hubAdventure}
+        onPvp={hubPvp}
+        savedRunPreview={savedRunPreview ? { shift: savedRunPreview.run.currentShift, totalShifts: ADVENTURE_TOTAL_SHIFTS } : null}
+        onResumeSavedRun={handleResumeSavedRun}
+        onBack={() => setScreen('menu')}
       />
     )
   } else if (screen === 'pvplobby') {
+    const pool = chatMode === 'room'
+      ? unassignedPool(roomPlayers, pvpLobby?.red ?? [], pvpLobby?.blue ?? [])
+      : []
     content = (
       <PvPLobby
         red={pvpLobby?.red ?? []}
         blue={pvpLobby?.blue ?? []}
+        unassigned={pool}
         onMovePlayer={(username, team) => setPvpLobby(prev => {
           if (!prev) return prev
           const other: 'red' | 'blue' = team === 'red' ? 'blue' : 'red'
@@ -706,7 +684,7 @@ export default function App() {
           }
         })}
         onClear={() => setPvpLobby(prev => prev ? { red: [], blue: [] } : prev)}
-        onBack={() => { setPvpLobby(null); setScreen('menu') }}
+        onBack={() => { setPvpLobby(null); setScreen('modehub') }}
         onNext={startPvpGame}
       />
     )
@@ -719,7 +697,7 @@ export default function App() {
         onStart={handleAdventureLobbyStart}
         onBack={adventureRun
           ? () => setScreen('adventurebriefing')
-          : () => { clearAdventureLobby(); setScreen('menu') }}
+          : () => { clearAdventureLobby(); setScreen('modehub') }}
         onShowIntro={() => setAdventureIntroOpen(true)}
         activeShift={adventureRun?.currentShift}
         twitchStatus={twitchChat.status}
@@ -769,7 +747,7 @@ export default function App() {
           }
           setScreen('freeplaysetup')
         }}
-        onBack={() => setScreen(chatMode === 'room' ? 'localplay' : 'menu')}
+        onBack={() => setScreen('modehub')}
       />
     )
   } else if (screen === 'freeplaysetup') {
@@ -813,7 +791,7 @@ export default function App() {
         onNextLevel={undefined}
         onMenu={() => { setPvpLobby(null); setScreen('menu') }}
         onChangePlayset={!adventureRun ? () => setScreen('playsetpicker') : undefined}
-        onOpenLobby={chatMode === 'room' && !adventureRun ? () => { roomRef.current.unlockJoins(); setScreen('localplay') } : undefined}
+        onOpenLobby={chatMode === 'room' && !adventureRun ? () => { roomRef.current.unlockJoins(); setRoomQrOpen(true) } : undefined}
         onPvpLobby={finalStats.redMoney !== undefined ? () => setScreen('pvplobby') : undefined}
         onSetAutoRestart={(enabled) => handleGameOptionsChange({ ...gameOptionsRef.current, autoRestart: enabled })}
       />
@@ -874,7 +852,6 @@ export default function App() {
         onAudioChange={handleAudioChange}
         onExit={() => { setPaused(false); setTutorialStep(null); setScreen('menu') }}
         onPlaysetPicker={!adventureRun && !isTutorial ? () => { setPaused(false); setScreen('playsetpicker') } : undefined}
-        onOpenLobby={chatMode === 'room' && !isTutorial ? () => { setPaused(false); roomRef.current.unlockJoins(); setScreen('localplay') } : undefined}
         onTutorialNext={handleTutorialNext}
         onTutorialBack={handleTutorialBack}
         onTutorialSkip={handleTutorialComplete}
@@ -889,17 +866,11 @@ export default function App() {
       {content}
       {toast && <Toast message={toast} />}
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
-      {showTutorialPrompt && screen === 'menu' && !tutorialOpen && (
-        <TutorialPrompt
-          onStartTutorial={startTutorial}
-          onNo={dismissTutorialPrompt}
-          onDontShowAgain={disableTutorialPrompt}
-        />
-      )}
-      {showNoTwitchPrompt && screen === 'menu' && !tutorialOpen && !showTutorialPrompt && (
-        <NoTwitchPrompt
-          onContinue={confirmNoTwitch}
-          onBack={cancelNoTwitch}
+      {roomQrOpen && (
+        <RoomQRModal
+          code={room.code}
+          players={roomPlayers}
+          onClose={() => setRoomQrOpen(false)}
         />
       )}
       {tutorialOpen && (

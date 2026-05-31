@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { SharedSnapshot } from '../shared/protocol'
 import styles from './Lobby.module.css'
 
@@ -6,13 +6,18 @@ interface Props {
   nickname: string
   stage: string
   snapshot: SharedSnapshot | null
+  assignedTeam?: 'red' | 'blue' | null
   send: (cmd: string) => void
   connected: boolean
   onExit: () => void
 }
 
-export default function Lobby({ nickname, stage, snapshot, send, connected, onExit }: Props) {
-  const [team, setTeam] = useState<'red' | 'blue' | null>(null)
+export default function Lobby({ nickname, stage, snapshot, assignedTeam, send, connected, onExit }: Props) {
+  const [team, setTeam] = useState<'red' | 'blue' | null>(assignedTeam ?? null)
+  // Only re-sync when the host-assigned team changes — deliberately excludes `team`
+  // so an optimistic tap isn't immediately clobbered before the snapshot catches up.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (assignedTeam && assignedTeam !== team) setTeam(assignedTeam) }, [assignedTeam])
   const isPvP = snapshot?.teamMoney !== undefined
 
   if (stage === 'gameover' && snapshot) {

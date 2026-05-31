@@ -4,6 +4,7 @@ import styles from './PvPLobby.module.css'
 interface Props {
   red: string[]
   blue: string[]
+  unassigned: string[]
   onMovePlayer: (username: string, team: 'red' | 'blue') => void
   onKick: (username: string) => void
   onBalance: () => void
@@ -12,7 +13,7 @@ interface Props {
   onNext: () => void
 }
 
-export default function PvPLobby({ red, blue, onMovePlayer, onKick, onBalance, onClear, onBack, onNext }: Props) {
+export default function PvPLobby({ red, blue, unassigned, onMovePlayer, onKick, onBalance, onClear, onBack, onNext }: Props) {
   const [dragUser, setDragUser] = useState<string | null>(null)
   const [dragOverTeam, setDragOverTeam] = useState<'red' | 'blue' | null>(null)
 
@@ -104,7 +105,7 @@ export default function PvPLobby({ red, blue, onMovePlayer, onKick, onBalance, o
         <div className={styles.leftColScroll}>
           <div className={styles.title}>⚔️ PvP Lobby</div>
           <div className={styles.hint}>
-            Type <strong>!red</strong>, <strong>!blue</strong>, or <strong>!join</strong> in chat to join a team
+            Phones can pick a team, or drag players below onto a team
           </div>
 
           <div className={styles.divider} />
@@ -147,6 +148,22 @@ export default function PvPLobby({ red, blue, onMovePlayer, onKick, onBalance, o
 
       {/* ── RIGHT PANEL ── */}
       <div className={styles.rightCol}>
+        {unassigned.length > 0 && (
+          <div className={styles.pool}>
+            <div className={styles.poolLabel}>Unassigned ({unassigned.length}) — drag onto a team</div>
+            <div className={styles.poolList}>
+              {unassigned.map(p => (
+                <div
+                  key={p}
+                  draggable
+                  className={`${styles.poolMember} ${dragUser === p ? styles.memberDragging : ''}`}
+                  onDragStart={() => handleDragStart(p)}
+                  onDragEnd={handleDragEnd}
+                >{p}</div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className={styles.rosters}>
           {renderTeam('red', red)}
           <div className={styles.vs}>VS</div>

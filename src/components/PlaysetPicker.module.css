@@ -19,27 +19,27 @@
 }
 
 .backBtn {
-  border: none;
+  background: transparent;
+  border: 1.5px solid var(--border);
   border-radius: 10px;
-  padding: 8px 20px;
+  padding: 8px 18px;
   font-family: 'Fredoka', sans-serif;
   font-size: var(--base-fs);
   font-weight: 700;
-  background: var(--ps-accent);
-  color: #f5ead8;
+  color: var(--text-muted);
   cursor: pointer;
-  transition: transform 0.1s, filter 0.1s;
+  transition: border-color 0.15s, color 0.15s;
 }
 
 .backBtn:hover {
-  transform: scale(1.03);
-  filter: brightness(1.15);
+  border-color: #5a5248;
+  color: var(--text-secondary);
 }
 
 .title {
   font-family: 'Lilita One', cursive;
   font-size: 32px;
-  color: var(--ps-accent);
+  color: var(--text);
 }
 
 .difficultyToggle {

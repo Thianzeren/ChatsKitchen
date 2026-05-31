@@ -40,7 +40,7 @@
 .title {
   font-family: 'Lilita One', cursive;
   font-size: 32px;
-  color: var(--accent);
+  color: var(--text);
   margin: 0;
   line-height: 1;
 }
@@ -401,4 +401,99 @@
   .dialogActions {
     flex-direction: column;
   }
+}
+
+/* ── How to Play (moved from main menu) ── */
+.howSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-shrink: 0;
+}
+
+.howBody {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.howSteps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.howStep {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.howStepNum {
+  background: var(--accent);
+  color: var(--text);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.howStepTitle {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.howStepDesc {
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+.howCheats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.howCheatsLabel {
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.howCheatsGrid {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  align-items: baseline;
+}
+
+.howCheatCmd {
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.howCheatDesc {
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  color: var(--text-muted);
 }
