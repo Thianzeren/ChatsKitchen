@@ -693,3 +693,13 @@
 .modeOptions:hover {
   border-color: #5a5248;
 }
+
+.connLabel { font-size:13px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; margin:6px 0 2px; }
+.connTwitch, .connLocal, .connSolo { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; padding:16px 20px; border-radius:12px; border:1px solid var(--border,#555); background:rgba(127,127,127,.08); color:inherit; cursor:pointer; }
+.connTwitch:disabled { opacity:.5; cursor:not-allowed; }
+.connTwitch { border-color:#9147ff; }
+.connLocal { border-color:#5fb07a; }
+.connSolo { border-color:#7fbdd6; }
+.connName { font-size:17px; font-weight:700; }
+.connDesc { font-size:13px; opacity:.75; }
+.connArrow { font-size:18px; opacity:.8; }

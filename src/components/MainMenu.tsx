@@ -3,17 +3,14 @@ import { TwitchStatus } from '../hooks/useTwitchChat'
 import styles from './MainMenu.module.css'
 
 interface Props {
-  onPlay: () => void
-  onPvp: () => void
-  onAdventure: () => void
+  onChooseTwitch: () => void          // proceed to mode hub with Twitch as primary
+  onChooseLocalPlay: () => void       // create room → room panel
+  onChooseSolo: () => void            // proceed to mode hub, keyboard only
   onOptions: () => void
   onFeedback: () => void
   onCredits: () => void
   onTutorial: () => void
   onStartTutorial: () => void
-  onLocalPlay: () => void
-  savedRunPreview: { shift: number; totalShifts: number } | null
-  onResumeSavedRun: () => void
   twitchChannel: string | null
   twitchStatus: TwitchStatus
   twitchError: string | undefined
@@ -21,7 +18,7 @@ interface Props {
   onTwitchDisconnect: () => void
 }
 
-export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeedback, onCredits, onTutorial, onStartTutorial, onLocalPlay, savedRunPreview, onResumeSavedRun, twitchChannel, twitchStatus, twitchError, onTwitchConnect, onTwitchDisconnect }: Props) {
+export default function MainMenu({ onChooseTwitch, onChooseLocalPlay, onChooseSolo, onOptions, onFeedback, onCredits, onTutorial, onStartTutorial, twitchChannel, twitchStatus, twitchError, onTwitchConnect, onTwitchDisconnect }: Props) {
   const [twitchInput, setTwitchInput] = useState(twitchChannel || '')
   const isConnected = twitchStatus === 'connected'
   const isConnecting = twitchStatus === 'connecting'
@@ -159,7 +156,7 @@ export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeed
             )}
           </div>
 
-          {/* Game modes */}
+          {/* Connection options */}
           <div className={styles.modes}>
 
             <div className={styles.modeBottomRow}>
@@ -167,59 +164,33 @@ export default function MainMenu({ onPlay, onPvp, onAdventure, onOptions, onFeed
               <button className={styles.modeHowToPlay} onClick={onTutorial}>How To Play</button>
             </div>
 
-            <div className={styles.modePlayRow}>
-              <button className={styles.modeFreePlay} onClick={onPlay}>
-                <div>
-                  <div className={styles.fpName}>Free Play</div>
-                  <div className={styles.fpDesc}>Pick recipes, set duration &amp; difficulty</div>
-                </div>
-                <div className={styles.fpArrow}>▶</div>
-              </button>
+            <div className={styles.connLabel}>How are players joining?</div>
 
-              <button className={styles.modeLocalPlay} onClick={onLocalPlay}>
-                <div>
-                  <div className={styles.lpName}>Local Play</div>
-                  <div className={styles.lpDesc}>Phone controllers, no Twitch needed</div>
+            <button className={styles.connTwitch} onClick={onChooseTwitch} disabled={!isConnected}>
+              <div>
+                <div className={styles.connName}>Twitch Chat</div>
+                <div className={styles.connDesc}>
+                  {isConnected ? 'Your chat is the kitchen crew' : 'Connect a channel above first'}
                 </div>
-                <div className={styles.lpArrow}>→</div>
-              </button>
-            </div>
+              </div>
+              <div className={styles.connArrow}>▶</div>
+            </button>
 
-            <div className={styles.modeRow}>
-              <button className={styles.modeAdventures} onClick={onAdventure}>
-                <div>
-                  <div className={styles.lvName}>Adventure</div>
-                  <div className={styles.lvDesc}>Roguelike runs — how many shifts can you survive?</div>
-                </div>
-                <div className={styles.lvArrow}>→</div>
-              </button>
+            <button className={styles.connLocal} onClick={onChooseLocalPlay}>
+              <div>
+                <div className={styles.connName}>Local Play</div>
+                <div className={styles.connDesc}>Phone controllers — no Twitch needed</div>
+              </div>
+              <div className={styles.connArrow}>→</div>
+            </button>
 
-              <button className={styles.modePvp} onClick={onPvp}>
-                <div>
-                  <div className={styles.lvName}>PvP</div>
-                  <div className={styles.lvDesc}>Two teams compete — most money wins!</div>
-                </div>
-                <div className={styles.lvArrow}>⚔️</div>
-              </button>
-            </div>
-
-            {savedRunPreview && (
-              <button
-                type="button"
-                className={styles.resumeRunPill}
-                onClick={onResumeSavedRun}
-                title="Resume your saved Adventure run"
-              >
-                <span className={styles.resumeRunIcon}>📂</span>
-                <span className={styles.resumeRunBody}>
-                  <span className={styles.resumeRunLabel}>Resume Adventure</span>
-                  <span className={styles.resumeRunMeta}>
-                    Shift {savedRunPreview.shift} / {savedRunPreview.totalShifts}
-                  </span>
-                </span>
-                <span className={styles.resumeRunArrow}>→</span>
-              </button>
-            )}
+            <button className={styles.connSolo} onClick={onChooseSolo}>
+              <div>
+                <div className={styles.connName}>Solo</div>
+                <div className={styles.connDesc}>Just you, typing commands on this screen</div>
+              </div>
+              <div className={styles.connArrow}>→</div>
+            </button>
 
             <div className={styles.modeBottomRow}>
               <button className={styles.modeOptions} onClick={onOptions}>Options</button>
