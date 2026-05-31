@@ -2,6 +2,8 @@ import { Fragment, useState } from 'react'
 import { AdventureRun, AdventureBestRun } from '../state/types'
 import { RECIPES, STATION_DEFS } from '../data/recipes'
 import { orderStepsForDisplay } from '../data/recipeSteps'
+import { getRecipeProfile, orderedTags } from '../data/recipeProfile'
+import ArchetypeChip from './ArchetypeChip'
 import FoodIcon from './FoodIcon'
 import { ADVENTURE_SHIFT_DURATION, isBossShift, ADVENTURE_TOTAL_SHIFTS } from '../data/adventureMode'
 import { GARNISHES, applyAllGarnishes } from '../data/adventureGarnishes'
@@ -131,6 +133,7 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, onMan
           {run.currentRecipes.map((key, i) => {
             const recipe = RECIPES[key]
             if (!recipe) return null
+            const tags = orderedTags(getRecipeProfile(recipe).tags)
             return (
               <div key={key} className={`${styles.recipeCard} ${i > 0 ? styles.recipeCardBorder : ''}`}>
                 <div className={styles.recipeHeader}>
@@ -138,6 +141,11 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, onMan
                   <span className={styles.recipeName}>{recipe.name}</span>
                   <span className={styles.recipeReward}>${recipe.reward}</span>
                 </div>
+                {tags.length > 0 && (
+                  <div className={styles.tagRow}>
+                    {tags.map(t => <ArchetypeChip key={t} tag={t} />)}
+                  </div>
+                )}
                 <div className={styles.recipeSteps}>
                   {orderStepsForDisplay(recipe.steps).map((step, si) => (
                     <Fragment key={si}>

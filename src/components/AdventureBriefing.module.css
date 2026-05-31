@@ -410,3 +410,10 @@
   color: #c4a020;
   font-weight: 700;
 }
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0 2px;
+}
