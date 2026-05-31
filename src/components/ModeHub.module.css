@@ -1,0 +1,22 @@
+.screen { display:flex; flex-direction:column; gap:20px; padding:32px; max-width:900px; margin:0 auto; height:100%; box-sizing:border-box; }
+.header { display:flex; align-items:center; justify-content:space-between; }
+.changeBtn { background:transparent; border:1px solid var(--border, #555); color:inherit; border-radius:8px; padding:8px 14px; cursor:pointer; font-size:14px; }
+.connBadge { font-size:13px; opacity:.8; padding:6px 12px; border-radius:999px; background:rgba(127,127,127,.15); }
+.roomWidget { display:flex; align-items:center; gap:16px; padding:12px 18px; border-radius:12px; border:1px solid #7fbdd6; background:rgba(127,189,214,.12); cursor:pointer; color:inherit; }
+.roomCode { font-weight:700; font-size:16px; letter-spacing:.1em; }
+.roomPlayers { opacity:.8; font-size:14px; }
+.roomQr { margin-left:auto; font-size:13px; opacity:.9; }
+.title { font-size:28px; margin:8px 0 0; }
+.modes { display:flex; flex-direction:column; gap:14px; }
+.modes button { text-align:left; padding:20px 24px; border-radius:14px; border:1px solid var(--border, #555); cursor:pointer; color:inherit; background:rgba(127,127,127,.08); transition:transform .08s ease, background .15s ease; }
+.modes button:hover { transform:translateY(-2px); background:rgba(127,127,127,.16); }
+.modeName { font-size:20px; font-weight:700; margin-bottom:4px; }
+.modeDesc { font-size:14px; opacity:.75; }
+.modeFreePlay { border-color:#5fb07a !important; }
+.modeAdventure { border-color:#c0a050 !important; }
+.modePvp { border-color:#b06f8f !important; }
+.resumeRunPill { display:flex; align-items:center; gap:12px; padding:12px 18px; border-radius:12px; border:1px solid #c0a050; background:rgba(192,160,80,.12); cursor:pointer; color:inherit; }
+.resumeRunBody { display:flex; flex-direction:column; }
+.resumeRunLabel { font-weight:700; }
+.resumeRunMeta { font-size:12px; opacity:.75; }
+.resumeRunArrow { margin-left:auto; }
