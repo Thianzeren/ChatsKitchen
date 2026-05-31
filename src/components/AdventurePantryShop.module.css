@@ -365,3 +365,20 @@
   color: var(--text-muted);
   text-align: center;
 }
+
+.menuTags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.menuTagsLabel {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  opacity: 0.75;
+}
