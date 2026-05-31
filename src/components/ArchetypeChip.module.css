@@ -1,0 +1,25 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.count {
+  opacity: 0.8;
+  font-weight: 700;
+}
