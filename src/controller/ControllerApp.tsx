@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { SharedSnapshot } from '../shared/protocol'
+import type { SharedSnapshot, PartialPlayerView } from '../shared/protocol'
 import { SESSION_KEY } from '../shared/config'
 import { usePlayerSocket, type Credentials, type RoomInfo } from './usePlayerSocket'
 import JoinScreen from './JoinScreen'
@@ -11,11 +11,12 @@ export default function ControllerApp() {
   const [credentials, setCredentials] = useState<Credentials | null>(null)
   const [joinError, setJoinError] = useState<string | null>(null)
   const [snapshot, setSnapshot] = useState<SharedSnapshot | null>(null)
+  const [you, setYou] = useState<PartialPlayerView | null>(null)
 
   const { send, connected } = usePlayerSocket({
     credentials,
     onJoined: (r) => { setRoom(r); setJoinError(null) },
-    onSnapshot: (shared) => setSnapshot(shared),
+    onSnapshot: (shared, partial) => { setSnapshot(shared); setYou(partial) },
     onRoomClosed: () => { setRoom(null); setCredentials(null); setSnapshot(null) },
     onError: (msg) => { setJoinError(msg); setCredentials(null) },
   })
@@ -47,6 +48,7 @@ export default function ControllerApp() {
         nickname={room.nickname}
         stage={phase}
         snapshot={snapshot}
+        assignedTeam={you?.team ?? null}
         send={send}
         connected={connected}
         onExit={handleExitRoom}
