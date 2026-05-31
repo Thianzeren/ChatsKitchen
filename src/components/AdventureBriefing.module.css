@@ -381,36 +381,6 @@
   box-shadow: 0 0 12px rgba(232, 160, 42, 0.18);
 }
 
-/* ── Parameters panel ── */
-
-.paramsPanel {
-  background: var(--station-bg);
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-  flex-shrink: 0;
-}
-
-.paramRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 7px 0;
-}
-
-.paramLabel {
-  font-family: 'Fredoka', sans-serif;
-  font-size: var(--base-fs);
-  color: var(--text-secondary);
-}
-
-.paramValue {
-  font-family: 'Space Mono', monospace;
-  font-size: var(--base-fs);
-  color: #c4a020;
-  font-weight: 700;
-}
-
 .tagRow {
   display: flex;
   flex-wrap: wrap;

@@ -5,8 +5,8 @@ import { orderStepsForDisplay } from '../data/recipeSteps'
 import { getRecipeProfile, orderedTags } from '../data/recipeProfile'
 import ArchetypeChip from './ArchetypeChip'
 import FoodIcon from './FoodIcon'
-import { ADVENTURE_SHIFT_DURATION, isBossShift, ADVENTURE_TOTAL_SHIFTS } from '../data/adventureMode'
-import { GARNISHES, applyAllGarnishes } from '../data/adventureGarnishes'
+import { isBossShift, ADVENTURE_TOTAL_SHIFTS } from '../data/adventureMode'
+import { GARNISHES } from '../data/adventureGarnishes'
 import { BOSSES, BossId } from '../data/adventureBosses'
 import AdventureExitConfirm from './AdventureExitConfirm'
 import AdventureProgressDots from './AdventureProgressDots'
@@ -24,10 +24,6 @@ interface Props {
   twitchChannel: string | null
 }
 
-function formatMultiplier(value: number): string {
-  return `${value.toFixed(2).replace(/\.?0+$/, '')}×`
-}
-
 export default function AdventureBriefing({ run, bestRun, onStart, onMenu, onManageLobby, twitchStatus, twitchChannel }: Props) {
   const [confirmExit, setConfirmExit] = useState(false)
 
@@ -42,22 +38,6 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, onMan
   const bossDisabledStation = run.currentBoss?.disabledStationId
     ? STATION_DEFS[run.currentBoss.disabledStationId]?.name
     : null
-
-  // Effective options for this shift (with all owned garnishes applied).
-  const effective = applyAllGarnishes(run.ownedGarnishes, {
-    cookingSpeed: 1,
-    orderSpeed: 1,
-    orderSpawnRate: 1,
-  })
-  const shiftDurationMs = ADVENTURE_SHIFT_DURATION
-  const shiftMins = Math.floor(shiftDurationMs / 60_000)
-  const shiftSecs = Math.round((shiftDurationMs % 60_000) / 1000)
-  const shiftDurationLabel = shiftSecs === 0
-    ? `${shiftMins} min`
-    : `${shiftMins}:${String(shiftSecs).padStart(2, '0')}`
-  const cookingSpeed = effective.options.cookingSpeed ?? 1
-  const orderSpeed = effective.options.orderSpeed ?? 1
-  const orderSpawnRate = effective.options.orderSpawnRate ?? 1
 
   // Garnish chips: list owned garnishes.
   const ownedGarnishes = run.ownedGarnishes
@@ -181,25 +161,6 @@ export default function AdventureBriefing({ run, bestRun, onStart, onMenu, onMan
           </div>
         )}
 
-        <div className={styles.paramsPanel}>
-          <div className={styles.panelTitle}>Parameters</div>
-          <div className={styles.paramRow}>
-            <span className={styles.paramLabel}>Duration</span>
-            <span className={styles.paramValue}>{shiftDurationLabel}</span>
-          </div>
-          <div className={styles.paramRow}>
-            <span className={styles.paramLabel}>Cooking Speed</span>
-            <span className={styles.paramValue}>{formatMultiplier(cookingSpeed)}</span>
-          </div>
-          <div className={styles.paramRow}>
-            <span className={styles.paramLabel}>Order Patience</span>
-            <span className={styles.paramValue}>{formatMultiplier(1 / orderSpeed)}</span>
-          </div>
-          <div className={styles.paramRow}>
-            <span className={styles.paramLabel}>Order Spawn Rate</span>
-            <span className={styles.paramValue}>{formatMultiplier(orderSpawnRate)}</span>
-          </div>
-        </div>
       </div>
 
       {confirmExit && (
