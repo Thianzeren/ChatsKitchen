@@ -28,6 +28,7 @@ export default function AdventureLobby({
 
   return (
     <div className={styles.screen}>
+      <button type="button" className={styles.backBtn} onClick={onBack}>← Back</button>
       <button
         type="button"
         className={styles.helpBtn}
@@ -78,9 +79,6 @@ export default function AdventureLobby({
             disabled={!canStart}
           >
             {isMidRun ? `RESUME · SHIFT ${activeShift} →` : 'START RUN →'}
-          </button>
-          <button className={styles.menuBtn} onClick={onBack}>
-            {isMidRun ? '← Back to Briefing' : 'Main Menu'}
           </button>
           <TwitchStatusPill status={twitchStatus} channel={twitchChannel} />
         </div>
