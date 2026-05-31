@@ -1,22 +1,225 @@
-.screen { display:flex; flex-direction:column; gap:20px; padding:32px; max-width:900px; margin:0 auto; height:100%; box-sizing:border-box; }
-.header { display:flex; align-items:center; justify-content:space-between; }
-.changeBtn { background:transparent; border:1px solid var(--border, #555); color:inherit; border-radius:8px; padding:8px 14px; cursor:pointer; font-size:14px; }
-.connBadge { font-size:13px; opacity:.8; padding:6px 12px; border-radius:999px; background:rgba(127,127,127,.15); }
-.roomWidget { display:flex; align-items:center; gap:16px; padding:12px 18px; border-radius:12px; border:1px solid #7fbdd6; background:rgba(127,189,214,.12); cursor:pointer; color:inherit; }
-.roomCode { font-weight:700; font-size:16px; letter-spacing:.1em; }
-.roomPlayers { opacity:.8; font-size:14px; }
-.roomQr { margin-left:auto; font-size:13px; opacity:.9; }
-.title { font-size:28px; margin:8px 0 0; }
-.modes { display:flex; flex-direction:column; gap:14px; }
-.modes button { text-align:left; padding:20px 24px; border-radius:14px; border:1px solid var(--border, #555); cursor:pointer; color:inherit; background:rgba(127,127,127,.08); transition:transform .08s ease, background .15s ease; }
-.modes button:hover { transform:translateY(-2px); background:rgba(127,127,127,.16); }
-.modeName { font-size:20px; font-weight:700; margin-bottom:4px; }
-.modeDesc { font-size:14px; opacity:.75; }
-.modeFreePlay { border-color:#5fb07a !important; }
-.modeAdventure { border-color:#c0a050 !important; }
-.modePvp { border-color:#b06f8f !important; }
-.resumeRunPill { display:flex; align-items:center; gap:12px; padding:12px 18px; border-radius:12px; border:1px solid #c0a050; background:rgba(192,160,80,.12); cursor:pointer; color:inherit; }
-.resumeRunBody { display:flex; flex-direction:column; }
-.resumeRunLabel { font-weight:700; }
-.resumeRunMeta { font-size:12px; opacity:.75; }
-.resumeRunArrow { margin-left:auto; }
+/* ── Layout ── */
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  height: 100%;
+  box-sizing: border-box;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Fredoka', sans-serif;
+  padding: 40px 48px;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.changeBtn {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 10px;
+  padding: 10px 18px;
+  cursor: pointer;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.changeBtn:hover {
+  border-color: #5a5248;
+  color: var(--text-secondary);
+}
+
+.connBadge {
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+/* ── Room widget (Local Play only) ── */
+.roomWidget {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 22px;
+  border-radius: 12px;
+  border: 2px solid #c4a020;
+  background: linear-gradient(135deg, rgba(196, 160, 32, 0.14) 0%, rgba(216, 116, 40, 0.10) 100%);
+  cursor: pointer;
+  color: var(--text);
+  transition: filter 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+.roomWidget:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.roomCode {
+  font-family: 'Lilita One', cursive;
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  color: #c4a020;
+}
+
+.roomPlayers {
+  font-family: 'Space Mono', monospace;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.roomQr {
+  margin-left: auto;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #c4a020;
+}
+
+/* ── Title ── */
+.title {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--text);
+  margin: 6px 0 2px;
+  flex-shrink: 0;
+}
+
+/* ── Mode cards ── */
+.modes {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+}
+
+.modes button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+  padding: 24px 30px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
+  flex: 1;
+  min-height: 96px;
+}
+
+.modes button:active {
+  transform: translateY(2px);
+}
+
+.modeName {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.modeDesc {
+  font-family: 'Space Mono', monospace;
+  font-size: 16px;
+}
+
+/* Free Play — featured orange */
+.modeFreePlay {
+  background: #d87428;
+  border: none;
+  box-shadow: 0 4px 0 #8e4e18;
+}
+.modeFreePlay:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.modeFreePlay:active { box-shadow: 0 2px 0 #8e4e18; }
+.modeFreePlay .modeName { color: #fff; }
+.modeFreePlay .modeDesc { color: rgba(255, 255, 255, 0.6); }
+
+/* Adventure — purple */
+.modeAdventure {
+  background: #4e3a8a;
+  border: none;
+  box-shadow: 0 4px 0 #321e5e;
+}
+.modeAdventure:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.modeAdventure:active { box-shadow: 0 2px 0 #321e5e; }
+.modeAdventure .modeName { color: #fff; }
+.modeAdventure .modeDesc { color: rgba(255, 255, 255, 0.55); }
+
+/* PvP — red/purple gradient */
+.modePvp {
+  background: linear-gradient(135deg, rgba(192, 56, 48, 0.28) 0%, rgba(120, 88, 204, 0.28) 100%);
+  border: 1.5px solid rgba(192, 56, 48, 0.45);
+  box-shadow: 0 4px 0 #321e5e;
+}
+.modePvp:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.modePvp:active { box-shadow: 0 2px 0 #321e5e; }
+.modePvp .modeName { color: #fff; }
+.modePvp .modeDesc { color: rgba(255, 255, 255, 0.55); }
+
+/* ── Resume Adventure pill ── */
+.resumeRunPill {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: 2px solid rgba(196, 160, 32, 0.55);
+  background: linear-gradient(135deg, rgba(196, 160, 32, 0.14) 0%, rgba(216, 116, 40, 0.10) 100%);
+  cursor: pointer;
+  color: var(--text);
+  transition: transform 0.12s, filter 0.12s;
+  flex-shrink: 0;
+}
+
+.resumeRunPill:hover {
+  transform: translateX(2px);
+  filter: brightness(1.12);
+}
+
+.resumeRunIcon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.resumeRunBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.resumeRunLabel {
+  font-family: 'Lilita One', cursive;
+  font-size: 22px;
+  color: #c4a020;
+}
+
+.resumeRunMeta {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.resumeRunArrow {
+  font-family: 'Lilita One', cursive;
+  font-size: 24px;
+  color: #c4a020;
+  margin-left: auto;
+}
