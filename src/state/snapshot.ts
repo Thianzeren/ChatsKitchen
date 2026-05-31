@@ -1,6 +1,7 @@
 import { RECIPES } from '../data/recipes'
 import type { GameState } from './types'
-import type { SharedSnapshot } from '../shared/protocol'
+import type { SharedSnapshot, PartialPlayerView } from '../shared/protocol'
+import type { RoomPlayer } from './roomRoster'
 
 export function gameStateToSnapshot(state: GameState, phase: SharedSnapshot['phase']): SharedSnapshot {
   const activeOrders = state.orders.filter(o => !o.served && !o.outcome)
@@ -33,4 +34,32 @@ export function gameStateToSnapshot(state: GameState, phase: SharedSnapshot['pha
       busySlots: s.slots.length,
     })),
   }
+}
+
+// Snapshot pushed to phones while sitting in the PvP lobby (before RESET sets
+// GameState teams). teamMoney being present is how the controller Lobby detects
+// PvP and shows its Red/Blue picker.
+export function pvpLobbySnapshot(): SharedSnapshot {
+  return {
+    phase: 'lobby',
+    timeRemainingMs: 0,
+    money: 0,
+    teamMoney: { red: 0, blue: 0 },
+    orders: [],
+    stations: [],
+  }
+}
+
+// Per-player team assignment so each phone reflects host-side drags.
+export function pvpLobbyPerPlayer(
+  players: RoomPlayer[],
+  red: string[],
+  blue: string[],
+): Record<string, PartialPlayerView> {
+  const out: Record<string, PartialPlayerView> = {}
+  for (const p of players) {
+    const team = red.includes(p.nickname) ? 'red' : blue.includes(p.nickname) ? 'blue' : undefined
+    out[p.id] = { cooldownMs: 0, team }
+  }
+  return out
 }
