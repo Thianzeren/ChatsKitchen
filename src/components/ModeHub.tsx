@@ -10,18 +10,18 @@ interface Props {
   onPvp: () => void
   savedRunPreview: { shift: number; totalShifts: number } | null
   onResumeSavedRun: () => void
-  onChangeConnection: () => void
+  onBack: () => void
 }
 
 export default function ModeHub({
   connectionLabel, roomCode, roomPlayerCount, onShowRoom,
   onFreePlay, onAdventure, onPvp,
-  savedRunPreview, onResumeSavedRun, onChangeConnection,
+  savedRunPreview, onResumeSavedRun, onBack,
 }: Props) {
   return (
     <div className={styles.screen}>
       <div className={styles.header}>
-        <button className={styles.changeBtn} onClick={onChangeConnection}>← Change connection</button>
+        <button className={styles.changeBtn} onClick={onBack}>← Back</button>
         <div className={styles.connBadge}>{connectionLabel}</div>
       </div>
 

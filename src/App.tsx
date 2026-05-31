@@ -12,7 +12,6 @@ import { useGameLoop } from './hooks/useGameLoop'
 import { useBotSimulation } from './hooks/useBotSimulation'
 import { useTwitchChat } from './hooks/useTwitchChat'
 import { useRoomHost } from './hooks/useRoomHost'
-import { useConnection } from './hooks/useConnection'
 import { gameStateToSnapshot, pvpLobbySnapshot, pvpLobbyPerPlayer } from './state/snapshot'
 import { classifyRoomCommand } from './state/roomCommandRouting'
 import { connectedNicknames, unassignedPool } from './state/roomRoster'
@@ -106,7 +105,10 @@ export default function App() {
   const screenRef = useRef<Screen>('menu')
   const gameOptionsRef = useRef(gameOptions)
   const [adventureIntroOpen, setAdventureIntroOpen] = useState(false)
-  const [chatMode, setChatMode] = useState<'local' | 'twitch' | 'room'>('local')
+  // Jackbox-style co-play: a Local Play room is always live (its QR is shown on
+  // the menu); Twitch chat, when a channel is connected, plays alongside it.
+  // chatMode stays 'room' for the whole session — there is no connection switch.
+  const [chatMode] = useState<'local' | 'twitch' | 'room'>('room')
   const [roomPlayers, setRoomPlayers] = useState<Array<{ id: string; nickname: string; disconnected?: boolean }>>([])
   const chatModeRef = useRef(chatMode)
   chatModeRef.current = chatMode
@@ -165,7 +167,7 @@ export default function App() {
     tutorialOpen, setTutorialOpen, isTutorial,
     startTutorial, handleTutorialNext, handleTutorialBack,
     handleTutorialComplete, handleTutorialRepeat, handleTutorialEventCommand,
-    handleMenuTutorial, tutorialGameOver, resetTutorial,
+    tutorialGameOver, resetTutorial,
   } = tutorial
 
   const startFreePlay = useCallback((replay = false) => {
@@ -386,9 +388,9 @@ export default function App() {
 
   const handleTwitchMessage = useCallback((user: string, text: string, isMod: boolean) => {
     dispatch({ type: 'ADD_CHAT', username: user, text, msgType: 'normal' })
-    // Twitch chat drives the game ONLY when Twitch is the primary connection.
-    // Under Local Play (room) or Solo (local), an attached channel is view-only.
-    if (chatModeRef.current !== 'twitch') return
+    // Co-play: when a Twitch channel is connected, chat plays alongside the
+    // always-on Local Play room. Twitch messages drive the game through the same
+    // lobby/vote/game routing as room players.
     // PvP lobby: intercept !red / !blue / !join / !leave and lobby mod commands
     if (screenRef.current === 'pvplobby') {
       if (handleLobbyJoin(user, text.trim().toLowerCase())) return
@@ -457,24 +459,9 @@ export default function App() {
   const roomRef = useRef(room)
   roomRef.current = room
 
-  const enterRoom = useCallback(() => {
-    setChatMode('room')
-    setRoomPlayers([])
-    roomRef.current.unlockJoins()
-  }, [])
-  const closeRoom = useCallback(() => {
-    roomRef.current.closeRoom()
-    setChatMode('local')
-    setRoomPlayers([])
-  }, [])
-  const connection = useConnection({ setChatMode, enterRoom, closeRoom })
-
-  // Connection chooser → mode hub
+  // Menu "Play" → mode hub. The room is already live (always-on), so there is
+  // no connection step; players join via QR or Twitch from the menu.
   const goToHub = useCallback(() => setScreen('modehub'), [])
-  const chooseTwitch = useCallback(() => { connection.chooseTwitch(); goToHub() }, [connection, goToHub])
-  const chooseSolo   = useCallback(() => { connection.chooseSolo();   goToHub() }, [connection, goToHub])
-  const chooseLocalPlay = useCallback(() => { connection.chooseLocalPlay(); setScreen('localplay') }, [connection])
-  const changeConnection = useCallback(() => { connection.changeConnection(); setScreen('menu') }, [connection])
 
   // Mode hub buttons
   const hubFreePlay  = useCallback(() => setScreen('playsetpicker'), [])
@@ -639,30 +626,26 @@ export default function App() {
   if (screen === 'menu') {
     content = (
       <MainMenu
-        onChooseTwitch={chooseTwitch}
-        onChooseLocalPlay={chooseLocalPlay}
-        onChooseSolo={chooseSolo}
+        onPlay={goToHub}
+        onTutorial={startTutorial}
         onOptions={() => setScreen('options')}
         onFeedback={() => setShowFeedback(true)}
         onCredits={() => setScreen('credits')}
-        onTutorial={handleMenuTutorial}
-        onStartTutorial={startTutorial}
         twitchChannel={twitchChannel}
         twitchStatus={twitchChat.status}
         twitchError={twitchChat.error}
-        onTwitchConnect={(ch) => { setTwitchChannel(ch); setChatMode('twitch') }}
-        onTwitchDisconnect={() => { setTwitchChannel(null); setChatMode('local') }}
+        onTwitchConnect={(ch) => setTwitchChannel(ch)}
+        onTwitchDisconnect={() => setTwitchChannel(null)}
+        roomCode={room.code}
+        roomPlayers={roomPlayers}
       />
     )
   } else if (screen === 'modehub') {
-    const connectionLabel =
-      connection.method === 'twitch' ? `Twitch: ${twitchChannel ?? '—'}`
-      : connection.method === 'local' ? 'Local Play'
-      : 'Solo'
+    const connectionLabel = twitchChannel ? `Twitch · ${twitchChannel}` : 'Local Play'
     content = (
       <ModeHub
         connectionLabel={connectionLabel}
-        roomCode={chatMode === 'room' ? room.code : null}
+        roomCode={room.code}
         roomPlayerCount={roomPlayers.filter(p => !p.disconnected).length}
         onShowRoom={() => { roomRef.current.unlockJoins(); setScreen('localplay') }}
         onFreePlay={hubFreePlay}
@@ -670,7 +653,7 @@ export default function App() {
         onPvp={hubPvp}
         savedRunPreview={savedRunPreview ? { shift: savedRunPreview.run.currentShift, totalShifts: ADVENTURE_TOTAL_SHIFTS } : null}
         onResumeSavedRun={handleResumeSavedRun}
-        onChangeConnection={changeConnection}
+        onBack={() => setScreen('menu')}
       />
     )
   } else if (screen === 'localplay') {

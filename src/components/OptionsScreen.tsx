@@ -49,6 +49,57 @@ export default function OptionsScreen({ options, onChange, audioSettings, onAudi
         <h1 className={styles.title}>Options</h1>
       </div>
 
+      <div className={styles.howSection}>
+        <div className={styles.sectionHeader}>
+          <span className={styles.sectionTitle}>📖 How to Play</span>
+        </div>
+        <div className={styles.howBody}>
+          <div className={styles.howSteps}>
+            <div className={styles.howStep}>
+              <div className={styles.howStepNum}>1</div>
+              <div>
+                <div className={styles.howStepTitle}>Get your crew in</div>
+                <div className={styles.howStepDesc}>Players scan the room QR with their phones, or connect a Twitch channel — both can play together.</div>
+              </div>
+            </div>
+            <div className={styles.howStep}>
+              <div className={styles.howStepNum}>2</div>
+              <div>
+                <div className={styles.howStepTitle}>Type commands from the recipe</div>
+                <div className={styles.howStepDesc}>e.g. chop lettuce · grill patty · serve 1</div>
+              </div>
+            </div>
+            <div className={styles.howStep}>
+              <div className={styles.howStepNum}>3</div>
+              <div>
+                <div className={styles.howStepTitle}>Serve orders before time's up</div>
+                <div className={styles.howStepDesc}>Earn money, climb the leaderboard.</div>
+              </div>
+            </div>
+            <div className={styles.howStep}>
+              <div className={styles.howStepNum}>4</div>
+              <div>
+                <div className={styles.howStepTitle}>Best played in full screen</div>
+                <div className={styles.howStepDesc}>Press F11 to go full screen.</div>
+              </div>
+            </div>
+          </div>
+          <div className={styles.howCheats}>
+            <div className={styles.howCheatsLabel}>Mods can control the session live from chat:</div>
+            <div className={styles.howCheatsGrid}>
+              <span className={styles.howCheatCmd}>!start</span>
+              <span className={styles.howCheatDesc}>begin next round</span>
+              <span className={styles.howCheatCmd}>!exit</span>
+              <span className={styles.howCheatDesc}>end the current round</span>
+              <span className={styles.howCheatCmd}>!onAutoRestart</span>
+              <span className={styles.howCheatDesc}>enable auto-restart</span>
+              <span className={styles.howCheatCmd}>!offAutoRestart</span>
+              <span className={styles.howCheatDesc}>disable auto-restart</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className={styles.columns}>
         {/* LEFT: Audio */}
         <div className={styles.column}>
