@@ -1,4 +1,4 @@
-import { Recipe, HEAT_EXEMPT_STATIONS } from './recipes'
+import { Recipe, RECIPES, HEAT_EXEMPT_STATIONS } from './recipes'
 
 export type RecipeTag = 'fast' | 'slow' | 'premium' | 'value' | 'prep_heavy' | 'hot_line'
 
@@ -48,4 +48,38 @@ export function getRecipeProfile(recipe: Recipe): RecipeProfile {
   if (heatStations.length >= 2) tags.push('hot_line')
 
   return { reward: recipe.reward, prepTimeMs, complexity, complexityPips, stations, heatStations, tags }
+}
+
+// ── Player-facing archetype metadata ─────────────────────────────────────────
+// Labels mirror the garnish copy ("Premium dishes…", "Hot-line dishes…") so the
+// synergy reads at a glance. Two icons intentionally echo existing garnishes
+// (🪙 ↔ Penny Pincher, 🌶️ ↔ Fire Whisperer).
+export const TAG_META: Record<RecipeTag, { label: string; icon: string; color: string }> = {
+  premium:    { label: 'Premium',    icon: '💎', color: '#d4af37' },
+  value:      { label: 'Value',      icon: '🪙', color: '#c08a3e' },
+  fast:       { label: 'Fast',       icon: '⚡', color: '#e0a52b' },
+  slow:       { label: 'Slow',       icon: '🐢', color: '#5a8bb0' },
+  prep_heavy: { label: 'Prep-Heavy', icon: '🧊', color: '#3f9e92' },
+  hot_line:   { label: 'Hot Line',   icon: '🌶️', color: '#d94f4f' },
+}
+
+// Fixed display order for stable chip layout across every surface.
+export const TAG_ORDER: RecipeTag[] = ['premium', 'value', 'fast', 'slow', 'prep_heavy', 'hot_line']
+
+// Re-order a recipe's derived tags into the canonical display order.
+export function orderedTags(tags: RecipeTag[]): RecipeTag[] {
+  return TAG_ORDER.filter(t => tags.includes(t))
+}
+
+// Aggregate archetype tag counts across a set of recipe keys (the active menu).
+export function getMenuTagCounts(recipeKeys: string[]): Map<RecipeTag, number> {
+  const counts = new Map<RecipeTag, number>()
+  for (const key of recipeKeys) {
+    const recipe = RECIPES[key]
+    if (!recipe) continue
+    for (const tag of getRecipeProfile(recipe).tags) {
+      counts.set(tag, (counts.get(tag) ?? 0) + 1)
+    }
+  }
+  return counts
 }
