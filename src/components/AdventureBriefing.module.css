@@ -70,6 +70,9 @@
   overflow: hidden;
   box-shadow: 0 0 28px rgba(217, 79, 79, 0.18);
   animation: bossPulse 3s ease-in-out infinite;
+  /* overflow:hidden lets a flex item shrink below content size; without this the
+     leftCol column would compress the panel and clip the boss description. */
+  flex-shrink: 0;
 }
 
 @keyframes bossPulse {

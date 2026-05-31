@@ -97,39 +97,6 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
 
       {/* ── RIGHT ── */}
       <div className={styles.rightCol}>
-        <div className={styles.historyPanel}>
-          <div className={styles.panelTitle}>Shift History</div>
-          <div className={styles.historyHeader}>
-            <span className={styles.historyShift}>#</span>
-            <span className={styles.historyRecipes}>Recipes</span>
-            <span className={styles.historyGoal}>Goal</span>
-            <span className={styles.historyEarned}>Earned</span>
-            <span className={styles.historyResult}>Result</span>
-          </div>
-          {run.shiftResults.map(r => {
-            const boss = r.bossDebuffId ? BOSSES[r.bossDebuffId as BossId] : null
-            return (
-              <div
-                key={r.shiftNumber}
-                className={`${styles.historyRow} ${!r.passed ? styles.historyRowFail : ''}`}
-              >
-                <span className={styles.historyShift}>{r.shiftNumber}</span>
-                <span className={styles.historyRecipes}>
-                  {boss && (
-                    <span className={styles.historyBoss} title={`${boss.name} — ${boss.description}`}>{boss.icon}</span>
-                  )}
-                  {r.recipes.map(k => <FoodIcon key={k} icon={RECIPES[k]?.emoji ?? '?'} size={18} />)}
-                </span>
-                <span className={styles.historyGoal}>${r.goalMoney}</span>
-                <span className={styles.historyEarned}>${r.moneyEarned}</span>
-                <span className={r.passed ? styles.resultPass : styles.resultFail}>
-                  {r.passed ? 'PASS' : 'FAIL'}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-
         <div className={styles.leaderboard}>
           <div className={styles.lbStickyHead}>
             <div className={styles.lbTitle}>Leaderboard</div>
@@ -172,6 +139,41 @@ export default function AdventureRunEnd({ run, bestRun, isNewBestRun, onPlayAgai
               )
             })
           )}
+        </div>
+
+        <div className={styles.historyPanel}>
+          <div className={styles.panelTitle}>Shift History</div>
+          <div className={styles.historyHeader}>
+            <span className={styles.historyShift}>#</span>
+            <span className={styles.historyRecipes}>Recipes</span>
+            <span className={styles.historyGoal}>Goal</span>
+            <span className={styles.historyEarned}>Earned</span>
+            <span className={styles.historyResult}>Result</span>
+          </div>
+          <div className={styles.historyRows}>
+            {run.shiftResults.map(r => {
+              const boss = r.bossDebuffId ? BOSSES[r.bossDebuffId as BossId] : null
+              return (
+                <div
+                  key={r.shiftNumber}
+                  className={`${styles.historyRow} ${!r.passed ? styles.historyRowFail : ''}`}
+                >
+                  <span className={styles.historyShift}>{r.shiftNumber}</span>
+                  <span className={styles.historyRecipes}>
+                    {boss && (
+                      <span className={styles.historyBoss} title={`${boss.name} — ${boss.description}`}>{boss.icon}</span>
+                    )}
+                    {r.recipes.map(k => <FoodIcon key={k} icon={RECIPES[k]?.emoji ?? '?'} size={18} />)}
+                  </span>
+                  <span className={styles.historyGoal}>${r.goalMoney}</span>
+                  <span className={styles.historyEarned}>${r.moneyEarned}</span>
+                  <span className={r.passed ? styles.resultPass : styles.resultFail}>
+                    {r.passed ? 'PASS' : 'FAIL'}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
 

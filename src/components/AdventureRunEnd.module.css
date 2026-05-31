@@ -10,7 +10,7 @@
 .leftCol {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: safe center;
   gap: 20px;
   height: 100%;
   padding: 40px 32px 40px 48px;
@@ -54,6 +54,9 @@
   border-radius: 12px;
   padding: 14px 18px;
   max-width: 460px;
+  /* Never let a long garnish collection grow the column and push the buttons
+     off-screen — the chip list scrolls internally instead. */
+  flex-shrink: 0;
 }
 
 .garnishesTitle {
@@ -67,6 +70,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  max-height: 140px;
+  overflow-y: auto;
 }
 
 .garnishChip {
@@ -159,6 +164,13 @@
   border-radius: 10px;
   padding: 16px;
   flex-shrink: 0;
+}
+
+/* Cap the shift history to ~3 rows; the rest scrolls so the leaderboard above
+   stays the focus of the screen. */
+.historyRows {
+  max-height: 112px;
+  overflow-y: auto;
 }
 
 .panelTitle {
@@ -274,6 +286,7 @@
   flex-direction: column;
   gap: 12px;
   width: 240px;
+  flex-shrink: 0;
 }
 
 .playAgainBtn {
