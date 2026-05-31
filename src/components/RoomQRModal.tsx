@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import QRCode from 'qrcode'
 import styles from './RoomQRModal.module.css'
 
@@ -29,7 +30,7 @@ export default function RoomQRModal({ code, players, onClose }: Props) {
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  return (
+  return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <button className={styles.closeBtn} onClick={onClose} aria-label="Close">✕</button>
@@ -65,6 +66,7 @@ export default function RoomQRModal({ code, players, onClose }: Props) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  z-index: 60;
+  z-index: 700; /* above the PauseModal (600) so it stacks over the in-game pause menu */
 }
 
 .modal {

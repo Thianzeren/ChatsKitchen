@@ -41,7 +41,6 @@ import PlaysetPicker from './components/PlaysetPicker'
 import { DIFFICULTY_PRESETS, type Playset, type Difficulty } from './data/playsets'
 import { mergePlayerStats, ADVENTURE_TOTAL_SHIFTS } from './data/adventureMode'
 import GameplayScreen from './components/GameplayScreen'
-import LocalPlayScreen from './components/LocalPlayScreen'
 import ModeHub from './components/ModeHub'
 import RoomQRModal from './components/RoomQRModal'
 import { DEFAULT_GAME_OPTIONS } from './state/defaultOptions'
@@ -658,15 +657,6 @@ export default function App() {
         onBack={() => setScreen('menu')}
       />
     )
-  } else if (screen === 'localplay') {
-    content = (
-      <LocalPlayScreen
-        code={room.code}
-        players={roomPlayers}
-        onBack={() => setScreen('modehub')}
-        onStart={() => setScreen('modehub')}
-      />
-    )
   } else if (screen === 'pvplobby') {
     const pool = chatMode === 'room'
       ? unassignedPool(roomPlayers, pvpLobby?.red ?? [], pvpLobby?.blue ?? [])
@@ -801,7 +791,7 @@ export default function App() {
         onNextLevel={undefined}
         onMenu={() => { setPvpLobby(null); setScreen('modehub') }}
         onChangePlayset={!adventureRun ? () => setScreen('playsetpicker') : undefined}
-        onOpenLobby={chatMode === 'room' && !adventureRun ? () => { roomRef.current.unlockJoins(); setScreen('localplay') } : undefined}
+        onOpenLobby={chatMode === 'room' && !adventureRun ? () => { roomRef.current.unlockJoins(); setRoomQrOpen(true) } : undefined}
         onPvpLobby={finalStats.redMoney !== undefined ? () => setScreen('pvplobby') : undefined}
         onSetAutoRestart={(enabled) => handleGameOptionsChange({ ...gameOptionsRef.current, autoRestart: enabled })}
       />
@@ -862,7 +852,7 @@ export default function App() {
         onAudioChange={handleAudioChange}
         onExit={() => { setPaused(false); setTutorialStep(null); setScreen('modehub') }}
         onPlaysetPicker={!adventureRun && !isTutorial ? () => { setPaused(false); setScreen('playsetpicker') } : undefined}
-        onOpenLobby={chatMode === 'room' && !isTutorial ? () => { setPaused(false); roomRef.current.unlockJoins(); setScreen('localplay') } : undefined}
+        onOpenLobby={chatMode === 'room' && !isTutorial ? () => { roomRef.current.unlockJoins(); setRoomQrOpen(true) } : undefined}
         onTutorialNext={handleTutorialNext}
         onTutorialBack={handleTutorialBack}
         onTutorialSkip={handleTutorialComplete}
