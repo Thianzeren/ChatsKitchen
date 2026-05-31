@@ -722,7 +722,7 @@ export default function App() {
         run={adventureRun!}
         bestRun={adventureBestRun}
         onStart={() => setScreen('countdown')}
-        onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('modehub') }}
+        onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('menu') }}
         onManageLobby={handleManageLobby}
         twitchStatus={twitchChat.status}
         twitchChannel={twitchChannel}
@@ -789,7 +789,7 @@ export default function App() {
         } : undefined}
         onPlayAgain={() => startFreePlay(true)}
         onNextLevel={undefined}
-        onMenu={() => { setPvpLobby(null); setScreen('modehub') }}
+        onMenu={() => { setPvpLobby(null); setScreen('menu') }}
         onChangePlayset={!adventureRun ? () => setScreen('playsetpicker') : undefined}
         onOpenLobby={chatMode === 'room' && !adventureRun ? () => { roomRef.current.unlockJoins(); setRoomQrOpen(true) } : undefined}
         onPvpLobby={finalStats.redMoney !== undefined ? () => setScreen('pvplobby') : undefined}
@@ -806,7 +806,7 @@ export default function App() {
         lost={finalStats.lost}
         playerStats={finalStats.playerStats}
         onNext={openRecipePick}
-        onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('modehub') }}
+        onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('menu') }}
       />
     )
   } else if (screen === 'adventurepantryshop') {
@@ -827,7 +827,7 @@ export default function App() {
         bestRun={adventureBestRun}
         isNewBestRun={isNewBestAdventureRun}
         onPlayAgain={handleAdventurePlayAgain}
-        onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('modehub') }}
+        onMenu={() => { setAdventureRun(null); clearAdventureLobby(); setScreen('menu') }}
       />
     )
   } else {
@@ -850,9 +850,8 @@ export default function App() {
         onChatOpen={setChatOpen}
         onPause={setPaused}
         onAudioChange={handleAudioChange}
-        onExit={() => { setPaused(false); setTutorialStep(null); setScreen('modehub') }}
+        onExit={() => { setPaused(false); setTutorialStep(null); setScreen('menu') }}
         onPlaysetPicker={!adventureRun && !isTutorial ? () => { setPaused(false); setScreen('playsetpicker') } : undefined}
-        onOpenLobby={chatMode === 'room' && !isTutorial ? () => { roomRef.current.unlockJoins(); setRoomQrOpen(true) } : undefined}
         onTutorialNext={handleTutorialNext}
         onTutorialBack={handleTutorialBack}
         onTutorialSkip={handleTutorialComplete}

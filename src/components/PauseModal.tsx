@@ -16,7 +16,6 @@ interface PauseModalProps {
   onResume: () => void
   onExit: () => void
   onPlaysetPicker?: () => void
-  onOpenLobby?: () => void
 }
 
 export default function PauseModal({
@@ -30,7 +29,6 @@ export default function PauseModal({
   onResume,
   onExit,
   onPlaysetPicker,
-  onOpenLobby,
 }: PauseModalProps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -75,11 +73,6 @@ export default function PauseModal({
 
           <div className={styles.divider} />
 
-          {onOpenLobby && (
-            <button className={styles.exitBtn} onClick={onOpenLobby}>
-              Room Lobby
-            </button>
-          )}
           {onPlaysetPicker && (
             <button className={styles.exitBtn} onClick={onPlaysetPicker}>
               Change Playset
