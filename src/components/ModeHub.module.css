@@ -113,10 +113,11 @@
 
 .modes button {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-direction: row;
+  align-items: center;
+  gap: 28px;
   text-align: left;
-  padding: 24px 30px;
+  padding: 20px 32px;
   border-radius: 14px;
   cursor: pointer;
   transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
@@ -128,17 +129,38 @@
   transform: translateY(2px);
 }
 
+.modeIcon {
+  font-size: 56px;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 64px;
+  text-align: center;
+}
+
+.modeText {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
 .modeName {
   font-family: 'Fredoka', sans-serif;
   font-size: 32px;
   font-weight: 700;
   line-height: 1;
-  margin-bottom: 8px;
 }
 
 .modeDesc {
   font-family: 'Space Mono', monospace;
   font-size: 16px;
+}
+
+.modeArrow {
+  font-size: 40px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 /* Free Play — featured torch-flame (the primary action) */
@@ -151,28 +173,32 @@
 .modeFreePlay:active { box-shadow: 0 2px 0 var(--accent-deep); }
 .modeFreePlay .modeName { color: var(--text); }
 .modeFreePlay .modeDesc { color: var(--text-dim); }
+.modeFreePlay .modeArrow { color: rgba(245, 234, 216, 0.55); }
 
-/* Adventure — arcane deep (var(--accent-tertiary-deep)) */
+/* Adventure — arcane glimmer (var(--accent-tertiary)); brighter than PvP so the
+   list reads Free Play → Adventure → PvP in descending visual weight */
 .modeAdventure {
-  background: var(--accent-tertiary-deep);
-  border: none;
-  box-shadow: 0 4px 0 #321e5e;
-}
-.modeAdventure:hover { filter: brightness(1.1); transform: translateY(-1px); }
-.modeAdventure:active { box-shadow: 0 2px 0 #321e5e; }
-.modeAdventure .modeName { color: var(--text); }
-.modeAdventure .modeDesc { color: var(--text-dim); }
-
-/* PvP — arcane glimmer (var(--accent-tertiary)); distinct from Adventure's deep */
-.modePvp {
   background: var(--accent-tertiary);
   border: none;
   box-shadow: 0 4px 0 var(--accent-tertiary-deep);
 }
+.modeAdventure:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.modeAdventure:active { box-shadow: 0 2px 0 var(--accent-tertiary-deep); }
+.modeAdventure .modeName { color: var(--text); }
+.modeAdventure .modeDesc { color: var(--text-dim); }
+.modeAdventure .modeArrow { color: rgba(245, 234, 216, 0.5); }
+
+/* PvP — arcane deep, the quietest of the three */
+.modePvp {
+  background: var(--accent-tertiary-deep);
+  border: none;
+  box-shadow: 0 4px 0 #321e5e;
+}
 .modePvp:hover { filter: brightness(1.1); transform: translateY(-1px); }
-.modePvp:active { box-shadow: 0 2px 0 var(--accent-tertiary-deep); }
+.modePvp:active { box-shadow: 0 2px 0 #321e5e; }
 .modePvp .modeName { color: var(--text); }
 .modePvp .modeDesc { color: var(--text-dim); }
+.modePvp .modeArrow { color: rgba(245, 234, 216, 0.45); }
 
 /* ── Resume Adventure pill ── */
 .resumeRunPill {

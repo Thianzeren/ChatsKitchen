@@ -37,16 +37,28 @@ export default function ModeHub({
 
       <div className={styles.modes}>
         <button className={styles.modeFreePlay} onClick={onFreePlay}>
-          <div className={styles.modeName}>Free Play</div>
-          <div className={styles.modeDesc}>Pick recipes, set duration &amp; difficulty</div>
+          <span className={styles.modeIcon}>🍳</span>
+          <span className={styles.modeText}>
+            <span className={styles.modeName}>Free Play</span>
+            <span className={styles.modeDesc}>Pick recipes, set duration &amp; difficulty</span>
+          </span>
+          <span className={styles.modeArrow}>→</span>
         </button>
         <button className={styles.modeAdventure} onClick={onAdventure}>
-          <div className={styles.modeName}>Adventure</div>
-          <div className={styles.modeDesc}>Roguelike runs — how many shifts can you survive?</div>
+          <span className={styles.modeIcon}>🗺️</span>
+          <span className={styles.modeText}>
+            <span className={styles.modeName}>Adventure</span>
+            <span className={styles.modeDesc}>Roguelike runs — how many shifts can you survive?</span>
+          </span>
+          <span className={styles.modeArrow}>→</span>
         </button>
         <button className={styles.modePvp} onClick={onPvp}>
-          <div className={styles.modeName}>PvP</div>
-          <div className={styles.modeDesc}>Two teams compete — most money wins!</div>
+          <span className={styles.modeIcon}>⚔️</span>
+          <span className={styles.modeText}>
+            <span className={styles.modeName}>PvP</span>
+            <span className={styles.modeDesc}>Two teams compete — most money wins!</span>
+          </span>
+          <span className={styles.modeArrow}>→</span>
         </button>
       </div>
 
