@@ -694,7 +694,10 @@
   border-color: #5a5248;
 }
 
-/* ── Connection chooser ── */
+/* ── Connection chooser ──
+   Selection cards (PlaysetPicker pattern): Hewn Surface rest, Dungeon Crack
+   border, border shifts to the method accent on hover. No press shadow — the
+   tactile shadow is reserved for primary (torch-flame) buttons. */
 .connLabel {
   font-family: 'Fredoka', sans-serif;
   font-size: 16px;
@@ -720,45 +723,23 @@
   flex: 1;
   min-height: 0;
   text-align: left;
-  transition: filter 0.15s, transform 0.1s, box-shadow 0.1s;
+  transition: border-color 0.15s, background 0.15s;
 }
 
 .connTwitch:hover:not(:disabled),
 .connLocal:hover,
 .connSolo:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
+  background: var(--surface-2);
 }
 
-.connTwitch:active:not(:disabled),
-.connLocal:active,
-.connSolo:active {
-  transform: translateY(2px);
-}
+.connTwitch:hover:not(:disabled) { border-color: #9146ff; }
+.connLocal:hover  { border-color: var(--accent-secondary); }
+.connSolo:hover   { border-color: var(--text-secondary); }
 
-.connTwitch {
-  border-color: #9146ff;
-  box-shadow: 0 4px 0 rgba(145, 70, 255, 0.4);
-}
-.connTwitch:active:not(:disabled) { box-shadow: 0 2px 0 rgba(145, 70, 255, 0.4); }
 .connTwitch:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
-  box-shadow: none;
-  filter: grayscale(0.4);
 }
-
-.connLocal {
-  border-color: #c4a020;
-  box-shadow: 0 4px 0 rgba(196, 160, 32, 0.4);
-}
-.connLocal:active { box-shadow: 0 2px 0 rgba(196, 160, 32, 0.4); }
-
-.connSolo {
-  border-color: #42a05e;
-  box-shadow: 0 4px 0 rgba(66, 160, 94, 0.4);
-}
-.connSolo:active { box-shadow: 0 2px 0 rgba(66, 160, 94, 0.4); }
 
 .connName {
   font-family: 'Fredoka', sans-serif;
@@ -766,9 +747,9 @@
   font-weight: 700;
   line-height: 1;
 }
-.connTwitch .connName { color: #bf94ff; }
-.connLocal .connName { color: #c4a020; }
-.connSolo .connName { color: #5fc47e; }
+.connTwitch .connName { color: #9146ff; }
+.connLocal .connName  { color: var(--accent-secondary); }
+.connSolo .connName   { color: var(--text); }
 
 .connDesc {
   font-family: 'Space Mono', monospace;
@@ -778,9 +759,7 @@
 }
 
 .connArrow {
-  font-size: 26px;
+  font-size: 24px;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
-.connTwitch .connArrow { color: rgba(191, 148, 255, 0.5); }
-.connLocal .connArrow { color: rgba(196, 160, 32, 0.5); }
-.connSolo .connArrow { color: rgba(95, 196, 126, 0.5); }

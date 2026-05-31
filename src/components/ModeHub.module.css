@@ -49,31 +49,32 @@
   border: 1px solid var(--border);
 }
 
-/* ── Room widget (Local Play only) ── */
+/* ── Room widget (Local Play only) ──
+   Verdure border signals a live, connected room. Flat surface (no gradient) per
+   the Flat Surface Rule; gold is reserved for money/reward only. */
 .roomWidget {
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 14px 22px;
   border-radius: 12px;
-  border: 2px solid #c4a020;
-  background: linear-gradient(135deg, rgba(196, 160, 32, 0.14) 0%, rgba(216, 116, 40, 0.10) 100%);
+  border: 2px solid var(--accent-secondary);
+  background: var(--surface);
   cursor: pointer;
   color: var(--text);
-  transition: filter 0.15s, transform 0.1s;
+  transition: background 0.15s;
   flex-shrink: 0;
 }
 
 .roomWidget:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
+  background: var(--surface-2);
 }
 
 .roomCode {
   font-family: 'Lilita One', cursive;
   font-size: 22px;
   letter-spacing: 0.12em;
-  color: #c4a020;
+  color: var(--text);
 }
 
 .roomPlayers {
@@ -87,7 +88,7 @@
   font-family: 'Fredoka', sans-serif;
   font-size: 16px;
   font-weight: 700;
-  color: #c4a020;
+  color: var(--accent-secondary);
 }
 
 /* ── Title ── */
@@ -140,38 +141,38 @@
   font-size: 16px;
 }
 
-/* Free Play — featured orange */
+/* Free Play — featured torch-flame (the primary action) */
 .modeFreePlay {
-  background: #d87428;
+  background: var(--accent);
   border: none;
-  box-shadow: 0 4px 0 #8e4e18;
+  box-shadow: 0 4px 0 var(--accent-deep);
 }
 .modeFreePlay:hover { filter: brightness(1.1); transform: translateY(-1px); }
-.modeFreePlay:active { box-shadow: 0 2px 0 #8e4e18; }
-.modeFreePlay .modeName { color: #fff; }
-.modeFreePlay .modeDesc { color: rgba(255, 255, 255, 0.6); }
+.modeFreePlay:active { box-shadow: 0 2px 0 var(--accent-deep); }
+.modeFreePlay .modeName { color: var(--text); }
+.modeFreePlay .modeDesc { color: var(--text-dim); }
 
-/* Adventure — purple */
+/* Adventure — arcane deep (var(--accent-tertiary-deep)) */
 .modeAdventure {
-  background: #4e3a8a;
+  background: var(--accent-tertiary-deep);
   border: none;
   box-shadow: 0 4px 0 #321e5e;
 }
 .modeAdventure:hover { filter: brightness(1.1); transform: translateY(-1px); }
 .modeAdventure:active { box-shadow: 0 2px 0 #321e5e; }
-.modeAdventure .modeName { color: #fff; }
-.modeAdventure .modeDesc { color: rgba(255, 255, 255, 0.55); }
+.modeAdventure .modeName { color: var(--text); }
+.modeAdventure .modeDesc { color: var(--text-dim); }
 
-/* PvP — red/purple gradient */
+/* PvP — arcane glimmer (var(--accent-tertiary)); distinct from Adventure's deep */
 .modePvp {
-  background: linear-gradient(135deg, rgba(192, 56, 48, 0.28) 0%, rgba(120, 88, 204, 0.28) 100%);
-  border: 1.5px solid rgba(192, 56, 48, 0.45);
-  box-shadow: 0 4px 0 #321e5e;
+  background: var(--accent-tertiary);
+  border: none;
+  box-shadow: 0 4px 0 var(--accent-tertiary-deep);
 }
 .modePvp:hover { filter: brightness(1.1); transform: translateY(-1px); }
-.modePvp:active { box-shadow: 0 2px 0 #321e5e; }
-.modePvp .modeName { color: #fff; }
-.modePvp .modeDesc { color: rgba(255, 255, 255, 0.55); }
+.modePvp:active { box-shadow: 0 2px 0 var(--accent-tertiary-deep); }
+.modePvp .modeName { color: var(--text); }
+.modePvp .modeDesc { color: var(--text-dim); }
 
 /* ── Resume Adventure pill ── */
 .resumeRunPill {
