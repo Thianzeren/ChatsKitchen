@@ -1,5 +1,7 @@
 # ChatsKitchen — Jackbox-Style Multiplayer Spec
 
+> **Status (implemented, model evolved):** Local Play room hosting shipped. The final design is **co-play**: a room is always live (`chatMode` stays `'room'` — it is no longer toggled between `local`/`twitch`/`room`), and a connected Twitch channel plays *alongside* the room rather than as a separate mode. The room is surfaced via the always-on Local Play card on the main menu and a `RoomQRModal` popup (there is no standalone local-play screen / `RoomHostCard`). See `CLAUDE.md` → "Connection model (Jackbox-style co-play)" for current behaviour; sections below are the original spec and may differ in detail.
+
 ## Context
 
 ChatsKitchen is a real-time browser cooking game where chat commands drive gameplay. Today it works in two ways:
