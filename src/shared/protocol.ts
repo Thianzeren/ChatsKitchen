@@ -37,12 +37,39 @@ export interface SnapshotEvent {
 }
 export interface RoomClosedEvent { reason: 'host_gone' | 'kicked' }
 
+// ── Adventure vote screens (recipe draft / pantry shop) ──────────
+// Present when the host is on an Adventure choice-vote screen so phones can
+// render voting buttons instead of the "waiting for host" lobby.
+export interface VoteOptionView {
+  index: number       // 1-based; the !N command this option maps to
+  label: string       // dish or garnish name
+  emoji: string       // dish/garnish icon
+  detail?: string     // reward "$65" (recipe) or "$40 · rare" (shop)
+  votes: number       // current tally
+  disabled?: boolean  // shop: unaffordable on this option
+}
+
+export interface VoteSnapshot {
+  kind: 'recipe' | 'shop'
+  title: string                 // "Add a Recipe" / "The Pantry"
+  instruction: string           // short how-to line
+  money?: number                // run bank (shop only)
+  options: VoteOptionView[]
+  skipCommand: string | null    // "!skip" / "!done" / null
+  skipLabel: string | null      // "Skip" / "Done"
+  timeLeftMs: number | null
+  timeMaxMs: number | null      // original duration, for the timer bar
+  paused: boolean
+  resolved: boolean
+}
+
 // ── Snapshot shape (what phones render from) ─────────────────────
 export interface SharedSnapshot {
   phase: 'lobby' | 'playing' | 'gameover'
   timeRemainingMs: number
   money: number
   teamMoney?: { red: number; blue: number }  // PvP only
+  vote?: VoteSnapshot                          // present on Adventure vote screens
   orders: Array<{
     id: number
     dish: string

@@ -5,6 +5,7 @@ import { GARNISHES } from '../data/adventureGarnishes'
 import { getMenuTagCounts, TAG_ORDER } from '../data/recipeProfile'
 import ArchetypeChip from './ArchetypeChip'
 import { getAudioManager } from '../audio/AudioManager'
+import type { VoteSnapshot } from '../shared/protocol'
 import styles from './AdventurePantryShop.module.css'
 
 const VOTE_DURATION_MS = 60_000
@@ -15,10 +16,11 @@ interface Props {
   onReroll: () => boolean
   onClose: () => void
   voteRef: { current: ((user: string, text: string) => boolean) | null }
+  snapshotRef?: { current: VoteSnapshot | null }
   rerollPrice: number
 }
 
-export default function AdventurePantryShop({ run, onPurchase, onReroll, onClose, voteRef, rerollPrice }: Props) {
+export default function AdventurePantryShop({ run, onPurchase, onReroll, onClose, voteRef, snapshotRef, rerollPrice }: Props) {
   const offers = useMemo(() => run.pendingShopOffers ?? [], [run.pendingShopOffers])
   const menuTagCounts = useMemo(() => getMenuTagCounts(run.currentRecipes), [run.currentRecipes])
 
@@ -96,6 +98,37 @@ export default function AdventurePantryShop({ run, onPurchase, onReroll, onClose
   const timerPct = voteState.timeLeftMs !== null
     ? (voteState.timeLeftMs / VOTE_DURATION_MS) * 100
     : 100
+
+  // Publish the live vote view so the room snapshot loop can push voting UI to
+  // phones. Written during render (idempotent) and cleared on unmount.
+  if (snapshotRef) {
+    snapshotRef.current = {
+      kind: 'shop',
+      title: 'The Pantry',
+      instruction: offers.length > 0
+        ? `Tap a garnish — or type !1–!${offers.length} / !done`
+        : 'Closing pantry…',
+      money: run.currentRunMoney,
+      options: offers.map((offer, idx) => {
+        const g = GARNISHES[offer.garnishId]
+        return {
+          index: idx + 1,
+          label: g?.name ?? offer.garnishId,
+          emoji: g?.icon ?? '🌿',
+          detail: `$${offer.price} · ${offer.rarity}`,
+          votes: voteState.tallies[idx] ?? 0,
+          disabled: run.currentRunMoney < offer.price,
+        }
+      }),
+      skipCommand: '!done',
+      skipLabel: 'Done',
+      timeLeftMs: voteState.timeLeftMs,
+      timeMaxMs: VOTE_DURATION_MS,
+      paused: voteState.paused,
+      resolved: voteState.resolved,
+    }
+  }
+  useEffect(() => () => { if (snapshotRef) snapshotRef.current = null }, [snapshotRef])
 
   return (
     <div className={styles.screen}>

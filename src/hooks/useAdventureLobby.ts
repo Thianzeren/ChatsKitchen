@@ -2,8 +2,9 @@ import { useState, useRef, useCallback, Dispatch, SetStateAction } from 'react'
 import { Screen } from '../state/types'
 
 // Adventure runs cooperatively, so the lobby is a flat roster (no teams).
-// Only local "You" is auto-joined; everyone else (including the Twitch broadcaster)
-// must type !join from chat.
+// The lobby starts empty: every chef joins via !join (or, in Local Play, by
+// connecting a phone). The local host ("You") is an uncounted admin who plays
+// through the in-game chatbox and is never added to the roster.
 //
 // The lobby state outlives the lobby screen — it stays alive through the run so
 // mid-run !leave / !kick can shrink the roster, which `closeShop` reads at shift
@@ -16,9 +17,9 @@ export function useAdventureLobby(
   const adventureLobbyRef = useRef<string[] | null>(null)
   adventureLobbyRef.current = adventureLobby
 
-  // Open the lobby with only the local "You" auto-joined.
+  // Open the lobby empty — chefs join via !join / phone; the host is uncounted.
   const openAdventureLobby = useCallback(() => {
-    setAdventureLobby(['You'])
+    setAdventureLobby([])
     setScreen('adventurelobby')
   }, [setScreen])
 

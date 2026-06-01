@@ -2,6 +2,7 @@ import { GameState, Station, Order, ChatMessage, StationSlot, PlayerStats } from
 import { RECIPES, STATION_DEFS, HEAT_EXEMPT_STATIONS } from '../data/recipes'
 import { getRecipeProfile } from '../data/recipeProfile'
 import { pickMiseEnPlaceIngredients, applyServeTriggers } from '../data/adventureGarnishes'
+import { countActivePlayers } from './participants'
 
 export const HEAT_PER_COOK = 20   // kept for reference; actual value is random 10–20 per slot
 export const COOL_AMOUNT   = 50   // midpoint reference only — actual value rolled randomly 40–60 on each use
@@ -217,7 +218,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         const blueSize = Object.values(state.teams).filter(t => t === 'blue').length
         needed = Math.max(1, Math.ceil(Math.max(redSize, blueSize) * 0.5))
       } else {
-        const totalPlayers = Math.max(state.participantCount, Object.keys(state.playerStats).length, 1)
+        const totalPlayers = Math.max(state.participantCount, countActivePlayers(state.playerStats), 1)
         needed = Math.max(1, Math.ceil(totalPlayers * 0.5))
       }
       const withStat = addStat(state, user, 'extinguished', 1)
@@ -446,7 +447,7 @@ let matchedStep = null
     }
 
     case 'SPAWN_ORDER': {
-      const playerCount = Object.keys(state.playerStats).length
+      const playerCount = Math.max(state.participantCount, countActivePlayers(state.playerStats))
       const maxOrders = Math.min(15, 5 + Math.floor(playerCount / 8))
       const activeOrders = state.orders.filter(o => !o.served).length
       if (activeOrders >= maxOrders) return state

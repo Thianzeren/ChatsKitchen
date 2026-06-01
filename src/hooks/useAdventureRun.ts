@@ -10,6 +10,7 @@ import {
 } from '../data/adventureGarnishes'
 import { generateRecipeOffers } from '../data/adventureRecipeDraft'
 import { applyBossDebuff, pickBossForShift } from '../data/adventureBosses'
+import { countRoster } from '../state/participants'
 
 // ── localStorage migration ───────────────────────────────────────────────────
 
@@ -187,7 +188,7 @@ export function useAdventureRun(
   // startAdventure: create a fresh run and open the opening recipe draft.
   const startAdventure = useCallback(() => {
     const roster = adventureLobbyRef.current ?? []
-    const participantCount = Math.max(1, roster.length)
+    const participantCount = Math.max(1, countRoster(roster))
     const shift = 1
     const runSeed = makeRunSeed()
     const run: AdventureRun = {
@@ -384,9 +385,8 @@ export function useAdventureRun(
       const nextShift = prev.currentShift + 1
 
       const liveRoster = adventureLobbyRef.current
-      const nextParticipantCount = liveRoster && liveRoster.length > 0
-        ? liveRoster.length
-        : prev.participantCount
+      const liveCount = liveRoster ? countRoster(liveRoster) : 0
+      const nextParticipantCount = liveCount > 0 ? liveCount : prev.participantCount
 
       const currentGoal = getAdventureGoal(nextShift, nextParticipantCount)
 
@@ -441,7 +441,7 @@ export function useAdventureRun(
     setAdventureRun(prev => {
       if (!prev) return prev
       const liveRoster = adventureLobbyRef.current ?? []
-      const nextParticipantCount = Math.max(1, liveRoster.length)
+      const nextParticipantCount = Math.max(1, countRoster(liveRoster))
       const currentGoal = getAdventureGoal(prev.currentShift, nextParticipantCount)
       const updatedRun: AdventureRun = { ...prev, participantCount: nextParticipantCount, currentGoal }
       dispatch(buildShiftReset(updatedRun, prev.currentBoss))

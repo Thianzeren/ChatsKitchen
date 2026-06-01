@@ -1,0 +1,264 @@
+.screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  padding: 20px 16px;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  gap: 14px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.money {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  line-height: 1;
+}
+
+.instruction {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* ── Timer bar ───────────────────────────────────────────── */
+.timerBar {
+  position: relative;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.timerFill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s linear;
+}
+
+.timerBarPaused .timerFill {
+  background: var(--text-muted);
+}
+
+.timerLabel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Options ─────────────────────────────────────────────── */
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 14px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  min-height: 64px;
+  touch-action: manipulation;
+  transition: border-color 0.12s, filter 0.12s;
+}
+
+.option:active {
+  filter: brightness(1.12);
+}
+
+.optionSelected {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.option:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.optKey {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+  min-width: 28px;
+}
+
+.optIcon {
+  font-size: 1.9rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.optBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.optLabel {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.15;
+}
+
+.optDetail {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.optVotes {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* ── Skip / Done ─────────────────────────────────────────── */
+.skipBtn {
+  padding: 14px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  min-height: 48px;
+  touch-action: manipulation;
+  transition: border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.skipBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.resolved {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--accent-secondary);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* ── Footer ──────────────────────────────────────────────── */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+  padding-top: 4px;
+}
+
+.nickname {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.footerRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c03830;
+  flex-shrink: 0;
+}
+
+.dotOn {
+  background: var(--accent-secondary);
+}
+
+.exitBtn,
+.exitConfirmYes,
+.exitConfirmNo {
+  padding: 8px 14px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 36px;
+  touch-action: manipulation;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.exitConfirmLabel {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.exitConfirmYes {
+  border-color: #c03830;
+  color: #e06860;
+}
+
+.exitConfirmNo {
+  border-color: var(--accent-secondary);
+  color: var(--accent-secondary);
+}

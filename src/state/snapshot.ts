@@ -1,6 +1,6 @@
 import { RECIPES } from '../data/recipes'
 import type { GameState } from './types'
-import type { SharedSnapshot, PartialPlayerView } from '../shared/protocol'
+import type { SharedSnapshot, PartialPlayerView, VoteSnapshot } from '../shared/protocol'
 import type { RoomPlayer } from './roomRoster'
 
 export function gameStateToSnapshot(state: GameState, phase: SharedSnapshot['phase']): SharedSnapshot {
@@ -45,6 +45,21 @@ export function pvpLobbySnapshot(): SharedSnapshot {
     timeRemainingMs: 0,
     money: 0,
     teamMoney: { red: 0, blue: 0 },
+    orders: [],
+    stations: [],
+  }
+}
+
+// Snapshot pushed to phones while the host sits on an Adventure choice-vote
+// screen (recipe draft / pantry shop). Carries the live vote view so phones can
+// render voting buttons instead of the "waiting for host" lobby. The vote
+// components own the VoteSnapshot; this just wraps it into a SharedSnapshot.
+export function adventureVoteSnapshot(vote: VoteSnapshot): SharedSnapshot {
+  return {
+    phase: 'lobby',
+    timeRemainingMs: vote.timeLeftMs ?? 0,
+    money: vote.money ?? 0,
+    vote,
     orders: [],
     stations: [],
   }
