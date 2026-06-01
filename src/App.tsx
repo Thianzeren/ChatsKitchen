@@ -12,8 +12,10 @@ import { useGameLoop } from './hooks/useGameLoop'
 import { useBotSimulation } from './hooks/useBotSimulation'
 import { useTwitchChat } from './hooks/useTwitchChat'
 import { useRoomHost } from './hooks/useRoomHost'
-import { gameStateToSnapshot, pvpLobbySnapshot, pvpLobbyPerPlayer } from './state/snapshot'
+import { gameStateToSnapshot, pvpLobbySnapshot, pvpLobbyPerPlayer, adventureVoteSnapshot } from './state/snapshot'
+import type { VoteSnapshot } from './shared/protocol'
 import { classifyRoomCommand } from './state/roomCommandRouting'
+import { countActivePlayers } from './state/participants'
 import { connectedNicknames, unassignedPool } from './state/roomRoster'
 import { useGameAudio } from './audio/useGameAudio'
 import { useViewportScale } from './hooks/useViewportScale'
@@ -159,6 +161,10 @@ export default function App() {
   // Vote-screen chat interception: the active vote-driven screen (e.g. PantryShop)
   // registers its registerVote handler here so chat messages routing can find it.
   const adventureVoteRef = useRef<((user: string, text: string) => boolean) | null>(null)
+  // The active vote-driven screen also publishes its live VoteSnapshot here so the
+  // room snapshot loop can push voting UI to phones (otherwise they sit on the
+  // "waiting for host" lobby and can't vote). Cleared when the screen unmounts.
+  const adventureVoteSnapshotRef = useRef<VoteSnapshot | null>(null)
 
   const { pvpLobby, setPvpLobby, pvpLobbyRef, startPvp, startPvpGame, balanceLobby, handleLobbyMetaCommand, handleLobbyJoin } = usePvpLobby(setScreen, showToast)
 
@@ -244,14 +250,14 @@ export default function App() {
   // run (opening recipe draft) or resumes an existing one if the host had stepped
   // back to the lobby mid-run via the briefing's "Manage Lobby" button.
   const handleAdventureLobbyStart = useCallback(() => {
-    const roster = adventureLobbyRef.current ?? []
-    if (roster.length === 0) return
+    // No empty-roster guard: the host plays as an uncounted admin via the
+    // in-game chatbox, so a solo run (0 joined chefs) is allowed.
     if (adventureRunRef.current) {
       resumeAdventureRun()
       return
     }
     startAdventure()
-  }, [adventureLobbyRef, adventureRunRef, resumeAdventureRun, startAdventure])
+  }, [adventureRunRef, resumeAdventureRun, startAdventure])
 
   // Briefing → lobby (preserves the active run; lobby's "Resume" button calls
   // resumeAdventureRun to return).
@@ -329,7 +335,7 @@ export default function App() {
     } else {
       // Compute star thresholds from actual player count (non-PvP free play only)
       if (!s.teams || Object.keys(s.teams).length === 0) {
-        const playerCount = Math.max(s.participantCount, Object.keys(s.playerStats).length, 1)
+        const playerCount = Math.max(s.participantCount, countActivePlayers(s.playerStats), 1)
         const optionsForThresholds = activeGameOptionsRef.current ?? gameOptionsRef.current
         activeGameOptionsRef.current = null
         setStarThresholds(computeStarThresholds(optionsForThresholds, playerCount))
@@ -581,6 +587,12 @@ export default function App() {
         )
         return
       }
+      if (currentScreen === 'adventurerecipepick' || currentScreen === 'adventurepantryshop') {
+        // Always re-send: tallies and the timer change without GameState changing.
+        const vote = adventureVoteSnapshotRef.current
+        if (vote) roomRef.current.sendSnapshot(adventureVoteSnapshot(vote))
+        return
+      }
       const phase: 'lobby' | 'playing' | 'gameover' =
         currentScreen === 'playing' ? 'playing'
         : (currentScreen === 'shiftend' || currentScreen === 'gameover') ? 'gameover'
@@ -599,13 +611,13 @@ export default function App() {
   }, [chatMode])
 
   // In Local Play, the connected room roster IS the Adventure roster.
-  // Mirror room players into the adventure lobby whenever it is active.
+  // Mirror room players into the adventure lobby whenever it is active. The
+  // local host ("You") is an uncounted admin and is deliberately NOT seeded
+  // here — they participate via the in-game chatbox without counting as a chef.
   useEffect(() => {
     if (chatMode !== 'room') return
     if (adventureLobby == null) return // adventure not active
-    const connected = connectedNicknames(roomPlayers)
-    // Preserve 'You' (the host) if present, then append connected room players.
-    const next = ['You', ...connected.filter(n => n !== 'You')]
+    const next = connectedNicknames(roomPlayers).filter(n => n !== 'You')
     const sameLength = adventureLobby.length === next.length
     const same = sameLength && adventureLobby.every((u, i) => u === next[i])
     if (!same) setAdventureLobby(next)
@@ -714,6 +726,7 @@ export default function App() {
         onConfirm={confirmRecipePick}
         onSkip={skipRecipePick}
         voteRef={adventureVoteRef}
+        snapshotRef={adventureVoteSnapshotRef}
       />
     )
   } else if (screen === 'adventurebriefing') {
@@ -817,6 +830,7 @@ export default function App() {
         onReroll={rerollShopOffers}
         onClose={closeShop}
         voteRef={adventureVoteRef}
+        snapshotRef={adventureVoteSnapshotRef}
         rerollPrice={getRerollPrice()}
       />
     )

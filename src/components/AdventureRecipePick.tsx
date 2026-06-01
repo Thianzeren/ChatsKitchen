@@ -5,6 +5,7 @@ import { getRecipeProfile, orderedTags } from '../data/recipeProfile'
 import ArchetypeChip from './ArchetypeChip'
 import { orderStepsForDisplay } from '../data/recipeSteps'
 import { getAudioManager } from '../audio/AudioManager'
+import type { VoteSnapshot } from '../shared/protocol'
 import styles from './AdventureRecipePick.module.css'
 
 const VOTE_DURATION_MS = 45_000
@@ -18,9 +19,10 @@ interface Props {
   onConfirm: (offerIdx: number) => void
   onSkip: () => void
   voteRef: { current: ((user: string, text: string) => boolean) | null }
+  snapshotRef?: { current: VoteSnapshot | null }
 }
 
-export default function AdventureRecipePick({ offers, shiftNumber, rosterSize, allowSkip, onConfirm, onSkip, voteRef }: Props) {
+export default function AdventureRecipePick({ offers, shiftNumber, rosterSize, allowSkip, onConfirm, onSkip, voteRef, snapshotRef }: Props) {
   const [carouselStart, setCarouselStart] = useState(0)
 
   const { state: voteState, registerVote, forceResolve, togglePause } = useChoiceVote(
@@ -37,6 +39,35 @@ export default function AdventureRecipePick({ offers, shiftNumber, rosterSize, a
     voteRef.current = registerVote
     return () => { voteRef.current = null }
   }, [voteRef, registerVote])
+
+  // Publish the live vote view so the room snapshot loop can push voting UI to
+  // phones. Written during render (idempotent) and cleared on unmount.
+  if (snapshotRef) {
+    snapshotRef.current = {
+      kind: 'recipe',
+      title: 'Add a Recipe',
+      instruction: allowSkip
+        ? `Tap a dish — or type !1–!${offers.length} / !skip`
+        : `Tap a dish — or type !1–!${offers.length}`,
+      options: offers.map((key, idx) => {
+        const r = RECIPES[key]
+        return {
+          index: idx + 1,
+          label: r?.name ?? key,
+          emoji: r?.emoji ?? '🍽️',
+          detail: r ? `$${getRecipeProfile(r).reward}` : undefined,
+          votes: voteState.tallies[idx] ?? 0,
+        }
+      }),
+      skipCommand: allowSkip ? '!skip' : null,
+      skipLabel: allowSkip ? 'Skip' : null,
+      timeLeftMs: voteState.timeLeftMs,
+      timeMaxMs: VOTE_DURATION_MS,
+      paused: voteState.paused,
+      resolved: voteState.resolved,
+    }
+  }
+  useEffect(() => () => { if (snapshotRef) snapshotRef.current = null }, [snapshotRef])
 
   const totalVotes = voteState.tallies.reduce((s, t) => s + t, 0)
   const timerPct = voteState.timeLeftMs !== null ? (voteState.timeLeftMs / VOTE_DURATION_MS) * 100 : 100

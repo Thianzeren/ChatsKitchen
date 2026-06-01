@@ -23,7 +23,9 @@ export default function AdventureLobby({
 }: Props) {
   const [confirmClear, setConfirmClear] = useState(false)
   const playerCount = roster.length
-  const canStart = playerCount >= 1
+  // The host always plays as an (uncounted) admin via the in-game chatbox, so the
+  // run can start even with an empty crew — chefs can still !join mid-run.
+  const canStart = true
   const isMidRun = activeShift !== undefined
 
   return (

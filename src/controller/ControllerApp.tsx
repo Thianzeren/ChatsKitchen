@@ -5,6 +5,7 @@ import { usePlayerSocket, type Credentials, type RoomInfo } from './usePlayerSoc
 import JoinScreen from './JoinScreen'
 import Lobby from './Lobby'
 import Controller from './Controller'
+import VoteScreen from './VoteScreen'
 
 export default function ControllerApp() {
   const [room, setRoom] = useState<RoomInfo | null>(null)
@@ -41,6 +42,20 @@ export default function ControllerApp() {
   }
 
   const phase = snapshot?.phase ?? 'lobby'
+
+  // Adventure choice-vote screens (recipe draft / pantry shop): show the voting
+  // UI instead of the "waiting for host" lobby so phone players can vote.
+  if (snapshot?.vote) {
+    return (
+      <VoteScreen
+        nickname={room.nickname}
+        vote={snapshot.vote}
+        send={send}
+        connected={connected}
+        onExit={handleExitRoom}
+      />
+    )
+  }
 
   if (phase !== 'playing') {
     return (

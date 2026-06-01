@@ -1,13 +1,13 @@
 .screen {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
   height: 100%;
   background:
     radial-gradient(ellipse at top, rgba(216, 116, 40, 0.05), transparent 65%),
     radial-gradient(ellipse at bottom right, rgba(196, 160, 32, 0.04), transparent 60%),
     var(--bg);
-  padding: 32px 60px;
+  padding: 24px 48px;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -158,11 +158,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 7px;
   background: linear-gradient(180deg, var(--station-bg) 0%, rgba(0, 0, 0, 0.18) 100%);
   border: 2px solid var(--border);
   border-radius: 16px;
-  padding: 22px 18px 16px;
+  padding: 16px 16px 14px;
   cursor: pointer;
   transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   text-align: center;
@@ -211,9 +211,9 @@
 }
 
 .cardHero {
-  font-size: 56px;
+  font-size: 42px;
   line-height: 1;
-  margin-top: 4px;
+  margin-top: 0;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
 }
 
@@ -231,8 +231,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 18px 6px;
+  gap: 5px;
+  padding: 9px 6px;
   background: rgba(255, 255, 255, 0.045);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -240,7 +240,7 @@
 
 .statValue {
   font-family: 'Lilita One', cursive;
-  font-size: 40px;
+  font-size: 30px;
   line-height: 1;
   color: var(--text);
   letter-spacing: 2px;
@@ -272,8 +272,8 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 6px;
-  padding: 12px 10px;
+  gap: 5px;
+  padding: 8px 10px;
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -311,23 +311,23 @@
 .stepRow {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 8px 13px;
   flex-shrink: 0;
 }
 
 .stepNum {
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'Lilita One', cursive;
-  font-size: 16px;
+  font-size: 14px;
   color: #1a1a1a;
   background: #c4a020;
   border-radius: 50%;
@@ -335,7 +335,7 @@
 
 .stepAction {
   font-family: 'Fredoka', sans-serif;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 700;
   color: #e8943a;
   text-transform: capitalize;
@@ -343,7 +343,7 @@
 
 .stepTarget {
   font-family: 'Fredoka', sans-serif;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--text);
   text-align: left;
@@ -397,17 +397,17 @@
 
 .cardName {
   font-family: 'Lilita One', cursive;
-  font-size: 28px;
+  font-size: 23px;
   color: var(--text);
 }
 
 .cardFooter {
-  margin-top: 6px;
+  margin-top: 3px;
 }
 
 .cardVotes {
   font-family: 'Space Mono', monospace;
-  font-size: 18px;
+  font-size: 15px;
   color: var(--text-muted);
 }
 
@@ -482,5 +482,5 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 4px;
-  margin: 2px 0 6px;
+  margin: 0 0 2px;
 }
