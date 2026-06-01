@@ -720,6 +720,7 @@ export default function App() {
     content = (
       <AdventureRecipePick
         offers={adventureRun.pendingRecipeOffers}
+        currentRecipes={adventureRun.currentRecipes}
         shiftNumber={adventureRun.shiftResults.length === 0 ? 1 : adventureRun.currentShift + 1}
         rosterSize={adventureLobby?.length ?? adventureRun.participantCount}
         allowSkip={adventureRun.shiftResults.length > 0}

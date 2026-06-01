@@ -1,7 +1,7 @@
-import { useEffect, useState, Fragment } from 'react'
+import { useEffect, useMemo, useState, Fragment } from 'react'
 import { useChoiceVote } from '../hooks/useChoiceVote'
 import { RECIPES } from '../data/recipes'
-import { getRecipeProfile, orderedTags } from '../data/recipeProfile'
+import { getRecipeProfile, orderedTags, getMenuTagCounts, TAG_ORDER } from '../data/recipeProfile'
 import ArchetypeChip from './ArchetypeChip'
 import { orderStepsForDisplay } from '../data/recipeSteps'
 import { getAudioManager } from '../audio/AudioManager'
@@ -13,6 +13,7 @@ const VISIBLE = 3
 
 interface Props {
   offers: string[]                 // recipe keys (1–3)
+  currentRecipes: string[]         // the menu drafted so far (empty on the opening pick)
   shiftNumber: number
   rosterSize: number
   allowSkip: boolean               // false for the opening draft (must pick a first dish)
@@ -22,8 +23,11 @@ interface Props {
   snapshotRef?: { current: VoteSnapshot | null }
 }
 
-export default function AdventureRecipePick({ offers, shiftNumber, rosterSize, allowSkip, onConfirm, onSkip, voteRef, snapshotRef }: Props) {
+export default function AdventureRecipePick({ offers, currentRecipes, shiftNumber, rosterSize, allowSkip, onConfirm, onSkip, voteRef, snapshotRef }: Props) {
   const [carouselStart, setCarouselStart] = useState(0)
+  // Archetype make-up of the menu drafted so far — helps chat decide what to add.
+  // Empty on the opening pick (no menu yet), so the banner is hidden then.
+  const menuTagCounts = useMemo(() => getMenuTagCounts(currentRecipes), [currentRecipes])
 
   const { state: voteState, registerVote, forceResolve, togglePause } = useChoiceVote(
     { numOptions: offers.length, durationMs: VOTE_DURATION_MS, allowDoneCommand: allowSkip },
@@ -89,6 +93,15 @@ export default function AdventureRecipePick({ offers, shiftNumber, rosterSize, a
           <span className={styles.crewBadgeLabel}>{rosterSize === 1 ? 'chef' : 'chefs'}</span>
         </div>
       </div>
+
+      {menuTagCounts.size > 0 && (
+        <div className={styles.menuTags}>
+          <span className={styles.menuTagsLabel}>Your menu:</span>
+          {TAG_ORDER.filter(t => menuTagCounts.has(t)).map(t => (
+            <ArchetypeChip key={t} tag={t} count={menuTagCounts.get(t)!} />
+          ))}
+        </div>
+      )}
 
       <div className={`${styles.timerBar} ${voteState.paused ? styles.timerBarPaused : ''}`}>
         <div className={styles.timerFill} style={{ width: `${timerPct}%` }} />
