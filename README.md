@@ -7,6 +7,7 @@ A browser-based real-time kitchen game where Twitch chat collectively runs a res
 ## Features
 
 - **Twitch integration** — connect any channel and chat commands become gameplay actions
+- **Local Play** — an always-live room; players scan a QR to join from their phones (works with or without Twitch, and the two can play together)
 - **Cooperative chaos** — 27 recipes across 6 cuisine sets, 12 station types, one shared kitchen
 - **Heat mechanic** — stations heat up during cooking; cool with `cool <station>` (40–60% reduction) or the team must `extinguish` if it overheats
 - **Kitchen Events** — random mid-round challenges (hazards and opportunities) that the whole chat must respond to together

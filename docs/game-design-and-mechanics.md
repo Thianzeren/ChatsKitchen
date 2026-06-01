@@ -234,7 +234,7 @@ Kitchen events are **off** for shifts 1–2 and turn **on from shift 3 onward**,
 - **Clearing shift 8** wins the run.
 - **Missing any shift's goal** ends the run immediately at the run-end screen.
 - The **best run** (furthest shift, then most total money as a tiebreaker) and a running count of **won runs** are saved to the browser and persist between sessions.
-- The full run is **auto-saved at every shift boundary**. If the browser is closed mid-run, a Resume pill on the Main Menu drops chat back into the upcoming shift's briefing. Saved state is cleared when the run ends (win or fail). Mid-shift cooking state is never saved — resuming always restarts at a briefing.
+- The full run is **auto-saved at every shift boundary**. If the browser is closed mid-run, a Resume pill on the mode hub restores it — it reopens the Adventure lobby (Manage the Crew) so players can re-join, then continues to the upcoming shift's briefing. Saved state is cleared when the run ends (win or fail). Mid-shift cooking state is never saved — resuming always restarts at a briefing.
 
 ## Orders And Scoring
 
@@ -420,12 +420,12 @@ The game is designed to remain understandable even during busy rounds.
 
 ### Main Menu
 
-The Main Menu is the hub for:
+The Main Menu is the **connection screen**. The left side holds the primary actions — **Play** (opens the mode hub), **Tutorial**, **Options**, **Feedback**, and **Credits**. The right side is "How players join":
 
-- connecting Twitch
-- entering Adventure, Free Play, or PvP Mode
-- starting the tutorial
-- changing Options
+- **Twitch chat** — connect a channel and chat plays the game.
+- **Local Play** — an always-live room; players scan the QR (or visit `/play`) to join from their phones.
+
+The two combine (co-play): a Local Play room is always running, and an attached Twitch channel plays alongside the phone crew. **Play** opens the **mode hub** ("Choose a mode": Free Play / Adventure / PvP), where the actual mode is picked.
 
 ### Tutorial Flow
 
@@ -433,11 +433,8 @@ The tutorial system is meant to lower the learning curve without forcing a long 
 
 Current tutorial behavior:
 
-- clicking `Adventure` or `Free Play` first shows a tutorial prompt for new players
-- `Play Tutorial` starts the interactive tutorial round
-- `Skip` continues into the selected mode
-- `Don't Show Again` suppresses the prompt for future sessions
-- clicking `Tutorial` on the main menu starts the tutorial directly
+- the **Tutorial** button on the main menu starts the interactive tutorial round directly
+- there is no separate tutorial prompt before entering a mode — Tutorial is an explicit choice on the menu
 
 ### Gameplay HUD
 
@@ -469,8 +466,8 @@ When connected:
 
 When disconnected:
 
-- the game can still be played locally
-- the UI warns that Twitch should be connected before playing with a community
+- Twitch is optional — the menu notes that connecting a channel lets chat play too
+- the game still plays via Local Play (phone controllers) and the local chat input
 - the local chat input is always treated as broadcaster-level for mod commands
 
 ## Audio And Feedback

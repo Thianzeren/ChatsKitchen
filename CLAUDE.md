@@ -62,19 +62,27 @@ ChatsKitchen/
 
 ### Screen Routing
 
-`App.tsx` owns top-level screen state as a union type:
+`App.tsx` owns top-level screen state as a union type (`Screen` in `types.ts`):
 ```
-'menu' | 'localplay' | 'pvplobby' | 'adventurelobby' | 'adventurerecipepick'
-| 'adventurebriefing' | 'adventurepantryshop' | 'adventurebossbriefing'
+'menu' | 'modehub' | 'pvplobby' | 'adventurelobby' | 'adventurerecipepick'
+| 'adventurebriefing' | 'adventurepantryshop'
 | 'adventureshiftpassed' | 'adventurerunend'
 | 'options' | 'playsetpicker' | 'freeplaysetup'
 | 'countdown' | 'playing' | 'shiftend' | 'gameover' | 'credits'
 ```
 No router library — screens are conditionally rendered components.
 
+`menu` is the **main menu / connection screen** (brand + Play/Tutorial/Options/Feedback/Credits on the left; Twitch + always-live Local Play QR on the right). `Play` advances to `modehub` ("Choose a mode": Free Play / Adventure / PvP). Post-game "Menu"/"Exit to Menu" actions return to `menu`; "Back" from setup screens steps back to `modehub`.
+
+### Connection model (Jackbox-style co-play)
+
+There is **no connection-method chooser** — a Local Play room is always live (`chatMode` is initialised to `'room'` in `App.tsx` and never changes for the session). The room's QR/code is shown on the main menu (and via a `RoomQRModal` popup elsewhere). Twitch is an **optional co-input**: when a channel is connected (`twitchChannel` set), chat plays *alongside* the room — `useTwitchChat` connects off `twitchChannel` regardless of `chatMode`, and `handleTwitchMessage` drives the game with no "view-only" guard. Phone players always play; the host can also type as `You`.
+
+There is no standalone local-play screen — the room is surfaced through `RoomQRModal` (`src/components/RoomQRModal.tsx`), portaled to `document.body` so it stacks above the in-game `PauseModal`.
+
 ### PvP Lobby
 
-PvP Mode adds a pre-game lobby screen (`pvplobby`) between the Main Menu and `freeplaysetup`. The roster is stored in `App.tsx` as:
+PvP Mode adds a pre-game lobby screen (`pvplobby`) between the mode hub and `freeplaysetup`. The roster is stored in `App.tsx` as:
 
 ```typescript
 pvpLobby: { red: string[], blue: string[] } | null
@@ -82,7 +90,7 @@ pvpLobby: { red: string[], blue: string[] } | null
 
 A `pvpLobbyRef` (useRef) mirrors this state so that lobby mod commands (`!move`, `!balance`) can read the current roster synchronously inside `useCallback` closures without stale-closure bugs.
 
-**Screen flow:** `menu` → `pvplobby` → `freeplaysetup` → `countdown` → `playing` → `shiftend` → `gameover`
+**Screen flow:** `menu` → `modehub` → `pvplobby` → `freeplaysetup` → `countdown` → `playing` → `shiftend` → `gameover`. In Local Play, room players appear as an "unassigned pool" the host can drag onto a team; phones can also self-pick via `!red`/`!blue` reflected through PvP-lobby snapshots.
 
 When the game starts, the roster is merged into the reducer's initial state via the `RESET` action's `teams` parameter (`Record<string, 'red' | 'blue'>`). Lobby state is then cleared.
 
@@ -112,7 +120,7 @@ Drag-and-drop is also available in the `PvPLobby` component UI — players can b
 
 A Balatro-inspired 8-shift run. Chat builds up a menu via a draft system, and shops the Pantry for permanent upgrades. Any failed shift ends the run; the goal is to clear shift 8.
 
-**Screen flow:** `menu` → `adventurelobby` → `adventurerecipepick` (opening draft) → `adventurebriefing` → `countdown` → `playing` → `shiftend` → `adventureshiftpassed` → `adventurerecipepick` → `adventurepantryshop` → next `adventurebriefing` (loop) → `adventurerunend`
+**Screen flow:** `menu` → `modehub` → `adventurelobby` → `adventurerecipepick` (opening draft) → `adventurebriefing` → `countdown` → `playing` → `shiftend` → `adventureshiftpassed` → `adventurerecipepick` → `adventurepantryshop` → next `adventurebriefing` (loop) → `adventurerunend`. Resuming a saved run (Resume pill on the mode hub) lands on `adventurelobby` (Manage the Crew) first so players can re-join, then proceeds to the briefing via the lobby's "Resume" button.
 
 Most run-level state lives in `useAdventureRun.ts` (`AdventureRun` shape in `types.ts`); the lobby roster is owned by `useAdventureLobby.ts`. The recipe-draft and shop voting screens use the shared `useChoiceVote.ts` hook (plurality `!1`..`!N` with timer + pause). Both `pvpLobbyRef` and `adventureLobbyRef` mirror their respective rosters into refs for stale-closure-safe chat command handling.
 
@@ -149,10 +157,16 @@ App.tsx
 
 ### Command Flow
 
+Three input sources feed the same pipeline: Twitch chat (`handleTwitchMessage`), the local ChatPanel (`handleChatSend`), and phone-controller commands (`onPlayerCommand` in `useRoomHost`). Twitch and phones play together (co-play); all are connected at once.
+
 ```
-Twitch Chat (or local ChatPanel)
-  → handleTwitchMessage (App.tsx)       // receives (user, text, isMod)
-  → [pvplobby screen only] lobby intercept // !red / !blue / !join / !balance / !move handled here; early return
+Twitch chat / local ChatPanel / phone controller
+  → handleTwitchMessage | handleChatSend | onPlayerCommand (App.tsx)
+  → screen-based intercept (early return):
+       pvplobby            → handleLobbyJoin / handleLobbyMetaCommand
+       adventurelobby      → handleAdventureLobbyJoin / …MetaCommand
+       adventure vote      → adventureVoteRef.current(...)
+     (room players route via classifyRoomCommand in state/roomCommandRouting.ts)
   → handleEventCommand (useKitchenEvents) // kitchen event response matching; runs before game commands
   → handleMetaCommand (App.tsx)         // handles mod-only shell commands; returns early if consumed
   → parseCommand (commandProcessor.ts)  // returns GameAction or null
@@ -256,7 +270,7 @@ All keys use the `chatsKitchen_` prefix + camelCase. The UI preference keys (`Sh
 | `chatsKitchen_adventureBestRun` | `useAdventureRun.ts` | JSON — `AdventureBestRun` |
 | `chatsKitchen_hideTutorialPrompt` | `useTutorialState.ts` | `'true'` |
 | `chatsKitchen_adventureIntroSeen` | `App.tsx` | `'true'` (one-time Adventure overview popup dismissal) |
-| `chatsKitchen_savedAdventureRun` | `useAdventureRun.ts` | JSON — `{ version: 1, run, lobby, savedAt }`. Auto-saved at every shift boundary; cleared on run end (fail / S8 win). Resumed via MainMenu pill. |
+| `chatsKitchen_savedAdventureRun` | `useAdventureRun.ts` | JSON — `{ version: 1, run, lobby, savedAt }`. Auto-saved at every shift boundary; cleared on run end (fail / S8 win). Resumed via the ModeHub pill. |
 | `chatsKitchen_preparedItemsShowNames` | `PreparedItems.tsx` | `'true'` / `'false'` |
 | `chatsKitchen_diningRoomSimpleTickets` | `DiningRoom.tsx` | `'true'` / `'false'` |
 | `chatsKitchen_kitchenShowCommands` | `Kitchen.tsx` | `'true'` / `'false'` |
@@ -473,7 +487,11 @@ In PvP mode, `redPreparedItemSources` and `bluePreparedItemSources` mirror the p
 | `src/components/EventCardOverlay.tsx` | Receipt-ticket overlay for active kitchen events; dance memorise/type phases |
 | `src/components/Toast.tsx` | Brief fixed-position toast notification for mod command feedback |
 | `src/components/FoodIcon.tsx` | Renders food icons — `<img>` for `/`-prefixed paths, `<span>` for emoji strings |
-| `src/components/PvPLobby.tsx` | Pre-game team selection screen; drag-and-drop roster management; `!red`/`!blue`/`!join`/`!join red`/`!join blue` join flow |
+| `src/components/PvPLobby.tsx` | Pre-game team selection screen; drag-and-drop roster management; unassigned-pool column for Local Play room players; `!red`/`!blue`/`!join`/`!join red`/`!join blue` join flow |
+| `src/components/MainMenu.tsx` | Main menu / connection screen — brand + Play/Tutorial/Options/Feedback/Credits buttons; Twitch connect card + always-live Local Play QR with joined-player chips |
+| `src/components/ModeHub.tsx` | "Choose a mode" hub (Free Play / Adventure / PvP) reached via Play; room status badge, Show-QR popup trigger, Resume-Adventure pill |
+| `src/components/RoomQRModal.tsx` | Shared room QR/code/player popup (portaled to `document.body`); opened from the hub badge, the in-game pause menu, and game over |
+| `src/hooks/useRoomHost.ts` | Local Play room host — socket.io relay lifecycle, room code, `sendSnapshot`, join lock/unlock, `onPlayerCommand` |
 
 ---
 
@@ -547,7 +565,7 @@ When implementing a new feature of similar scope, create a spec + plan document 
 12. **Stale-ref update pattern** — When mirroring React state into a ref for use inside intervals/callbacks, update it inline (`ref.current = value`) not inside a `useEffect`. The `useEffect` runs after render, leaving a one-tick-old snapshot available to any interval that fires between render and effect execution.
 13. **`handleChatSend` vs `handleTwitchMessage` asymmetry** — Local chat (`handleChatSend`) always calls `handleCommand` regardless of tutorial state; Twitch chat skips it during tutorial (`if (!isTutorialRef.current) handleCommand(...)`). This is intentional — local users can practice commands during the tutorial. Do not "fix" the asymmetry.
 14. **`preparedItemSources` must stay in sync with `preparedItems`** — every operation that adds or removes from `preparedItems` must do the same to `preparedItemSources` at the same index. COOK instant → push `user` to sources. TICK completion → push `slot.user` to sources. SERVE → splice both arrays at the same index. `ADD_PREPARED_ITEMS` → push `''` per item (no cooker). `REMOVE_PREPARED_ITEMS` → splice sources at the same random indices. PvP equivalents (`redPreparedItemSources`, `bluePreparedItemSources`) follow the same rule. A length mismatch silently breaks bonus point attribution.
-15. **`chatMode` must be set to `'twitch'` when connecting** — `effectiveTwitchChannel = chatMode === 'twitch' ? twitchChannel : null`. Setting `twitchChannel` alone does not connect to Twitch; `chatMode` must also be `'twitch'`. The `onTwitchConnect` handler in `App.tsx` calls both `setTwitchChannel(ch)` and `setChatMode('twitch')`. The `onTwitchDisconnect` handler resets `chatMode` back to `'local'`. Do not call just one without the other.
+15. **Twitch is co-play, not a `chatMode` switch** — `chatMode` is initialised to `'room'` and stays there for the whole session (there is no connection chooser). Twitch connects purely off `twitchChannel` (`useTwitchChat(twitchChannel, …)` — *not* gated by `chatMode`), so `onTwitchConnect` only calls `setTwitchChannel(ch)` and `onTwitchDisconnect` only `setTwitchChannel(null)`. `handleTwitchMessage` has **no** "view-only" early return — when a channel is connected, chat drives the game alongside the always-live room. Do not reintroduce a `chatMode === 'twitch'` gate or a view-only guard.
 16. **Auto-restart Cancel persists the off state** — the Cancel button in `GameOver` calls both `setCountdown(null)` (local) and `onDisableAutoRestart()` (persists `autoRestart: false` to `gameOptions`/localStorage). Only clearing local state would cause the countdown to restart on the next game over screen because a new `GameOver` mount triggers the `useEffect([autoRestart, ...])` with the still-true value. The `!offAutoRestart` chat command does the same thing as Cancel.
 
 ## Workflow
