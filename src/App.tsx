@@ -393,44 +393,50 @@ export default function App() {
   const isTutorialRef = useRef(isTutorial)
   isTutorialRef.current = isTutorial
 
-  const handleTwitchMessage = useCallback((user: string, text: string, isMod: boolean) => {
+  // Single command pipeline shared by all three input sources — Twitch chat, phone
+  // controllers, and the local chatbox. Screen-based intercepts run first (PvP /
+  // Adventure lobby joins, mod commands, choice votes); anything left falls through
+  // to the game reducer. `forceDuringTutorial` is the one intentional asymmetry
+  // (CLAUDE.md pitfall #13): the local host may practise commands mid-tutorial,
+  // while Twitch/phone input stays gated.
+  const routeChatCommand = useCallback((user: string, text: string, isMod: boolean, forceDuringTutorial: boolean) => {
     dispatch({ type: 'ADD_CHAT', username: user, text, msgType: 'normal' })
-    // Co-play: when a Twitch channel is connected, chat plays alongside the
-    // always-on Local Play room. Twitch messages drive the game through the same
-    // lobby/vote/game routing as room players.
-    // PvP lobby: intercept !red / !blue / !join / !leave and lobby mod commands
-    if (screenRef.current === 'pvplobby') {
-      if (handleLobbyJoin(user, text.trim().toLowerCase())) return
-      handleLobbyMetaCommand(user, text, isMod)
-      return
+    const lower = text.trim().toLowerCase()
+
+    switch (classifyRoomCommand(screenRef.current)) {
+      case 'pvpLobby':
+        if (handleLobbyJoin(user, lower)) return
+        handleLobbyMetaCommand(user, text, isMod)
+        return
+      case 'adventureLobby':
+        if (handleAdventureLobbyJoin(user, lower)) return
+        if (handleAdventureLobbyMetaCommand(user, text, isMod) === 'start') handleAdventureLobbyStart()
+        return
+      case 'adventureVote':
+        if (adventureVoteRef.current?.(user, text)) return
+        break // not a vote command — fall through to the game pipeline
+      case 'game':
+        break
     }
-    // Adventure lobby: !join / !leave for everyone, !kick / !start for mods + broadcaster.
-    if (screenRef.current === 'adventurelobby') {
-      if (handleAdventureLobbyJoin(user, text.trim().toLowerCase())) return
-      const result = handleAdventureLobbyMetaCommand(user, text, isMod)
-      if (result === 'start') handleAdventureLobbyStart()
-      return
-    }
-    // Adventure choice-vote screens: route !1/!2/... to the active vote handler.
-    if (
-      screenRef.current === 'adventurepantryshop'
-      || screenRef.current === 'adventurerecipepick'
-    ) {
-      if (adventureVoteRef.current?.(user, text)) return
-    }
-    // Adventure run is in progress: !leave / !kick still update the roster; the
-    // shrunken count applies at the next shift boundary inside closeShop.
+
+    // Mid-run roster upkeep: !leave / !kick adjust the crew (applied at the next
+    // shift boundary in closeShop); the command also falls through to the game.
     if (adventureRunRef.current) {
-      if (handleAdventureLobbyJoin(user, text.trim().toLowerCase())) {
-        // Allow the command to fall through so it doesn't block any in-game side-effects
-      }
+      handleAdventureLobbyJoin(user, lower)
       handleAdventureLobbyMetaCommand(user, text, isMod)
     }
+
     handleEventCommand(user, text)
     handleTutorialEventCommand(text)
     handleMetaCommand(user, text, isMod)
-    if (!isTutorialRef.current) handleCommand(user, text)
+    if (forceDuringTutorial || !isTutorialRef.current) handleCommand(user, text)
   }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin, handleAdventureLobbyJoin, handleAdventureLobbyMetaCommand, handleAdventureLobbyStart, adventureRunRef])
+
+  // Twitch co-play: chat drives the game through the same routing as everyone else.
+  const handleTwitchMessage = useCallback(
+    (user: string, text: string, isMod: boolean) => routeChatCommand(user, text, isMod, false),
+    [routeChatCommand],
+  )
 
   // Keep Twitch connected regardless of chatMode so streamers can still see chat while using Local Play
   const effectiveTwitchChannel = twitchChannel
@@ -438,23 +444,8 @@ export default function App() {
 
   const room = useRoomHost({
     enabled: chatMode === 'room',
-    // Room player commands bypass handleTwitchMessage so they always drive the game in Local Play
-    onPlayerCommand: (nickname, command) => {
-      dispatch({ type: 'ADD_CHAT', username: nickname, text: command, msgType: 'normal' })
-      const target = classifyRoomCommand(screenRef.current)
-      if (target === 'pvpLobby') {
-        if (handleLobbyJoin(nickname, command.trim().toLowerCase())) return
-      } else if (target === 'adventureLobby') {
-        if (handleAdventureLobbyJoin(nickname, command.trim().toLowerCase())) return
-        if (handleAdventureLobbyMetaCommand(nickname, command, false) !== false) return
-      } else if (target === 'adventureVote') {
-        if (adventureVoteRef.current?.(nickname, command)) return
-      }
-      handleEventCommand(nickname, command)
-      handleTutorialEventCommand(command)
-      handleMetaCommand(nickname, command, false)
-      if (!isTutorialRef.current) handleCommand(nickname, command)
-    },
+    // Phone players are never mods; they drive the game through the shared pipeline.
+    onPlayerCommand: (nickname, command) => routeChatCommand(nickname, command, false, false),
     onPlayerJoined: (id, nickname, isReconnect) => setRoomPlayers(prev =>
       isReconnect
         ? prev.map(p => p.id === id ? { ...p, disconnected: false } : p)
@@ -475,34 +466,12 @@ export default function App() {
   const hubAdventure = useCallback(() => openAdventureLobby(), [openAdventureLobby])
   const hubPvp       = useCallback(() => startPvp(), [startPvp])
 
-  const handleChatSend = useCallback((text: string) => {
-    dispatch({ type: 'ADD_CHAT', username: 'You', text, msgType: 'normal' })
-    if (screenRef.current === 'pvplobby') {
-      if (handleLobbyJoin('You', text.trim().toLowerCase())) return
-      handleLobbyMetaCommand('You', text, true)
-      return
-    }
-    if (screenRef.current === 'adventurelobby') {
-      if (handleAdventureLobbyJoin('You', text.trim().toLowerCase())) return
-      const result = handleAdventureLobbyMetaCommand('You', text, true)
-      if (result === 'start') handleAdventureLobbyStart()
-      return
-    }
-    if (
-      screenRef.current === 'adventurepantryshop'
-      || screenRef.current === 'adventurerecipepick'
-    ) {
-      if (adventureVoteRef.current?.('You', text)) return
-    }
-    if (adventureRunRef.current) {
-      handleAdventureLobbyJoin('You', text.trim().toLowerCase())
-      handleAdventureLobbyMetaCommand('You', text, true)
-    }
-    handleEventCommand('You', text)
-    handleTutorialEventCommand(text)
-    handleMetaCommand('You', text, true)
-    handleCommand('You', text)
-  }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin, handleAdventureLobbyJoin, handleAdventureLobbyMetaCommand, handleAdventureLobbyStart, adventureRunRef])
+  // Local chatbox: the host acts as the broadcaster (always mod) and may practise
+  // commands during the tutorial (forceDuringTutorial = true).
+  const handleChatSend = useCallback(
+    (text: string) => routeChatCommand('You', text, true, true),
+    [routeChatCommand],
+  )
 
 
   useEffect(() => {

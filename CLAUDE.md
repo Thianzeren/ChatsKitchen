@@ -157,16 +157,18 @@ App.tsx
 
 ### Command Flow
 
-Three input sources feed the same pipeline: Twitch chat (`handleTwitchMessage`), the local ChatPanel (`handleChatSend`), and phone-controller commands (`onPlayerCommand` in `useRoomHost`). Twitch and phones play together (co-play); all are connected at once.
+Three input sources feed the same pipeline: Twitch chat (`handleTwitchMessage`), the local ChatPanel (`handleChatSend`), and phone-controller commands (`onPlayerCommand` in `useRoomHost`). Twitch and phones play together (co-play); all are connected at once. **All three are thin adapters over one shared `routeChatCommand(user, text, isMod, forceDuringTutorial)` in `App.tsx`** — they only differ in `isMod` (Twitch passes it through, phones are never mod, the local host is always mod) and `forceDuringTutorial` (local-only; see pitfall #13).
 
 ```
 Twitch chat / local ChatPanel / phone controller
-  → handleTwitchMessage | handleChatSend | onPlayerCommand (App.tsx)
-  → screen-based intercept (early return):
-       pvplobby            → handleLobbyJoin / handleLobbyMetaCommand
-       adventurelobby      → handleAdventureLobbyJoin / …MetaCommand
-       adventure vote      → adventureVoteRef.current(...)
-     (room players route via classifyRoomCommand in state/roomCommandRouting.ts)
+  → handleTwitchMessage | handleChatSend | onPlayerCommand  (thin adapters)
+  → routeChatCommand (App.tsx)
+  → screen-based intercept via classifyRoomCommand (state/roomCommandRouting.ts):
+       pvpLobby        → handleLobbyJoin / handleLobbyMetaCommand        (early return)
+       adventureLobby  → handleAdventureLobbyJoin / …MetaCommand / start (early return)
+       adventureVote   → adventureVoteRef.current(...)  (return if consumed, else fall through)
+       game            → fall through
+  → mid-run roster upkeep (!leave / !kick) if an Adventure run is active
   → handleEventCommand (useKitchenEvents) // kitchen event response matching; runs before game commands
   → handleMetaCommand (App.tsx)         // handles mod-only shell commands; returns early if consumed
   → parseCommand (commandProcessor.ts)  // returns GameAction or null
@@ -573,7 +575,7 @@ When implementing a new feature of similar scope, create a spec + plan document 
 10. **PvP lobby state lives in App.tsx, not GameState** — `pvpLobby: { red: string[], blue: string[] } | null` is pre-game state. It is merged into the reducer's RESET action as `teams` when the game starts, then cleared. Do not store it in `GameState`.
 11. **`pvpLobbyRef` for stale closure safety** — Lobby mod commands (`!move`) check `pvpLobbyRef.current` synchronously before calling `setPvpLobby`. Reading `pvpLobby` state directly inside a `useCallback` would see a stale snapshot.
 12. **Stale-ref update pattern** — When mirroring React state into a ref for use inside intervals/callbacks, update it inline (`ref.current = value`) not inside a `useEffect`. The `useEffect` runs after render, leaving a one-tick-old snapshot available to any interval that fires between render and effect execution.
-13. **`handleChatSend` vs `handleTwitchMessage` asymmetry** — Local chat (`handleChatSend`) always calls `handleCommand` regardless of tutorial state; Twitch chat skips it during tutorial (`if (!isTutorialRef.current) handleCommand(...)`). This is intentional — local users can practice commands during the tutorial. Do not "fix" the asymmetry.
+13. **Tutorial command asymmetry** — All three input sources share `routeChatCommand`; the local chatbox passes `forceDuringTutorial = true` so the host always reaches `handleCommand`, while Twitch/phone pass `false` and skip it during the tutorial (`forceDuringTutorial || !isTutorialRef.current`). This is intentional — local users can practice commands during the tutorial. The asymmetry is now a single explicit flag; do not "fix" it by removing the flag.
 14. **`preparedItemSources` must stay in sync with `preparedItems`** — every operation that adds or removes from `preparedItems` must do the same to `preparedItemSources` at the same index. COOK instant → push `user` to sources. TICK completion → push `slot.user` to sources. SERVE → splice both arrays at the same index. `ADD_PREPARED_ITEMS` → push `''` per item (no cooker). `REMOVE_PREPARED_ITEMS` → splice sources at the same random indices. PvP equivalents (`redPreparedItemSources`, `bluePreparedItemSources`) follow the same rule. A length mismatch silently breaks bonus point attribution.
 15. **Twitch is co-play, not a `chatMode` switch** — `chatMode` is initialised to `'room'` and stays there for the whole session (there is no connection chooser). Twitch connects purely off `twitchChannel` (`useTwitchChat(twitchChannel, …)` — *not* gated by `chatMode`), so `onTwitchConnect` only calls `setTwitchChannel(ch)` and `onTwitchDisconnect` only `setTwitchChannel(null)`. `handleTwitchMessage` has **no** "view-only" early return — when a channel is connected, chat drives the game alongside the always-live room. Do not reintroduce a `chatMode === 'twitch'` gate or a view-only guard.
 16. **Auto-restart Cancel persists the off state** — the Cancel button in `GameOver` calls both `setCountdown(null)` (local) and `onDisableAutoRestart()` (persists `autoRestart: false` to `gameOptions`/localStorage). Only clearing local state would cause the countdown to restart on the next game over screen because a new `GameOver` mount triggers the `useEffect([autoRestart, ...])` with the still-true value. The `!offAutoRestart` chat command does the same thing as Cancel.
