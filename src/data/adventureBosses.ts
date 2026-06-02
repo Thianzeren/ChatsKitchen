@@ -101,9 +101,12 @@ export function applyBossDebuff(bossId: string | undefined, disabledStationId?: 
     case 'recipe_roulette':
       return { options: {}, state: {} }
     case 'hangry_mob':
-      return { options: {}, state: { orderPatienceBonus: -15000 } }
+      // 30% less patience: orderSpeed divides the patience pool in SPAWN_ORDER, so
+      // 1/0.7 ≈ 1.43 yields ~70% of base patience. Percentage (not flat) so the
+      // hit is consistent across cheap fast dishes and long slow ones.
+      return { options: { orderSpeed: 1.43 }, state: {} }
     case 'bad_reviews':
-      return { options: {}, state: { lostOrderPenalty: 5 } }
+      return { options: {}, state: { lostOrderPenalty: 20 } }
   }
 }
 

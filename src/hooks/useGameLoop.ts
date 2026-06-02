@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { GameAction } from '../state/gameReducer'
 import { GameState } from '../state/types'
+import { countActivePlayers } from '../state/participants'
 
 const EMPTY_BOOST_DURATION = 10000  // ms — how long the faster spawn rate lasts
 const EMPTY_BOOST_MULTIPLIER = 2    // spawn 2× faster during boost window
@@ -65,7 +66,9 @@ export function useGameLoop(
       orderTimerRef.current += delta
       const pendingOrders = s.orders.filter(o => !o.served).length
       const isBoosting = now < boostEndTimeRef.current
-      const playerCount = Object.keys(s.playerStats).length
+      // Same player count the reducer uses for order caps — excludes the admin "You"
+      // and never falls below the known participant count.
+      const playerCount = Math.max(s.participantCount, countActivePlayers(s.playerStats))
       const dynamicSpawnMultiplier = Math.min(3.0, 1.0 + playerCount / 25)
       const orderInterval = (13000 / s.orderSpawnRate) / (isBoosting ? EMPTY_BOOST_MULTIPLIER : 1) / dynamicSpawnMultiplier
 

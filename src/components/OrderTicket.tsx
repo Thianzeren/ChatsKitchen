@@ -1,6 +1,6 @@
 import { Order } from '../state/types'
 import { RECIPES, INGREDIENT_EMOJI } from '../data/recipes'
-import { SERVE_TIME_BONUS_MAX } from '../state/gameReducer'
+import { SERVE_TIME_BONUS_FRACTION } from '../state/gameReducer'
 import { seededScramble } from '../data/kitchenEventDefs'
 import FoodIcon from './FoodIcon'
 import styles from './OrderTicket.module.css'
@@ -32,7 +32,7 @@ export default function OrderTicket({ order, orderNumber, simple = false, isGlit
 
   const isServed = order.outcome === 'served'
   const isLost = order.outcome === 'lost'
-  const actualReward = Math.round(recipe.reward + Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * SERVE_TIME_BONUS_MAX)))
+  const actualReward = Math.round(recipe.reward + Math.max(0, Math.round(recipe.reward * SERVE_TIME_BONUS_FRACTION * (order.patienceLeft / order.patienceMax))))
   const outcomeClass = isServed ? styles.ticketServed : isLost ? styles.ticketLost : ''
 
   if (simple) {

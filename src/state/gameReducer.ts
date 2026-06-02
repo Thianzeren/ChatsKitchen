@@ -1,12 +1,18 @@
 import { GameState, Station, Order, ChatMessage, StationSlot, PlayerStats } from './types'
-import { RECIPES, STATION_DEFS, HEAT_EXEMPT_STATIONS } from '../data/recipes'
+import { RECIPES, STATION_DEFS, HEAT_EXEMPT_STATIONS, getEnabledStations } from '../data/recipes'
 import { getRecipeProfile } from '../data/recipeProfile'
 import { pickMiseEnPlaceIngredients, applyServeTriggers } from '../data/adventureGarnishes'
 import { countActivePlayers } from './participants'
 
 export const HEAT_PER_COOK = 20   // kept for reference; actual value is random 10–20 per slot
 export const COOL_AMOUNT   = 50   // midpoint reference only — actual value rolled randomly 40–60 on each use
-export const SERVE_TIME_BONUS_MAX = 9   // max $ bonus for serving at full patience (cafe scale; was 30)
+// Serving fresh adds up to this FRACTION of the dish's own reward, scaled by patience
+// remaining. Proportional (not flat) so expensive dishes keep their edge — a flat
+// bonus used to make cheap 1-step dishes the optimal money source.
+export const SERVE_TIME_BONUS_FRACTION = 0.4
+// Letting an order expire forfeits this fraction of its reward from the bank — a small
+// opportunity cost so ignoring pricey orders to cherry-pick cheap ones actually costs money.
+export const LOST_ORDER_PENALTY_FRACTION = 0.2
 
 export type GameAction =
   | { type: 'TICK'; delta: number; now: number }
@@ -297,7 +303,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newOrders = state.orders.map((o, i) =>
         i === orderIdx ? { ...o, served: true, outcome: 'served' as const, completedAt: Date.now(), servedBy: user } : o
       )
-      const timeBonus = Math.max(0, Math.floor((order.patienceLeft / order.patienceMax) * SERVE_TIME_BONUS_MAX))
+      const timeBonus = Math.max(0, Math.round(recipe.reward * SERVE_TIME_BONUS_FRACTION * (order.patienceLeft / order.patienceMax)))
       const baseReward = recipe.reward + timeBonus
       const bossMoneyMul = state.bossMoneyMultiplier ?? 1
 
@@ -491,7 +497,7 @@ let matchedStep = null
       const newBluePreparedItemSources = state.teams ? [...(state.bluePreparedItemSources ?? [])] : []
       let newPlayerStats = { ...state.playerStats }
       let bloodhoundMoney = 0
-      let badReviewsPenaltyTotal = 0
+      let lostPenaltyTotal = 0
 
       // ── Periodic shift-timer effects (Recipe Roulette) ──
       let rouletteNextAt = state.rouletteNextAt
@@ -514,6 +520,16 @@ let matchedStep = null
             text: `🎲 Recipe Roulette! ${RECIPES[removed]?.name ?? removed} → ${RECIPES[added]?.name ?? added}`,
             type: 'system',
           })
+          // The swapped-out dish may leave a station no active recipe needs anymore.
+          // Clear its in-flight slots (they'd otherwise cook invisibly into unusable
+          // items) and free the chefs working there.
+          const stillNeeded = new Set(getEnabledStations(newEnabledRecipes))
+          for (const [sid, st] of Object.entries(newStations)) {
+            if (st.slots.length > 0 && !stillNeeded.has(sid)) {
+              for (const sl of st.slots) delete newActiveUsers[sl.user]
+              newStations[sid] = { ...st, slots: [] }
+            }
+          }
         }
         rouletteNextAt = now + 45_000
       }
@@ -544,7 +560,8 @@ let matchedStep = null
           // Step B: Check overheat (threshold may be raised by Insulation or lowered by Glass Kitchen)
           const overheatLimit = state.overheatThreshold ?? 100
           if (currentHeat >= overheatLimit) {
-            // Penalise every player cooking at this station, not just the one whose slot tipped it over
+            // Penalise every player cooking at this station, not just the one whose slot
+            // tipped it over — overheating is a shared, team-level failure.
             for (const s of station.slots) {
               const statSnap = addStat({ ...state, playerStats: newPlayerStats }, s.user, 'firesCaused', 1)
               newPlayerStats = statSnap.playerStats
@@ -630,10 +647,13 @@ let matchedStep = null
         if (newPatience <= 0) {
           lost++
           messages.push({ id: nextMsgId++, username: 'CUSTOMER', text: `Order #${order.id} expired! Lost a ${RECIPES[order.dish].emoji}!`, type: 'error' })
-          // Bad Reviews boss — flat $ deducted per expired order.
+          // Base opportunity cost — forfeit a fraction of the ignored dish's value, so
+          // letting a pricey order lapse costs more than a cheap one.
+          lostPenaltyTotal += Math.floor((RECIPES[order.dish]?.reward ?? 0) * LOST_ORDER_PENALTY_FRACTION)
+          // Bad Reviews boss — flat $ deducted per expired order, stacked on top.
           // Lost orders aren't team-tagged, so PvP charges BOTH teams equally.
           if (state.lostOrderPenalty !== undefined) {
-            badReviewsPenaltyTotal += state.lostOrderPenalty
+            lostPenaltyTotal += state.lostOrderPenalty
             messages.push({
               id: nextMsgId++,
               username: 'KITCHEN',
@@ -676,12 +696,12 @@ let matchedStep = null
         nextMessageId: nextMsgId,
         cookingSpeedModifier,
         moneyMultiplier,
-        money: state.money + bloodhoundMoney - badReviewsPenaltyTotal,
+        money: Math.max(0, state.money + bloodhoundMoney - lostPenaltyTotal),
         redMoney: state.teams && state.redMoney !== undefined
-          ? state.redMoney - badReviewsPenaltyTotal
+          ? Math.max(0, state.redMoney - lostPenaltyTotal)
           : state.redMoney,
         blueMoney: state.teams && state.blueMoney !== undefined
-          ? state.blueMoney - badReviewsPenaltyTotal
+          ? Math.max(0, state.blueMoney - lostPenaltyTotal)
           : state.blueMoney,
         enabledRecipes: newEnabledRecipes,
         rouletteNextAt,
