@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, Dispatch, SetStateAction } from 'react'
 import { GameOptions, KitchenEvent, Screen, TutorialDestination, ActiveEventOptions } from '../state/types'
 import { GameAction } from '../state/gameReducer'
 import { TUTORIAL_STEPS, TUTORIAL_COOL_STEP, TUTORIAL_EXTINGUISH_STEP, TUTORIAL_EVENT_STEP } from '../data/tutorialData'
+import { storage } from '../state/storage'
 
 const TUTORIAL_MYSTERY_EVENT: KitchenEvent = {
   id: 'tutorial_mystery',
@@ -32,13 +33,9 @@ export function useTutorialState(
   const [tutorialOpen, setTutorialOpen] = useState(false)
   const [showTutorialPrompt, setShowTutorialPrompt] = useState(false)
   const [tutorialDestination, setTutorialDestination] = useState<TutorialDestination>('menu')
-  const [hideTutorialPrompt, setHideTutorialPrompt] = useState(() => {
-    try {
-      return localStorage.getItem('chatsKitchen_hideTutorialPrompt') === 'true'
-    } catch {
-      return false
-    }
-  })
+  const [hideTutorialPrompt, setHideTutorialPrompt] = useState(() =>
+    storage.get('chatsKitchen_hideTutorialPrompt') === 'true'
+  )
 
   const isTutorial = tutorialStep !== null
   const tutorialStepRef = useRef(tutorialStep)
@@ -133,12 +130,8 @@ export function useTutorialState(
 
   const persistHideTutorialPrompt = useCallback((hide: boolean) => {
     setHideTutorialPrompt(hide)
-    try {
-      if (hide) localStorage.setItem('chatsKitchen_hideTutorialPrompt', 'true')
-      else localStorage.removeItem('chatsKitchen_hideTutorialPrompt')
-    } catch {
-      // ignore storage failures
-    }
+    if (hide) storage.set('chatsKitchen_hideTutorialPrompt', 'true')
+    else storage.remove('chatsKitchen_hideTutorialPrompt')
   }, [])
 
   const resetTutorial = useCallback(() => {

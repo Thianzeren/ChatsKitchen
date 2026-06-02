@@ -16,6 +16,7 @@ import { gameStateToSnapshot, pvpLobbySnapshot, pvpLobbyPerPlayer, adventureVote
 import type { VoteSnapshot } from './shared/protocol'
 import { classifyRoomCommand } from './state/roomCommandRouting'
 import { countActivePlayers } from './state/participants'
+import { storage } from './state/storage'
 import { connectedNicknames, unassignedPool } from './state/roomRoster'
 import { useGameAudio } from './audio/useGameAudio'
 import { useViewportScale } from './hooks/useViewportScale'
@@ -61,16 +62,9 @@ const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
 export default function App() {
   const [screen, setScreen] = useState<Screen>('menu')
   const [activeEventOptions, setActiveEventOptions] = useState<ActiveEventOptions | null>(null)
-  const [gameOptions, setGameOptions] = useState<GameOptions>(() => {
-    try {
-      const saved = localStorage.getItem('chatsKitchen_gameOptions')
-      if (!saved) return DEFAULT_GAME_OPTIONS
-      const parsed = JSON.parse(saved) as Partial<GameOptions>
-      return { ...DEFAULT_GAME_OPTIONS, ...parsed }
-    } catch {
-      return DEFAULT_GAME_OPTIONS
-    }
-  })
+  const [gameOptions, setGameOptions] = useState<GameOptions>(() =>
+    ({ ...DEFAULT_GAME_OPTIONS, ...storage.getJSON<Partial<GameOptions>>('chatsKitchen_gameOptions', {}) })
+  )
   const [state, dispatch] = useReducer(gameReducer, undefined, () =>
     createInitialState(gameOptions.shiftDuration, gameOptions.cookingSpeed, gameOptions.orderSpeed, gameOptions.orderSpawnRate)
   )
@@ -78,21 +72,10 @@ export default function App() {
   const [chatOpen, setChatOpen] = useState(false)
   const [paused, setPaused] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
-  const [twitchChannel, setTwitchChannel] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem('chatsKitchen_twitchChannel')
-    } catch {
-      return null
-    }
-  })
-  const [audioSettings, setAudioSettings] = useState<AudioSettings>(() => {
-    try {
-      const saved = localStorage.getItem('chatsKitchen_audioSettings')
-      return saved ? { ...DEFAULT_AUDIO_SETTINGS, ...JSON.parse(saved) } : DEFAULT_AUDIO_SETTINGS
-    } catch {
-      return DEFAULT_AUDIO_SETTINGS
-    }
-  })
+  const [twitchChannel, setTwitchChannel] = useState<string | null>(() => storage.get('chatsKitchen_twitchChannel'))
+  const [audioSettings, setAudioSettings] = useState<AudioSettings>(() =>
+    ({ ...DEFAULT_AUDIO_SETTINGS, ...storage.getJSON<Partial<AudioSettings>>('chatsKitchen_audioSettings', {}) })
+  )
   const stateRef = useRef(state)
   stateRef.current = state
   const lastSnapshotStateRef = useRef<object | null>(null)
@@ -177,21 +160,12 @@ export default function App() {
     tutorialGameOver, resetTutorial,
   } = tutorial
 
-  const startFreePlay = useCallback((replay = false) => {
-    const replayOpts = replay ? lastPlayedOptionsRef.current : null
-    const opts = replayOpts ?? gameOptions
-    if (!replay) lastPlayedOptionsRef.current = gameOptions
-
-    setActiveEventOptions(replayOpts ? toActiveEventOptions(replayOpts) : null)
-    activeGameOptionsRef.current = replayOpts
-
+  // Shared round kickoff: clear any Adventure run, RESET the reducer with the
+  // given options + team map, snapshot the room headcount, lock joins, and run
+  // the countdown. Both Free Play and the playset picker funnel through here.
+  type RoundOptions = Pick<GameOptions, 'shiftDuration' | 'cookingSpeed' | 'orderSpeed' | 'orderSpawnRate' | 'enabledRecipes'>
+  const beginRound = useCallback((opts: RoundOptions, teams: Record<string, 'red' | 'blue'>) => {
     setAdventureRun(null)
-    const teams: Record<string, 'red' | 'blue'> = pvpLobbyRef.current
-      ? Object.fromEntries([
-          ...pvpLobbyRef.current.red.map(u => [u, 'red' as const]),
-          ...pvpLobbyRef.current.blue.map(u => [u, 'blue' as const]),
-        ])
-      : {}
     dispatch({
       type: 'RESET',
       shiftDuration: opts.shiftDuration,
@@ -205,7 +179,24 @@ export default function App() {
     setStarThresholds(null)
     if (chatModeRef.current === 'room') roomRef.current.lockJoins()
     setScreen('countdown')
-  }, [gameOptions, pvpLobbyRef, setAdventureRun, setStarThresholds])
+  }, [setAdventureRun, setStarThresholds])
+
+  const startFreePlay = useCallback((replay = false) => {
+    const replayOpts = replay ? lastPlayedOptionsRef.current : null
+    const opts = replayOpts ?? gameOptions
+    if (!replay) lastPlayedOptionsRef.current = gameOptions
+
+    setActiveEventOptions(replayOpts ? toActiveEventOptions(replayOpts) : null)
+    activeGameOptionsRef.current = replayOpts
+
+    const teams: Record<string, 'red' | 'blue'> = pvpLobbyRef.current
+      ? Object.fromEntries([
+          ...pvpLobbyRef.current.red.map(u => [u, 'red' as const]),
+          ...pvpLobbyRef.current.blue.map(u => [u, 'blue' as const]),
+        ])
+      : {}
+    beginRound(opts, teams)
+  }, [gameOptions, pvpLobbyRef, beginRound])
 
   const startFromPlayset = useCallback((playset: Playset, difficulty: Difficulty) => {
     const preset = DIFFICULTY_PRESETS[difficulty]
@@ -228,21 +219,8 @@ export default function App() {
     }
     activeGameOptionsRef.current = playsetGameOptions
     lastPlayedOptionsRef.current = playsetGameOptions
-    setAdventureRun(null)
-    dispatch({
-      type: 'RESET',
-      shiftDuration:   preset.shiftDuration,
-      cookingSpeed:    1.0,
-      orderSpeed:      preset.orderSpeed,
-      orderSpawnRate:  preset.orderSpawnRate,
-      enabledRecipes:  playset.recipes,
-      teams: {},
-      participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.filter(p => !p.disconnected).length : 0,
-    })
-    setStarThresholds(null)
-    if (chatModeRef.current === 'room') roomRef.current.lockJoins()
-    setScreen('countdown')
-  }, [setAdventureRun, setStarThresholds])
+    beginRound(playsetGameOptions, {})
+  }, [beginRound])
 
 
 
@@ -306,11 +284,7 @@ export default function App() {
 
   const handleGameOptionsChange = useCallback((options: GameOptions) => {
     setGameOptions(options)
-    try {
-      localStorage.setItem('chatsKitchen_gameOptions', JSON.stringify(options))
-    } catch {
-      // Ignore storage failures; in-memory state is already updated above.
-    }
+    storage.setJSON('chatsKitchen_gameOptions', options)
   }, [])
 
   const handleGameOver = useCallback(() => {
@@ -345,7 +319,7 @@ export default function App() {
       // Free Play: existing high-score + history logic (unchanged)
       setFreePlayHighScore(prev => {
         if (s.money > prev) {
-          try { localStorage.setItem('chatsKitchen_freePlayHighScore', String(s.money)) } catch { /* ignore */ }
+          storage.set('chatsKitchen_freePlayHighScore', String(s.money))
           setIsNewHighScore(true)
           return s.money
         }
@@ -354,7 +328,7 @@ export default function App() {
       })
       setFreePlayHistory(prev => {
         const updated = [{ money: s.money, served: s.served, lost: s.lost, playerCount: Object.keys(s.playerStats).length }, ...prev].slice(0, 5)
-        try { localStorage.setItem('chatsKitchen_freePlayHistory', JSON.stringify(updated)) } catch { /* ignore */ }
+        storage.setJSON('chatsKitchen_freePlayHistory', updated)
         return updated
       })
     }
@@ -491,31 +465,23 @@ export default function App() {
   // Returning visitors (or those who already dismissed) won't see it.
   useEffect(() => {
     if (screen !== 'adventurelobby') return
-    try {
-      if (localStorage.getItem('chatsKitchen_adventureIntroSeen') !== 'true') {
-        setAdventureIntroOpen(true)
-      }
-    } catch { /* ignore storage failures */ }
+    if (storage.get('chatsKitchen_adventureIntroSeen') !== 'true') setAdventureIntroOpen(true)
   }, [screen])
 
   const closeAdventureIntro = useCallback(() => {
     setAdventureIntroOpen(false)
-    try { localStorage.setItem('chatsKitchen_adventureIntroSeen', 'true') } catch { /* ignore */ }
+    storage.set('chatsKitchen_adventureIntroSeen', 'true')
   }, [])
 
   const handleAudioChange = useCallback((settings: AudioSettings) => {
     setAudioSettings(settings)
-    localStorage.setItem('chatsKitchen_audioSettings', JSON.stringify(settings))
+    storage.setJSON('chatsKitchen_audioSettings', settings)
   }, [])
 
   const handleTwitchChannelChange = useCallback((ch: string | null) => {
     setTwitchChannel(ch)
-    try {
-      if (ch) localStorage.setItem('chatsKitchen_twitchChannel', ch)
-      else localStorage.removeItem('chatsKitchen_twitchChannel')
-    } catch {
-      // Ignore storage failures; in-memory state is already updated above.
-    }
+    if (ch) storage.set('chatsKitchen_twitchChannel', ch)
+    else storage.remove('chatsKitchen_twitchChannel')
   }, [])
 
   const handleResetAll = useCallback(() => {
@@ -529,19 +495,12 @@ export default function App() {
     clearSavedAdventureRun()
     setSavedRunPreview(null)
 
-    try {
-      localStorage.setItem('chatsKitchen_audioSettings', JSON.stringify(DEFAULT_AUDIO_SETTINGS))
-      localStorage.removeItem('chatsKitchen_adventureBestRun')
-      localStorage.removeItem('chatsKitchen_gameOptions')
-      localStorage.removeItem('chatsKitchen_hideTutorialPrompt')
-      localStorage.removeItem('chatsKitchen_adventureIntroSeen')
-      localStorage.removeItem('chatsKitchen_savedAdventureRun')
-      localStorage.removeItem('chatsKitchen_preparedItemsShowNames')
-      localStorage.removeItem('chatsKitchen_diningRoomSimpleTickets')
-      localStorage.removeItem('chatsKitchen_kitchenShowCommands')
-    } catch {
-      // Ignore storage failures and keep the in-memory reset behavior.
-    }
+    storage.setJSON('chatsKitchen_audioSettings', DEFAULT_AUDIO_SETTINGS)
+    for (const key of [
+      'chatsKitchen_adventureBestRun', 'chatsKitchen_gameOptions', 'chatsKitchen_hideTutorialPrompt',
+      'chatsKitchen_adventureIntroSeen', 'chatsKitchen_savedAdventureRun', 'chatsKitchen_preparedItemsShowNames',
+      'chatsKitchen_diningRoomSimpleTickets', 'chatsKitchen_kitchenShowCommands',
+    ]) storage.remove(key)
   }, [handleTwitchChannelChange, resetTutorial, resetAdventureBestRun, resetSession, clearSavedAdventureRun])
 
   useEffect(() => {

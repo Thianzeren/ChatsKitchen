@@ -210,8 +210,12 @@ function clamp(v: number, [lo, hi]: [number, number]): number {
 const OVERHEAT_THRESHOLD_BASE = 100
 
 interface GarnishDelta {
-  options: Partial<GameOptions>
-  state: Partial<GameState>
+  options: Partial<Pick<GameOptions, 'cookingSpeed' | 'orderSpeed' | 'orderSpawnRate'>>
+  // Only the knobs garnishes actually touch — narrow so callers can spread it
+  // straight into a RESET action without dragging in unrelated GameState keys.
+  state: Partial<Pick<GameState,
+    | 'coolAmountBonus' | 'heatPerCookMultiplier' | 'choppingCookTimeMultiplier'
+    | 'flatTipPerOrder' | 'orderPatienceBonus' | 'overheatThreshold'>>
 }
 
 // Compose all owned garnishes on top of base options/state.

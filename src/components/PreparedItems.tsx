@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { INGREDIENT_EMOJI, RECIPES } from '../data/recipes'
 import FoodIcon from './FoodIcon'
+import { storage } from '../state/storage'
 import styles from './PreparedItems.module.css'
 
 interface Props {
@@ -17,13 +18,13 @@ interface Props {
 
 export default function PreparedItems({ items, enabledRecipes, isHighlighted, pvpMode, redItems, blueItems, redMoney, blueMoney }: Props) {
   const [showNames, setShowNames] = useState(() => {
-    const stored = localStorage.getItem('chatsKitchen_preparedItemsShowNames')
+    const stored = storage.get('chatsKitchen_preparedItemsShowNames')
     return stored === null ? true : stored === 'true'
   })
 
   const toggleShowNames = () => setShowNames(s => {
     const next = !s
-    localStorage.setItem('chatsKitchen_preparedItemsShowNames', String(next))
+    storage.set('chatsKitchen_preparedItemsShowNames', String(next))
     return next
   })
 
