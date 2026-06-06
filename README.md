@@ -8,14 +8,14 @@ A browser-based real-time kitchen game where Twitch chat collectively runs a res
 
 - **Twitch integration** — connect any channel and chat commands become gameplay actions
 - **Local Play** — an always-live room; players scan a QR to join from their phones (works with or without Twitch, and the two can play together)
-- **Cooperative chaos** — 27 recipes across 6 cuisine sets, 12 station types, one shared kitchen
+- **Cooperative chaos** — 30 recipes across 6 cuisine sets (plus ungrouped extras), 12 station types, one shared kitchen
 - **Heat mechanic** — stations heat up during cooking; cool with `cool <station>` (40–60% reduction) or the team must `extinguish` if it overheats
 - **Kitchen Events** — random mid-round challenges (hazards and opportunities) that the whole chat must respond to together
 - **PvP mode** — split chat into Red and Blue teams competing for money in the same kitchen
 - **Adventure mode** — roguelike multi-shift run; survive each shift to unlock the next
 - **Star rating** — dynamic difficulty threshold calibrated to the actual number of players after each round
 - **Bot simulation** — optional AI players fill in when chat is quiet
-- **Configurable** — tune cooking speed, order speed, station capacity, kitchen events, and more in Options
+- **Configurable** — tune cooking speed, order speed, shift duration, kitchen events, and more in Options
 
 ---
 
@@ -218,10 +218,11 @@ Audio settings, display preferences, and high scores persist in the browser. A f
 | Build | Vite 5 |
 | State | React `useReducer` (no Redux) |
 | Chat | tmi.js |
+| Local Play | socket.io (client) ↔ a thin Fly.io relay server (`server/`) |
 | Audio | Howler.js |
 | Styles | CSS Modules |
 
-No backend, no environment variables, no database. Everything runs in the browser.
+The game simulation runs entirely in the browser; nothing about a live game is persisted and there is no database. Local Play adds a small **socket.io relay server** (`server/`, deployed to Fly.io) that only brokers messages between the host browser and players' phones — it holds no game logic. The client resolves the relay URL from `VITE_RELAY_URL` (defaults to `http://localhost:8080`).
 
 ---
 
@@ -229,29 +230,32 @@ No backend, no environment variables, no database. Everything runs in the browse
 
 ```
 src/
-├── App.tsx                    # Screen routing and top-level state
+├── App.tsx                    # Screen routing and top-level state (host game)
+├── main.tsx                   # Entry: renders App, or the Controller on /play
 ├── state/
 │   ├── gameReducer.ts         # All game logic (single source of truth)
 │   ├── commandProcessor.ts    # Parses chat input → GameAction
+│   ├── snapshot.ts            # Serialises GameState for Local Play phones
 │   └── types.ts               # TypeScript interfaces
 ├── hooks/
 │   ├── useGameLoop.ts         # 100ms tick loop
 │   ├── useTwitchChat.ts       # tmi.js client lifecycle
+│   ├── useRoomHost.ts         # Local Play host: relay socket + snapshots
 │   ├── useBotSimulation.ts    # AI bot players
-│   ├── useKitchenEvents.ts    # Kitchen event lifecycle
-│   └── useGameAudio.ts        # Audio management
+│   └── useKitchenEvents.ts    # Kitchen event lifecycle
+├── controller/                # Phone-player app served at /play (join/lobby/vote)
 ├── components/                # React UI components (PascalCase)
-│   └── FoodIcon.tsx           # Renders emoji or SVG image path
-└── data/
-    ├── recipes.ts             # Recipe and station definitions
-    ├── kitchenEventDefs.ts    # Event definitions and generator functions
-    └── starThresholds.ts      # Star rating threshold computation
-public/
-└── icons/
-    ├── dishes/                # SVG icons for recipe dishes
-    └── ingredients/           # SVG icons for ingredients
+├── data/                      # Recipes, events, Adventure content, RNG (pure)
+├── audio/                     # Howler-based AudioManager + game audio hook
+└── shared/                    # protocol.ts — wire types shared with the server
+server/                        # Standalone socket.io relay (Fly.io); no game logic
+├── src/relay.ts               # createRelay() — rooms, join/lock, rate limit
+└── src/relay.test.ts          # Vitest integration + rate-limiter tests
+public/icons/                  # SVG icons for dishes/ and ingredients/
 docs/
 ├── game-design-and-mechanics.md  # Full design reference
+├── MULTIPLAYER_SPEC.md           # Local Play / relay design spec
+├── TESTING.md                    # Testing guide & plan
 └── Kitchen Events.md             # Kitchen events system reference
 ```
 
@@ -265,7 +269,7 @@ npm run build    # catches TypeScript errors
 ```
 
 - Always develop on a branch, never directly on `main`.
-- There are no automated tests. [Vitest](https://vitest.dev/) + [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) is the recommended approach when adding them.
+- Tests run on [Vitest](https://vitest.dev/): `npm test` runs the client suite (the pure `state/` + `data/` layers); `npm test` inside `server/` runs the relay suite. CI (`.github/workflows/ci.yml`) gates lint + tests + build on every push/PR. Hooks and components aren't covered yet — add React Testing Library when they need it. See [`docs/TESTING.md`](docs/TESTING.md).
 - All game logic lives in `src/state/gameReducer.ts`. Never mutate `GameState` directly — the reducer must return a new object.
 - Food icons use `FoodIcon.tsx` which renders `<img>` for `/`-prefixed paths and `<span>` for emoji strings — drop SVGs into `public/icons/` and update the `emoji` field in `recipes.ts` to use the path.
 

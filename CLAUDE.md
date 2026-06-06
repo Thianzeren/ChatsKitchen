@@ -34,24 +34,34 @@ npm run preview   # Preview production build locally
 ChatsKitchen/
 ├── src/
 │   ├── components/         # React UI components (PascalCase)
+│   ├── controller/         # Phone-player app served at /play (join/lobby/vote)
 │   ├── state/
 │   │   ├── gameReducer.ts  # All game logic (Redux-style reducer)
 │   │   ├── commandProcessor.ts  # Parses !command input → GameAction
+│   │   ├── snapshot.ts     # Serialises GameState → SharedSnapshot for phones
 │   │   └── types.ts        # TypeScript interfaces (GameState, Station, Order, etc.)
 │   ├── hooks/
 │   │   ├── useGameLoop.ts  # 100ms game tick loop
 │   │   ├── useTwitchChat.ts # Twitch IRC client lifecycle
+│   │   ├── useRoomHost.ts  # Local Play host: relay socket + snapshot push
 │   │   ├── useBotSimulation.ts # AI bot player (3s action interval)
 │   │   └── useKitchenEvents.ts # Kitchen events lifecycle (spawn, command match, resolve/fail)
 │   ├── data/
 │   │   ├── recipes.ts      # Recipe definitions, station configs, bot names
 │   │   └── kitchenEventDefs.ts # Event definitions, constants, generator functions
-│   └── main.tsx            # React entry point → App.tsx
+│   ├── audio/              # Howler-based AudioManager + game audio hook
+│   ├── shared/             # protocol.ts — wire types shared with the relay server
+│   └── main.tsx            # React entry: renders App, or Controller on /play
+├── server/                 # Standalone socket.io relay (Fly.io); no game logic
+│   ├── src/relay.ts        # createRelay() — rooms, join/lock, rate limit
+│   └── src/relay.test.ts   # Vitest integration + rate-limiter tests
 ├── docs/
 │   ├── Kitchen Events.md   # Kitchen events system reference
+│   ├── MULTIPLAYER_SPEC.md # Local Play / relay design spec
+│   ├── TESTING.md          # Testing guide & plan
 │   └── superpowers/plans/  # Development planning documents
-├── index.html              # SPA root
-├── vite.config.ts
+├── index.html              # SPA root (also serves /play via main.tsx)
+├── vite.config.ts          # Vite + Vitest config (test.include scopes to src/**)
 ├── tsconfig.json           # Project references → tsconfig.app.json + tsconfig.node.json
 ├── eslint.config.js
 └── package.json
@@ -375,7 +385,7 @@ Rewards are **cafe scale** ($5–$24). The `reward` field in `recipes.ts` is the
 
 Steps marked `→` require the prior ingredient in `preparedItems` before starting.
 
-### Stations (10 types)
+### Stations (12 types)
 
 | Station | Command | Heat |
 |---------|---------|------|
