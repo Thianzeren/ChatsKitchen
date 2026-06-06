@@ -34,15 +34,24 @@ export function usePlayerSocket({ credentials, onJoined, onSnapshot, onRoomClose
 
     s.on('connect', () => {
       setConnected(true)
-      // On reconnect, socket.io fires 'connect' again — skip re-join if already in the room
-      if (roomRef.current) return
-      s.emit('player:join', { code: credentials.code, nickname: credentials.nickname, playerId: credentials.playerId }, (res: PlayerJoinAck | PlayerJoinErr) => {
+      // (Re)join on every connect. socket.io assigns a new socket.id on reconnect
+      // and drops all room memberships, so even an already-joined player MUST
+      // re-emit player:join — otherwise the new socket never re-joins the
+      // `players:<code>` broadcast room and stops receiving snapshots (the phone
+      // freezes on its last lobby view and never sees the game start). When we
+      // already have a room, reconnect with its playerId so the server takes its
+      // reconnection path (restores the record, re-joins rooms, bypasses the lock).
+      const existing = roomRef.current
+      const joinMsg = existing
+        ? { code: existing.code, nickname: existing.nickname, playerId: existing.playerId }
+        : { code: credentials.code, nickname: credentials.nickname, playerId: credentials.playerId }
+      s.emit('player:join', joinMsg, (res: PlayerJoinAck | PlayerJoinErr) => {
         if ('error' in res) {
           onErrorRef.current(res.error)
           s.disconnect()
           return
         }
-        const room: RoomInfo = { code: credentials.code, playerId: res.playerId, nickname: res.nickname }
+        const room: RoomInfo = { code: joinMsg.code, playerId: res.playerId, nickname: res.nickname }
         roomRef.current = room
         sessionStorage.setItem(SESSION_KEY, JSON.stringify(room))
         onJoinedRef.current(room)
