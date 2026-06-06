@@ -127,6 +127,11 @@ const PAST_TENSE: Record<string, string> = {
   cook: 'cooked', mix: 'mixed', grind: 'ground', knead: 'kneaded',
 }
 
+// Cook-verb → present participle for the "started …ing" chat message.
+// Only irregular verbs that need consonant-doubling live here; everything
+// else is correct via `${action}ing` (grill→grilling, fry→frying, …).
+const COOK_GERUNDS: Record<string, string> = { chop: 'chopping' }
+
 function isUserBusy(state: GameState, user: string): boolean {
   return Boolean(state.activeUsers[user]) || Object.values(state.stations).some(
     station => station.slots.some(slot => slot.state === 'cooking' && slot.user === user)
@@ -448,7 +453,7 @@ let matchedStep = null
           activeUsers: { ...withStat.activeUsers, [user]: stationId },
           nextSlotId: withStat.nextSlotId + 1,
         },
-        'KITCHEN', `${user} started ${cookAction}ing ${target.replace(/_/g, ' ')}!`, 'success'
+        'KITCHEN', `${user} started ${COOK_GERUNDS[cookAction] ?? `${cookAction}ing`} ${target.replace(/_/g, ' ')}!`, 'success'
       )
     }
 

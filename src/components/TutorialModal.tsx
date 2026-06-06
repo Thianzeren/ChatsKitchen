@@ -1,4 +1,5 @@
 import { RECIPES } from '../data/recipes'
+import { orderStepsForDisplay } from '../data/recipeSteps'
 import FoodIcon from './FoodIcon'
 import styles from './TutorialModal.module.css'
 
@@ -96,10 +97,10 @@ export default function TutorialModal({ onClose, onStartCooking }: Props) {
                       <span className={styles.recipeCardReward}>${recipe.reward}</span>
                     </div>
                     <div className={styles.recipeCardSteps}>
-                      {recipe.steps.map((step, i) => (
+                      {orderStepsForDisplay(recipe.steps).map((step, i, ordered) => (
                         <span key={i} className={styles.recipeStep}>
                           <code>{step.action} {step.target}</code>
-                          {i < recipe.steps.length - 1 && <span className={styles.recipeArrow}>{recipe.steps[i + 1].requires ? '→' : '+'}</span>}
+                          {i < ordered.length - 1 && <span className={styles.recipeArrow}>{ordered[i + 1].requires ? '→' : '+'}</span>}
                         </span>
                       ))}
                     </div>

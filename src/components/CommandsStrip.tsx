@@ -1,4 +1,5 @@
 import { RECIPES } from '../data/recipes'
+import { orderStepsForDisplay } from '../data/recipeSteps'
 import styles from './CommandsStrip.module.css'
 
 interface Props {
@@ -15,7 +16,7 @@ export default function CommandsStrip({ enabledRecipes }: Props) {
         return (
           <span key={key} className={styles.pill}>
             <span className={styles.pillEmoji}>{recipe.emoji}</span>
-            {recipe.steps.map((step, i) => (
+            {orderStepsForDisplay(recipe.steps).map((step, i) => (
               <span key={i} className={styles.pillStep}>
                 {i > 0 && (
                   <span className={step.requires ? styles.pillArrow : styles.pillSep}>

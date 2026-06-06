@@ -43,6 +43,16 @@ describe('COOK', () => {
     expect(s.playerStats.alice.cooked).toBe(1)
   })
 
+  it('logs "chopping" (not "choping") when a chop action starts', () => {
+    const s = gameReducer(base(), { type: 'COOK', user: 'alice', action: 'chop', target: 'lettuce', now: NOW })
+    expect(s.chatMessages.some(m => m.text === 'alice started chopping lettuce!')).toBe(true)
+  })
+
+  it('keeps the plain +ing form for regular verbs (grill → grilling)', () => {
+    const s = gameReducer(base(), { type: 'COOK', user: 'alice', action: 'grill', target: 'patty', now: NOW })
+    expect(s.chatMessages.some(m => m.text === 'alice started grilling patty!')).toBe(true)
+  })
+
   it('allows unlimited concurrent slots at one station (no capacity limit — pitfall #2)', () => {
     let s = gameReducer(base(), { type: 'COOK', user: 'alice', action: 'chop', target: 'lettuce', now: NOW })
     s = gameReducer(s, { type: 'COOK', user: 'bob', action: 'chop', target: 'tomato', now: NOW })
