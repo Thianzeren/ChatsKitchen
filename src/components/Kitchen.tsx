@@ -4,6 +4,7 @@ import { getEnabledStations } from '../data/recipes'
 import Station from './Station'
 import PreparedItems from './PreparedItems'
 import CommandsStrip from './CommandsStrip'
+import { storage } from '../state/storage'
 import styles from './Kitchen.module.css'
 
 interface Props {
@@ -14,12 +15,12 @@ interface Props {
 export default function Kitchen({ state, tutorialHighlight }: Props) {
   const stationIds = getEnabledStations(state.enabledRecipes)
   const [showCommands, setShowCommands] = useState(() =>
-    localStorage.getItem('chatsKitchen_kitchenShowCommands') !== 'false'
+    storage.get('chatsKitchen_kitchenShowCommands') !== 'false'
   )
 
   const toggleCommands = () => setShowCommands(v => {
     const next = !v
-    localStorage.setItem('chatsKitchen_kitchenShowCommands', String(next))
+    storage.set('chatsKitchen_kitchenShowCommands', String(next))
     return next
   })
 

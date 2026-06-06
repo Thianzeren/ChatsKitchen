@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { GameState } from '../state/types'
 import OrderTicket from './OrderTicket'
+import { storage } from '../state/storage'
 import styles from './DiningRoom.module.css'
 
 function seededShuffle<T>(arr: T[], seed: number): T[] {
@@ -22,7 +23,7 @@ interface Props {
 
 export default function OrdersBar({ state, isHighlighted, isGlitched }: Props) {
   const [simpleTickets, setSimpleTickets] = useState(
-    () => localStorage.getItem('chatsKitchen_diningRoomSimpleTickets') === 'true'
+    () => storage.get('chatsKitchen_diningRoomSimpleTickets') === 'true'
   )
   const [shuffleSeed, setShuffleSeed] = useState(0)
 
@@ -34,7 +35,7 @@ export default function OrdersBar({ state, isHighlighted, isGlitched }: Props) {
 
   const toggleSimple = () => setSimpleTickets(v => {
     const next = !v
-    localStorage.setItem('chatsKitchen_diningRoomSimpleTickets', String(next))
+    storage.set('chatsKitchen_diningRoomSimpleTickets', String(next))
     return next
   })
 

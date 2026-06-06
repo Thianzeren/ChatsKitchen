@@ -12,6 +12,7 @@ import AdventureExitConfirm from './AdventureExitConfirm'
 import AdventureProgressDots from './AdventureProgressDots'
 import { TwitchStatus } from '../hooks/useTwitchChat'
 import TwitchStatusPill from './TwitchStatusPill'
+import { storage } from '../state/storage'
 import styles from './AdventureBriefing.module.css'
 
 interface Props {
@@ -26,11 +27,11 @@ interface Props {
 
 export default function AdventureBriefing({ run, bestRun, onStart, onMenu, onManageLobby, twitchStatus, twitchChannel }: Props) {
   const [confirmExit, setConfirmExit] = useState(false)
-  const [hideSteps, setHideSteps] = useState(() => localStorage.getItem('chatsKitchen_adventureBriefingHideSteps') === 'true')
+  const [hideSteps, setHideSteps] = useState(() => storage.get('chatsKitchen_adventureBriefingHideSteps') === 'true')
 
   const toggleHideSteps = () => setHideSteps(h => {
     const next = !h
-    localStorage.setItem('chatsKitchen_adventureBriefingHideSteps', String(next))
+    storage.set('chatsKitchen_adventureBriefingHideSteps', String(next))
     return next
   })
 

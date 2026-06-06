@@ -11,27 +11,25 @@ import {
 import { generateRecipeOffers } from '../data/adventureRecipeDraft'
 import { applyBossDebuff, pickBossForShift } from '../data/adventureBosses'
 import { countRoster } from '../state/participants'
+import { storage } from '../state/storage'
 
 // ── localStorage migration ───────────────────────────────────────────────────
 
 const BEST_RUN_KEY = 'chatsKitchen_adventureBestRun'
 
 function loadAdventureBestRun(): AdventureBestRun | null {
-  try {
-    const saved = localStorage.getItem(BEST_RUN_KEY)
-    if (!saved) return null
-    const parsed = JSON.parse(saved) as Partial<AdventureBestRun>
-    return {
-      furthestShift: parsed.furthestShift ?? 0,
-      totalMoney: parsed.totalMoney ?? 0,
-      wonRuns: parsed.wonRuns ?? 0,
-      bestEndedAt: parsed.bestEndedAt,
-    }
-  } catch { return null }
+  const parsed = storage.getJSON<Partial<AdventureBestRun> | null>(BEST_RUN_KEY, null)
+  if (!parsed) return null
+  return {
+    furthestShift: parsed.furthestShift ?? 0,
+    totalMoney: parsed.totalMoney ?? 0,
+    wonRuns: parsed.wonRuns ?? 0,
+    bestEndedAt: parsed.bestEndedAt,
+  }
 }
 
 function persistAdventureBestRun(run: AdventureBestRun): void {
-  try { localStorage.setItem(BEST_RUN_KEY, JSON.stringify(run)) } catch { /* ignore */ }
+  storage.setJSON(BEST_RUN_KEY, run)
 }
 
 // ── Saved-run persistence (resume between sessions) ─────────────────────────
@@ -49,24 +47,17 @@ export interface SavedAdventureRun {
 }
 
 export function loadSavedAdventureRun(): SavedAdventureRun | null {
-  try {
-    const raw = localStorage.getItem(SAVED_RUN_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as Partial<SavedAdventureRun>
-    if (parsed.version !== 2 || !parsed.run || !Array.isArray(parsed.lobby)) return null
-    return parsed as SavedAdventureRun
-  } catch { return null }
+  const parsed = storage.getJSON<Partial<SavedAdventureRun> | null>(SAVED_RUN_KEY, null)
+  if (!parsed || parsed.version !== 2 || !parsed.run || !Array.isArray(parsed.lobby)) return null
+  return parsed as SavedAdventureRun
 }
 
 function persistSavedAdventureRun(run: AdventureRun, lobby: string[]): void {
-  try {
-    const payload: SavedAdventureRun = { version: 2, run, lobby, savedAt: Date.now() }
-    localStorage.setItem(SAVED_RUN_KEY, JSON.stringify(payload))
-  } catch { /* ignore */ }
+  storage.setJSON(SAVED_RUN_KEY, { version: 2, run, lobby, savedAt: Date.now() } satisfies SavedAdventureRun)
 }
 
 function clearSavedAdventureRun(): void {
-  try { localStorage.removeItem(SAVED_RUN_KEY) } catch { /* ignore */ }
+  storage.remove(SAVED_RUN_KEY)
 }
 
 // ── Shop reroll pricing ──────────────────────────────────────────────────────
@@ -81,6 +72,10 @@ function getRerollPrice(rerollCount: number, participantCount: number = 1): numb
 }
 
 // ── Per-shift reset composition ──────────────────────────────────────────────
+
+// Drop a combined knob back to `undefined` when it lands on its no-op value, so
+// RESET falls back to the engine default instead of applying a 1×/+0 effect.
+const orNoop = (value: number, noop: number): number | undefined => (value === noop ? undefined : value)
 
 // Compose the RESET action payload. Boss debuff applies first; garnishes layer
 // on top so a Slow Burner garnish can partially counteract a Heatwave boss.
@@ -101,11 +96,11 @@ function buildShiftReset(
     orderSpawnRate: baseOrderSpawn,
   }, run.currentShift)
 
+  // Three knobs can be set by BOTH the boss and a garnish, so they're combined
+  // (heat multiplies; cool/patience add) rather than letting one clobber the other.
   const heatMul = (delta.state.heatPerCookMultiplier ?? 1) * (bossDelta.state.heatPerCookMultiplier ?? 1)
   const coolBonus = (delta.state.coolAmountBonus ?? 0) + (bossDelta.state.coolAmountBonus ?? 0)
-
-  const orderPatienceBonusCombined =
-    (delta.state.orderPatienceBonus ?? 0) + (bossDelta.state.orderPatienceBonus ?? 0)
+  const orderPatienceBonusCombined = (delta.state.orderPatienceBonus ?? 0) + (bossDelta.state.orderPatienceBonus ?? 0)
 
   return {
     type: 'RESET',
@@ -116,18 +111,15 @@ function buildShiftReset(
     enabledRecipes: run.currentRecipes,
     teams: undefined,
     participantCount: 0,
-    heatPerCookMultiplier: heatMul === 1 ? undefined : heatMul,
-    coolAmountBonus: coolBonus === 0 ? undefined : coolBonus,
-    flatTipPerOrder: delta.state.flatTipPerOrder,
-    choppingCookTimeMultiplier: delta.state.choppingCookTimeMultiplier,
-    orderPatienceBonus: orderPatienceBonusCombined === 0 ? undefined : orderPatienceBonusCombined,
-    overheatThreshold: delta.state.overheatThreshold,
-    bossMoneyMultiplier: bossDelta.state.bossMoneyMultiplier,
-    cooldownMultiplier: bossDelta.state.cooldownMultiplier,
-    disabledStations: bossDelta.state.disabledStations,
+    // Boss-only and garnish-only knobs pass straight through…
+    ...bossDelta.state,
+    ...delta.state,
+    // …then the three knobs both sides can touch override with their combined value.
+    heatPerCookMultiplier: orNoop(heatMul, 1),
+    coolAmountBonus: orNoop(coolBonus, 0),
+    orderPatienceBonus: orNoop(orderPatienceBonusCombined, 0),
     activeGarnishes: run.ownedGarnishes.map(g => g.garnishId),
     activeBossDebuff: boss?.id,
-    lostOrderPenalty: bossDelta.state.lostOrderPenalty,
   }
 }
 

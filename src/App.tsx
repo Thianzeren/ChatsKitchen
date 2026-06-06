@@ -16,6 +16,7 @@ import { gameStateToSnapshot, pvpLobbySnapshot, pvpLobbyPerPlayer, adventureVote
 import type { VoteSnapshot } from './shared/protocol'
 import { classifyRoomCommand } from './state/roomCommandRouting'
 import { countActivePlayers } from './state/participants'
+import { storage } from './state/storage'
 import { connectedNicknames, unassignedPool } from './state/roomRoster'
 import { useGameAudio } from './audio/useGameAudio'
 import { useViewportScale } from './hooks/useViewportScale'
@@ -61,16 +62,9 @@ const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
 export default function App() {
   const [screen, setScreen] = useState<Screen>('menu')
   const [activeEventOptions, setActiveEventOptions] = useState<ActiveEventOptions | null>(null)
-  const [gameOptions, setGameOptions] = useState<GameOptions>(() => {
-    try {
-      const saved = localStorage.getItem('chatsKitchen_gameOptions')
-      if (!saved) return DEFAULT_GAME_OPTIONS
-      const parsed = JSON.parse(saved) as Partial<GameOptions>
-      return { ...DEFAULT_GAME_OPTIONS, ...parsed }
-    } catch {
-      return DEFAULT_GAME_OPTIONS
-    }
-  })
+  const [gameOptions, setGameOptions] = useState<GameOptions>(() =>
+    ({ ...DEFAULT_GAME_OPTIONS, ...storage.getJSON<Partial<GameOptions>>('chatsKitchen_gameOptions', {}) })
+  )
   const [state, dispatch] = useReducer(gameReducer, undefined, () =>
     createInitialState(gameOptions.shiftDuration, gameOptions.cookingSpeed, gameOptions.orderSpeed, gameOptions.orderSpawnRate)
   )
@@ -78,21 +72,10 @@ export default function App() {
   const [chatOpen, setChatOpen] = useState(false)
   const [paused, setPaused] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
-  const [twitchChannel, setTwitchChannel] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem('chatsKitchen_twitchChannel')
-    } catch {
-      return null
-    }
-  })
-  const [audioSettings, setAudioSettings] = useState<AudioSettings>(() => {
-    try {
-      const saved = localStorage.getItem('chatsKitchen_audioSettings')
-      return saved ? { ...DEFAULT_AUDIO_SETTINGS, ...JSON.parse(saved) } : DEFAULT_AUDIO_SETTINGS
-    } catch {
-      return DEFAULT_AUDIO_SETTINGS
-    }
-  })
+  const [twitchChannel, setTwitchChannel] = useState<string | null>(() => storage.get('chatsKitchen_twitchChannel'))
+  const [audioSettings, setAudioSettings] = useState<AudioSettings>(() =>
+    ({ ...DEFAULT_AUDIO_SETTINGS, ...storage.getJSON<Partial<AudioSettings>>('chatsKitchen_audioSettings', {}) })
+  )
   const stateRef = useRef(state)
   stateRef.current = state
   const lastSnapshotStateRef = useRef<object | null>(null)
@@ -177,21 +160,12 @@ export default function App() {
     tutorialGameOver, resetTutorial,
   } = tutorial
 
-  const startFreePlay = useCallback((replay = false) => {
-    const replayOpts = replay ? lastPlayedOptionsRef.current : null
-    const opts = replayOpts ?? gameOptions
-    if (!replay) lastPlayedOptionsRef.current = gameOptions
-
-    setActiveEventOptions(replayOpts ? toActiveEventOptions(replayOpts) : null)
-    activeGameOptionsRef.current = replayOpts
-
+  // Shared round kickoff: clear any Adventure run, RESET the reducer with the
+  // given options + team map, snapshot the room headcount, lock joins, and run
+  // the countdown. Both Free Play and the playset picker funnel through here.
+  type RoundOptions = Pick<GameOptions, 'shiftDuration' | 'cookingSpeed' | 'orderSpeed' | 'orderSpawnRate' | 'enabledRecipes'>
+  const beginRound = useCallback((opts: RoundOptions, teams: Record<string, 'red' | 'blue'>) => {
     setAdventureRun(null)
-    const teams: Record<string, 'red' | 'blue'> = pvpLobbyRef.current
-      ? Object.fromEntries([
-          ...pvpLobbyRef.current.red.map(u => [u, 'red' as const]),
-          ...pvpLobbyRef.current.blue.map(u => [u, 'blue' as const]),
-        ])
-      : {}
     dispatch({
       type: 'RESET',
       shiftDuration: opts.shiftDuration,
@@ -205,7 +179,24 @@ export default function App() {
     setStarThresholds(null)
     if (chatModeRef.current === 'room') roomRef.current.lockJoins()
     setScreen('countdown')
-  }, [gameOptions, pvpLobbyRef, setAdventureRun, setStarThresholds])
+  }, [setAdventureRun, setStarThresholds])
+
+  const startFreePlay = useCallback((replay = false) => {
+    const replayOpts = replay ? lastPlayedOptionsRef.current : null
+    const opts = replayOpts ?? gameOptions
+    if (!replay) lastPlayedOptionsRef.current = gameOptions
+
+    setActiveEventOptions(replayOpts ? toActiveEventOptions(replayOpts) : null)
+    activeGameOptionsRef.current = replayOpts
+
+    const teams: Record<string, 'red' | 'blue'> = pvpLobbyRef.current
+      ? Object.fromEntries([
+          ...pvpLobbyRef.current.red.map(u => [u, 'red' as const]),
+          ...pvpLobbyRef.current.blue.map(u => [u, 'blue' as const]),
+        ])
+      : {}
+    beginRound(opts, teams)
+  }, [gameOptions, pvpLobbyRef, beginRound])
 
   const startFromPlayset = useCallback((playset: Playset, difficulty: Difficulty) => {
     const preset = DIFFICULTY_PRESETS[difficulty]
@@ -228,21 +219,8 @@ export default function App() {
     }
     activeGameOptionsRef.current = playsetGameOptions
     lastPlayedOptionsRef.current = playsetGameOptions
-    setAdventureRun(null)
-    dispatch({
-      type: 'RESET',
-      shiftDuration:   preset.shiftDuration,
-      cookingSpeed:    1.0,
-      orderSpeed:      preset.orderSpeed,
-      orderSpawnRate:  preset.orderSpawnRate,
-      enabledRecipes:  playset.recipes,
-      teams: {},
-      participantCount: chatModeRef.current === 'room' ? roomPlayersRef.current.filter(p => !p.disconnected).length : 0,
-    })
-    setStarThresholds(null)
-    if (chatModeRef.current === 'room') roomRef.current.lockJoins()
-    setScreen('countdown')
-  }, [setAdventureRun, setStarThresholds])
+    beginRound(playsetGameOptions, {})
+  }, [beginRound])
 
 
 
@@ -306,11 +284,7 @@ export default function App() {
 
   const handleGameOptionsChange = useCallback((options: GameOptions) => {
     setGameOptions(options)
-    try {
-      localStorage.setItem('chatsKitchen_gameOptions', JSON.stringify(options))
-    } catch {
-      // Ignore storage failures; in-memory state is already updated above.
-    }
+    storage.setJSON('chatsKitchen_gameOptions', options)
   }, [])
 
   const handleGameOver = useCallback(() => {
@@ -345,7 +319,7 @@ export default function App() {
       // Free Play: existing high-score + history logic (unchanged)
       setFreePlayHighScore(prev => {
         if (s.money > prev) {
-          try { localStorage.setItem('chatsKitchen_freePlayHighScore', String(s.money)) } catch { /* ignore */ }
+          storage.set('chatsKitchen_freePlayHighScore', String(s.money))
           setIsNewHighScore(true)
           return s.money
         }
@@ -354,7 +328,7 @@ export default function App() {
       })
       setFreePlayHistory(prev => {
         const updated = [{ money: s.money, served: s.served, lost: s.lost, playerCount: Object.keys(s.playerStats).length }, ...prev].slice(0, 5)
-        try { localStorage.setItem('chatsKitchen_freePlayHistory', JSON.stringify(updated)) } catch { /* ignore */ }
+        storage.setJSON('chatsKitchen_freePlayHistory', updated)
         return updated
       })
     }
@@ -393,44 +367,50 @@ export default function App() {
   const isTutorialRef = useRef(isTutorial)
   isTutorialRef.current = isTutorial
 
-  const handleTwitchMessage = useCallback((user: string, text: string, isMod: boolean) => {
+  // Single command pipeline shared by all three input sources — Twitch chat, phone
+  // controllers, and the local chatbox. Screen-based intercepts run first (PvP /
+  // Adventure lobby joins, mod commands, choice votes); anything left falls through
+  // to the game reducer. `forceDuringTutorial` is the one intentional asymmetry
+  // (CLAUDE.md pitfall #13): the local host may practise commands mid-tutorial,
+  // while Twitch/phone input stays gated.
+  const routeChatCommand = useCallback((user: string, text: string, isMod: boolean, forceDuringTutorial: boolean) => {
     dispatch({ type: 'ADD_CHAT', username: user, text, msgType: 'normal' })
-    // Co-play: when a Twitch channel is connected, chat plays alongside the
-    // always-on Local Play room. Twitch messages drive the game through the same
-    // lobby/vote/game routing as room players.
-    // PvP lobby: intercept !red / !blue / !join / !leave and lobby mod commands
-    if (screenRef.current === 'pvplobby') {
-      if (handleLobbyJoin(user, text.trim().toLowerCase())) return
-      handleLobbyMetaCommand(user, text, isMod)
-      return
+    const lower = text.trim().toLowerCase()
+
+    switch (classifyRoomCommand(screenRef.current)) {
+      case 'pvpLobby':
+        if (handleLobbyJoin(user, lower)) return
+        handleLobbyMetaCommand(user, text, isMod)
+        return
+      case 'adventureLobby':
+        if (handleAdventureLobbyJoin(user, lower)) return
+        if (handleAdventureLobbyMetaCommand(user, text, isMod) === 'start') handleAdventureLobbyStart()
+        return
+      case 'adventureVote':
+        if (adventureVoteRef.current?.(user, text)) return
+        break // not a vote command — fall through to the game pipeline
+      case 'game':
+        break
     }
-    // Adventure lobby: !join / !leave for everyone, !kick / !start for mods + broadcaster.
-    if (screenRef.current === 'adventurelobby') {
-      if (handleAdventureLobbyJoin(user, text.trim().toLowerCase())) return
-      const result = handleAdventureLobbyMetaCommand(user, text, isMod)
-      if (result === 'start') handleAdventureLobbyStart()
-      return
-    }
-    // Adventure choice-vote screens: route !1/!2/... to the active vote handler.
-    if (
-      screenRef.current === 'adventurepantryshop'
-      || screenRef.current === 'adventurerecipepick'
-    ) {
-      if (adventureVoteRef.current?.(user, text)) return
-    }
-    // Adventure run is in progress: !leave / !kick still update the roster; the
-    // shrunken count applies at the next shift boundary inside closeShop.
+
+    // Mid-run roster upkeep: !leave / !kick adjust the crew (applied at the next
+    // shift boundary in closeShop); the command also falls through to the game.
     if (adventureRunRef.current) {
-      if (handleAdventureLobbyJoin(user, text.trim().toLowerCase())) {
-        // Allow the command to fall through so it doesn't block any in-game side-effects
-      }
+      handleAdventureLobbyJoin(user, lower)
       handleAdventureLobbyMetaCommand(user, text, isMod)
     }
+
     handleEventCommand(user, text)
     handleTutorialEventCommand(text)
     handleMetaCommand(user, text, isMod)
-    if (!isTutorialRef.current) handleCommand(user, text)
+    if (forceDuringTutorial || !isTutorialRef.current) handleCommand(user, text)
   }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin, handleAdventureLobbyJoin, handleAdventureLobbyMetaCommand, handleAdventureLobbyStart, adventureRunRef])
+
+  // Twitch co-play: chat drives the game through the same routing as everyone else.
+  const handleTwitchMessage = useCallback(
+    (user: string, text: string, isMod: boolean) => routeChatCommand(user, text, isMod, false),
+    [routeChatCommand],
+  )
 
   // Keep Twitch connected regardless of chatMode so streamers can still see chat while using Local Play
   const effectiveTwitchChannel = twitchChannel
@@ -438,23 +418,8 @@ export default function App() {
 
   const room = useRoomHost({
     enabled: chatMode === 'room',
-    // Room player commands bypass handleTwitchMessage so they always drive the game in Local Play
-    onPlayerCommand: (nickname, command) => {
-      dispatch({ type: 'ADD_CHAT', username: nickname, text: command, msgType: 'normal' })
-      const target = classifyRoomCommand(screenRef.current)
-      if (target === 'pvpLobby') {
-        if (handleLobbyJoin(nickname, command.trim().toLowerCase())) return
-      } else if (target === 'adventureLobby') {
-        if (handleAdventureLobbyJoin(nickname, command.trim().toLowerCase())) return
-        if (handleAdventureLobbyMetaCommand(nickname, command, false) !== false) return
-      } else if (target === 'adventureVote') {
-        if (adventureVoteRef.current?.(nickname, command)) return
-      }
-      handleEventCommand(nickname, command)
-      handleTutorialEventCommand(command)
-      handleMetaCommand(nickname, command, false)
-      if (!isTutorialRef.current) handleCommand(nickname, command)
-    },
+    // Phone players are never mods; they drive the game through the shared pipeline.
+    onPlayerCommand: (nickname, command) => routeChatCommand(nickname, command, false, false),
     onPlayerJoined: (id, nickname, isReconnect) => setRoomPlayers(prev =>
       isReconnect
         ? prev.map(p => p.id === id ? { ...p, disconnected: false } : p)
@@ -475,34 +440,12 @@ export default function App() {
   const hubAdventure = useCallback(() => openAdventureLobby(), [openAdventureLobby])
   const hubPvp       = useCallback(() => startPvp(), [startPvp])
 
-  const handleChatSend = useCallback((text: string) => {
-    dispatch({ type: 'ADD_CHAT', username: 'You', text, msgType: 'normal' })
-    if (screenRef.current === 'pvplobby') {
-      if (handleLobbyJoin('You', text.trim().toLowerCase())) return
-      handleLobbyMetaCommand('You', text, true)
-      return
-    }
-    if (screenRef.current === 'adventurelobby') {
-      if (handleAdventureLobbyJoin('You', text.trim().toLowerCase())) return
-      const result = handleAdventureLobbyMetaCommand('You', text, true)
-      if (result === 'start') handleAdventureLobbyStart()
-      return
-    }
-    if (
-      screenRef.current === 'adventurepantryshop'
-      || screenRef.current === 'adventurerecipepick'
-    ) {
-      if (adventureVoteRef.current?.('You', text)) return
-    }
-    if (adventureRunRef.current) {
-      handleAdventureLobbyJoin('You', text.trim().toLowerCase())
-      handleAdventureLobbyMetaCommand('You', text, true)
-    }
-    handleEventCommand('You', text)
-    handleTutorialEventCommand(text)
-    handleMetaCommand('You', text, true)
-    handleCommand('You', text)
-  }, [handleCommand, handleEventCommand, handleTutorialEventCommand, handleMetaCommand, handleLobbyMetaCommand, handleLobbyJoin, handleAdventureLobbyJoin, handleAdventureLobbyMetaCommand, handleAdventureLobbyStart, adventureRunRef])
+  // Local chatbox: the host acts as the broadcaster (always mod) and may practise
+  // commands during the tutorial (forceDuringTutorial = true).
+  const handleChatSend = useCallback(
+    (text: string) => routeChatCommand('You', text, true, true),
+    [routeChatCommand],
+  )
 
 
   useEffect(() => {
@@ -522,31 +465,23 @@ export default function App() {
   // Returning visitors (or those who already dismissed) won't see it.
   useEffect(() => {
     if (screen !== 'adventurelobby') return
-    try {
-      if (localStorage.getItem('chatsKitchen_adventureIntroSeen') !== 'true') {
-        setAdventureIntroOpen(true)
-      }
-    } catch { /* ignore storage failures */ }
+    if (storage.get('chatsKitchen_adventureIntroSeen') !== 'true') setAdventureIntroOpen(true)
   }, [screen])
 
   const closeAdventureIntro = useCallback(() => {
     setAdventureIntroOpen(false)
-    try { localStorage.setItem('chatsKitchen_adventureIntroSeen', 'true') } catch { /* ignore */ }
+    storage.set('chatsKitchen_adventureIntroSeen', 'true')
   }, [])
 
   const handleAudioChange = useCallback((settings: AudioSettings) => {
     setAudioSettings(settings)
-    localStorage.setItem('chatsKitchen_audioSettings', JSON.stringify(settings))
+    storage.setJSON('chatsKitchen_audioSettings', settings)
   }, [])
 
   const handleTwitchChannelChange = useCallback((ch: string | null) => {
     setTwitchChannel(ch)
-    try {
-      if (ch) localStorage.setItem('chatsKitchen_twitchChannel', ch)
-      else localStorage.removeItem('chatsKitchen_twitchChannel')
-    } catch {
-      // Ignore storage failures; in-memory state is already updated above.
-    }
+    if (ch) storage.set('chatsKitchen_twitchChannel', ch)
+    else storage.remove('chatsKitchen_twitchChannel')
   }, [])
 
   const handleResetAll = useCallback(() => {
@@ -560,19 +495,12 @@ export default function App() {
     clearSavedAdventureRun()
     setSavedRunPreview(null)
 
-    try {
-      localStorage.setItem('chatsKitchen_audioSettings', JSON.stringify(DEFAULT_AUDIO_SETTINGS))
-      localStorage.removeItem('chatsKitchen_adventureBestRun')
-      localStorage.removeItem('chatsKitchen_gameOptions')
-      localStorage.removeItem('chatsKitchen_hideTutorialPrompt')
-      localStorage.removeItem('chatsKitchen_adventureIntroSeen')
-      localStorage.removeItem('chatsKitchen_savedAdventureRun')
-      localStorage.removeItem('chatsKitchen_preparedItemsShowNames')
-      localStorage.removeItem('chatsKitchen_diningRoomSimpleTickets')
-      localStorage.removeItem('chatsKitchen_kitchenShowCommands')
-    } catch {
-      // Ignore storage failures and keep the in-memory reset behavior.
-    }
+    storage.setJSON('chatsKitchen_audioSettings', DEFAULT_AUDIO_SETTINGS)
+    for (const key of [
+      'chatsKitchen_adventureBestRun', 'chatsKitchen_gameOptions', 'chatsKitchen_hideTutorialPrompt',
+      'chatsKitchen_adventureIntroSeen', 'chatsKitchen_savedAdventureRun', 'chatsKitchen_preparedItemsShowNames',
+      'chatsKitchen_diningRoomSimpleTickets', 'chatsKitchen_kitchenShowCommands',
+    ]) storage.remove(key)
   }, [handleTwitchChannelChange, resetTutorial, resetAdventureBestRun, resetSession, clearSavedAdventureRun])
 
   useEffect(() => {

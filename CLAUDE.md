@@ -157,16 +157,18 @@ App.tsx
 
 ### Command Flow
 
-Three input sources feed the same pipeline: Twitch chat (`handleTwitchMessage`), the local ChatPanel (`handleChatSend`), and phone-controller commands (`onPlayerCommand` in `useRoomHost`). Twitch and phones play together (co-play); all are connected at once.
+Three input sources feed the same pipeline: Twitch chat (`handleTwitchMessage`), the local ChatPanel (`handleChatSend`), and phone-controller commands (`onPlayerCommand` in `useRoomHost`). Twitch and phones play together (co-play); all are connected at once. **All three are thin adapters over one shared `routeChatCommand(user, text, isMod, forceDuringTutorial)` in `App.tsx`** — they only differ in `isMod` (Twitch passes it through, phones are never mod, the local host is always mod) and `forceDuringTutorial` (local-only; see pitfall #13).
 
 ```
 Twitch chat / local ChatPanel / phone controller
-  → handleTwitchMessage | handleChatSend | onPlayerCommand (App.tsx)
-  → screen-based intercept (early return):
-       pvplobby            → handleLobbyJoin / handleLobbyMetaCommand
-       adventurelobby      → handleAdventureLobbyJoin / …MetaCommand
-       adventure vote      → adventureVoteRef.current(...)
-     (room players route via classifyRoomCommand in state/roomCommandRouting.ts)
+  → handleTwitchMessage | handleChatSend | onPlayerCommand  (thin adapters)
+  → routeChatCommand (App.tsx)
+  → screen-based intercept via classifyRoomCommand (state/roomCommandRouting.ts):
+       pvpLobby        → handleLobbyJoin / handleLobbyMetaCommand        (early return)
+       adventureLobby  → handleAdventureLobbyJoin / …MetaCommand / start (early return)
+       adventureVote   → adventureVoteRef.current(...)  (return if consumed, else fall through)
+       game            → fall through
+  → mid-run roster upkeep (!leave / !kick) if an Adventure run is active
   → handleEventCommand (useKitchenEvents) // kitchen event response matching; runs before game commands
   → handleMetaCommand (App.tsx)         // handles mod-only shell commands; returns early if consumed
   → parseCommand (commandProcessor.ts)  // returns GameAction or null
@@ -197,7 +199,7 @@ Mod detection uses `tags.mod` and `tags.badges.broadcaster` from tmi.js. The loc
 `useGameLoop` dispatches `TICK` actions every 100ms while playing:
 - Increments each slot's `elapsedMs` by the tick `delta`; completes cooking when `elapsedMs >= cookDuration`; auto-collects output into `preparedItems` (and `preparedItemSources`) for all stations
 - Applies heat **incrementally during cooking** (proportional to slot progress); each slot rolls a random `heatPerCook` value (10–20) on creation — the total heat it contributes when fully cooked. Chopping board, mixing bowl, grinder, and knead board are exempt.
-- Decrements order patience; expires orders that run out
+- Decrements order patience; expires orders that run out. An expired order forfeits a base opportunity cost (`LOST_ORDER_PENALTY_FRACTION = 0.2` × the dish's reward) from the bank, plus the Bad Reviews boss's flat penalty if active; money is clamped at $0.
 - Spawns new orders at regular intervals. If the order queue empties mid-game, a new order spawns immediately and the spawn rate doubles for 10 seconds.
 - Triggers game over when `timeLeft <= 0`
 - Pause is handled by skipping the `TICK` dispatch entirely when `paused` is true (checked inside `useGameLoop` via a ref). No cook-time adjustment action is needed because `elapsedMs` only advances when ticks are dispatched.
@@ -296,69 +298,79 @@ interface GameOptions {
 
 ## Game Content
 
-### Recipes (27 dishes across 6 cuisine sets + 3 ungrouped)
+### Recipes (30 dishes — 6 cuisine sets + 3 ungrouped + 3 gap-filler)
+
+Rewards are **cafe scale** ($5–$24). The `reward` field in `recipes.ts` is the authored base value; serving fresh adds a proportional time bonus (`SERVE_TIME_BONUS_FRACTION = 0.4` × `reward`, scaled by patience remaining), so the bonus tracks dish value rather than flattening it. Keep this table in sync with `RECIPES` whenever rewards change.
 
 **Western Classics 🇺🇸** (`burger`, `fish_burger`, `salad`, `roasted_veggies`)
 
 | Dish | Key steps | Value |
 |------|-----------|-------|
-| Burger 🍔 | `chop lettuce` + `grill patty` + `toast bun` | $65 |
-| Fish & Chips 🐟 | `chop potato` → `fry potato` + `fry fish` | $60 |
-| Grilled Cheese 🥪 | `grill cheese` + `toast bread` | $40 |
-| Roasted Veggies 🫑 | `chop tomato` + `chop pepper` → `roast pepper` | $55 |
+| Burger 🍔 | `chop lettuce` + `grill patty` + `toast bun` | $14 |
+| Fish & Chips 🐟 | `fry fish` + `chop potato` → `fry potato` | $15 |
+| Caesar Salad 🥗 | `chop lettuce` + `chop tomato` + `toast crouton` | $7 |
+| Roasted Veggies 🫑 | `chop tomato` + `chop pepper` → `roast pepper` | $13 |
 
 **Chinese Kitchen 🇨🇳** (`fried_rice`, `stir_fried_pork`, `steamed_tofu`, `steamed_buns`)
 
 | Dish | Key steps | Value |
 |------|-----------|-------|
-| Fried Rice 🍳 | `cook rice` → `stirfry rice` + `stirfry egg` | $55 |
-| Stir-Fried Pork 🍛 | `chop pork` → `stirfry pork` + `chop spring_onion` | $65 |
-| Steamed Tofu 🧈 | `chop tofu` → `steam tofu` + `chop spring_onion` | $45 |
-| Steamed Buns 🥟 | `chop cabbage` + `steam bun` | $55 |
+| Fried Rice 🍳 | `cook rice` → `stirfry rice` + `stirfry egg` | $14 |
+| Stir-Fried Pork 🍛 | `chop pork` → `stirfry pork` + `chop spring_onion` | $15 |
+| Steamed Tofu 🧈 | `chop tofu` → `steam tofu` + `chop spring_onion` | $12 |
+| Steamed Buns 🥟 | `chop cabbage` + `steam bun` | $8 |
 
 **Korean Kitchen 🇰🇷** (`bulgogi`, `kimchi_jjigae`, `korean_fried_chicken`, `tteokbokki`)
 
 | Dish | Key steps | Value |
 |------|-----------|-------|
-| Bulgogi 🥩 | `chop beef` → `grill beef` + `chop spring_onion` | $70 |
-| Kimchi Jjigae 🥘 | `chop kimchi` → `simmer kimchi` + `chop tofu` | $65 |
-| Korean Fried Chicken 🍗 | `chop chicken` → `fry chicken` + `mix gochujang` | $75 |
-| Tteokbokki 🌶️ | `chop tteok` + `mix gochujang` → `boil tteok` | $65 |
+| Bulgogi 🥩 | `chop beef` → `grill beef` + `chop spring_onion` | $17 |
+| Kimchi Jjigae 🥘 | `chop kimchi` → `simmer kimchi` + `chop tofu` | $15 |
+| Korean Fried Chicken 🍗 | `chop chicken` → `fry chicken` + `mix gochujang` | $20 |
+| Tteokbokki 🌶️ | `chop tteok` + `mix gochujang` → `boil tteok` | $19 |
 
 **Japanese Kitchen 🇯🇵** (`sushi_roll`, `tempura`, `chawanmushi`, `salmon_donburi`)
 
 | Dish | Key steps | Value |
 |------|-----------|-------|
-| Sushi Roll 🍣 | `cook rice` + `chop tuna` + `toast nori` | $70 |
-| Tempura 🍤 | `chop shrimp` → `fry shrimp` | $65 |
-| Chawanmushi 🥚 | `chop egg` → `steam egg` + `chop shrimp` | $55 |
-| Salmon Donburi 🍱 | `cook rice` + `chop salmon` + `chop nori` | $75 |
+| Sushi Roll 🍣 | `cook rice` + `chop tuna` + `toast nori` | $16 |
+| Tempura 🍤 | `chop shrimp` → `fry shrimp` | $13 |
+| Chawanmushi 🥚 | `chop egg` → `steam egg` + `chop shrimp` | $12 |
+| Salmon Donburi 🍱 | `cook rice` + `chop salmon` + `chop nori` | $9 |
 
 **Japanese Bakery 🇯🇵** (`shio_pan`, `melon_pan`, `pour_over_coffee`, `matcha_latte`)
 
 | Dish | Key steps | Value |
 |------|-----------|-------|
-| Shio Pan 🫓 | `knead dough` → `toast dough` | $50 |
-| Melon Pan 🍨 | `knead dough` → `toast dough` + `mix topping` | $65 |
-| Pour-Over Coffee ☕ | `grind beans` + `boil water` | $45 |
-| Matcha Latte 🍵 | `mix matcha` + `steam milk` | $55 |
+| Shio Pan 🫓 | `knead dough` → `toast dough` | $11 |
+| Melon Pan 🍨 | `knead dough` → `toast dough` + `mix topping` | $19 |
+| Pour-Over Coffee ☕ | `grind beans` + `boil water` | $5 |
+| Matcha Latte 🍵 | `mix matcha` + `steam milk` | $6 |
 
 **SG Hawker Breakfast 🇸🇬** (`kaya_toast`, `economic_bee_hoon`, `roti_prata`, `nasi_lemak`)
 
 | Dish | Key steps | Value |
 |------|-----------|-------|
-| Kaya Toast 🍞 | `toast bread` + `mix kaya` | $40 |
-| Economic Bee Hoon 🍜 | `fry chicken_wing` + `stirfry bee_hoon` + `stirfry cabbage` + `fry egg` | $65 |
-| Roti Prata 🫓 | `knead prata` → `grill prata` + `boil curry` | $55 |
-| Nasi Lemak 🍱 | `cook rice` + `mix sambal` + `fry anchovies` + `fry egg` | $75 |
+| Kaya Toast 🍞 | `toast bread` + `mix kaya` | $5 |
+| Economic Bee Hoon 🍜 | `fry chicken_wing` + `stirfry bee_hoon` + `stirfry cabbage` + `fry egg` | $22 |
+| Roti Prata 🫓 | `knead prata` → `grill prata` + `boil curry` | $21 |
+| Nasi Lemak 🍱 | `cook rice` + `mix sambal` + `fry anchovies` + `fry egg` | $23 |
 
-**Ungrouped** (`fries`, `hot_dog`, `salad` — not in any cuisine set)
+**Ungrouped** (`fries`, `pasta` = Hot Dog, `mushroom_soup` = Grilled Cheese — not in any cuisine set)
 
 | Dish | Key steps | Value |
 |------|-----------|-------|
-| Fries 🍟 | `chop potato` → `fry potato` | $40 |
-| Hot Dog 🌭 | `grill sausage` + `chop onion` + `toast bun` | $45 |
-| Caesar Salad 🥗 | `chop lettuce` + `chop tomato` + `toast crouton` | $35 |
+| Fries 🍟 | `chop potato` → `fry potato` | $11 |
+| Hot Dog 🌭 | `grill sausage` + `chop onion` + `toast bun` | $12 |
+| Grilled Cheese 🥪 | `grill cheese` + `toast bread` | $8 |
+
+**Gap-filler** (`iced_lemon_tea`, `ramen_bowl`, `veggie_dumplings` — ungrouped, Adventure-eligible)
+
+| Dish | Key steps | Value |
+|------|-----------|-------|
+| Iced Lemon Tea 🥤 | `mix lemon_tea` | $5 |
+| Ramen Bowl 🍜 | `boil broth` + `chop chashu` → `grill chashu` + `boil noodles` | $24 |
+| Veggie Dumplings 🥟 | `chop cabbage` + `chop carrot` + `knead wrapper` → `steam dumplings` | $21 |
 
 Steps marked `→` require the prior ingredient in `preparedItems` before starting.
 
@@ -410,7 +422,7 @@ interface PlayerStats {
   served: number              // orders successfully served
   moneyEarned: number         // sum of rewards from orders they served
   extinguished: number        // extinguish votes cast
-  firesCaused: number         // times their cooking slot caused an overheat
+  firesCaused: number         // overheats at a station this player was cooking at (shared team-level penalty)
   cooled: number              // cool actions used
   eventParticipations: number // kitchen event responses
   bonusPoints: number         // bonus awarded for meaningful contributions (see table below)
@@ -563,7 +575,7 @@ When implementing a new feature of similar scope, create a spec + plan document 
 10. **PvP lobby state lives in App.tsx, not GameState** — `pvpLobby: { red: string[], blue: string[] } | null` is pre-game state. It is merged into the reducer's RESET action as `teams` when the game starts, then cleared. Do not store it in `GameState`.
 11. **`pvpLobbyRef` for stale closure safety** — Lobby mod commands (`!move`) check `pvpLobbyRef.current` synchronously before calling `setPvpLobby`. Reading `pvpLobby` state directly inside a `useCallback` would see a stale snapshot.
 12. **Stale-ref update pattern** — When mirroring React state into a ref for use inside intervals/callbacks, update it inline (`ref.current = value`) not inside a `useEffect`. The `useEffect` runs after render, leaving a one-tick-old snapshot available to any interval that fires between render and effect execution.
-13. **`handleChatSend` vs `handleTwitchMessage` asymmetry** — Local chat (`handleChatSend`) always calls `handleCommand` regardless of tutorial state; Twitch chat skips it during tutorial (`if (!isTutorialRef.current) handleCommand(...)`). This is intentional — local users can practice commands during the tutorial. Do not "fix" the asymmetry.
+13. **Tutorial command asymmetry** — All three input sources share `routeChatCommand`; the local chatbox passes `forceDuringTutorial = true` so the host always reaches `handleCommand`, while Twitch/phone pass `false` and skip it during the tutorial (`forceDuringTutorial || !isTutorialRef.current`). This is intentional — local users can practice commands during the tutorial. The asymmetry is now a single explicit flag; do not "fix" it by removing the flag.
 14. **`preparedItemSources` must stay in sync with `preparedItems`** — every operation that adds or removes from `preparedItems` must do the same to `preparedItemSources` at the same index. COOK instant → push `user` to sources. TICK completion → push `slot.user` to sources. SERVE → splice both arrays at the same index. `ADD_PREPARED_ITEMS` → push `''` per item (no cooker). `REMOVE_PREPARED_ITEMS` → splice sources at the same random indices. PvP equivalents (`redPreparedItemSources`, `bluePreparedItemSources`) follow the same rule. A length mismatch silently breaks bonus point attribution.
 15. **Twitch is co-play, not a `chatMode` switch** — `chatMode` is initialised to `'room'` and stays there for the whole session (there is no connection chooser). Twitch connects purely off `twitchChannel` (`useTwitchChat(twitchChannel, …)` — *not* gated by `chatMode`), so `onTwitchConnect` only calls `setTwitchChannel(ch)` and `onTwitchDisconnect` only `setTwitchChannel(null)`. `handleTwitchMessage` has **no** "view-only" early return — when a channel is connected, chat drives the game alongside the always-live room. Do not reintroduce a `chatMode === 'twitch'` gate or a view-only guard.
 16. **Auto-restart Cancel persists the off state** — the Cancel button in `GameOver` calls both `setCountdown(null)` (local) and `onDisableAutoRestart()` (persists `autoRestart: false` to `gameOptions`/localStorage). Only clearing local state would cause the countdown to restart on the next game over screen because a new `GameOver` mount triggers the `useEffect([autoRestart, ...])` with the still-true value. The `!offAutoRestart` chat command does the same thing as Cancel.
