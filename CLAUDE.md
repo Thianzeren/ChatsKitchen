@@ -8,11 +8,12 @@ This file provides essential context for AI assistants working in this repositor
 
 **"Let Chat Cook"** is a browser-based real-time cooking game where Twitch chat users collectively manage a restaurant kitchen. Players issue chat commands (`!chop`, `!grill`, `!plate`, `!serve`, etc.) to cook dishes, fill orders, and earn money before the shift timer runs out.
 
-- **Type:** Client-side SPA (no backend)
+- **Type:** Client-side React SPA + a thin socket.io **relay server** for Local Play (the game simulation always runs in the host's browser; the server only brokers messages)
 - **Framework:** React 18 + TypeScript
 - **Build Tool:** Vite 5
-- **External API:** Twitch Chat via `tmi.js`
+- **External API:** Twitch Chat via `tmi.js`; Local Play phones via socket.io through the relay
 - **State Management:** React `useReducer` (no Redux)
+- **Deploy:** static client on Vercel; relay server on Fly.io (`server/`)
 
 ---
 
@@ -33,24 +34,34 @@ npm run preview   # Preview production build locally
 ChatsKitchen/
 ├── src/
 │   ├── components/         # React UI components (PascalCase)
+│   ├── controller/         # Phone-player app served at /play (join/lobby/vote)
 │   ├── state/
 │   │   ├── gameReducer.ts  # All game logic (Redux-style reducer)
 │   │   ├── commandProcessor.ts  # Parses !command input → GameAction
+│   │   ├── snapshot.ts     # Serialises GameState → SharedSnapshot for phones
 │   │   └── types.ts        # TypeScript interfaces (GameState, Station, Order, etc.)
 │   ├── hooks/
 │   │   ├── useGameLoop.ts  # 100ms game tick loop
 │   │   ├── useTwitchChat.ts # Twitch IRC client lifecycle
+│   │   ├── useRoomHost.ts  # Local Play host: relay socket + snapshot push
 │   │   ├── useBotSimulation.ts # AI bot player (3s action interval)
 │   │   └── useKitchenEvents.ts # Kitchen events lifecycle (spawn, command match, resolve/fail)
 │   ├── data/
 │   │   ├── recipes.ts      # Recipe definitions, station configs, bot names
 │   │   └── kitchenEventDefs.ts # Event definitions, constants, generator functions
-│   └── main.tsx            # React entry point → App.tsx
+│   ├── audio/              # Howler-based AudioManager + game audio hook
+│   ├── shared/             # protocol.ts — wire types shared with the relay server
+│   └── main.tsx            # React entry: renders App, or Controller on /play
+├── server/                 # Standalone socket.io relay (Fly.io); no game logic
+│   ├── src/relay.ts        # createRelay() — rooms, join/lock, rate limit
+│   └── src/relay.test.ts   # Vitest integration + rate-limiter tests
 ├── docs/
 │   ├── Kitchen Events.md   # Kitchen events system reference
+│   ├── MULTIPLAYER_SPEC.md # Local Play / relay design spec
+│   ├── TESTING.md          # Testing guide & plan
 │   └── superpowers/plans/  # Development planning documents
-├── index.html              # SPA root
-├── vite.config.ts
+├── index.html              # SPA root (also serves /play via main.tsx)
+├── vite.config.ts          # Vite + Vitest config (test.include scopes to src/**)
 ├── tsconfig.json           # Project references → tsconfig.app.json + tsconfig.node.json
 ├── eslint.config.js
 └── package.json
@@ -374,7 +385,7 @@ Rewards are **cafe scale** ($5–$24). The `reward` field in `recipes.ts` is the
 
 Steps marked `→` require the prior ingredient in `preparedItems` before starting.
 
-### Stations (10 types)
+### Stations (12 types)
 
 | Station | Command | Heat |
 |---------|---------|------|
@@ -519,21 +530,23 @@ Run `npm run lint` before committing. The build (`npm run build`) also runs `tsc
 
 ---
 
-## No Tests
+## Testing
 
-There are currently no automated tests. No test framework is installed. When adding tests, **Vitest** (Vite-native) with **React Testing Library** is the recommended approach.
+Tests run on **Vitest**. Run the client suite with `npm test` (scoped to `src/**` via the `test.include` in `vite.config.ts`); run the relay server's suite with `npm test` inside `server/`.
+
+- **Client tests** live next to their subject in `src/data/` and `src/state/` and cover the pure layers — the reducer (mechanics + economy), kitchen-event generators, Adventure (garnishes/bosses/draft/mode), seeded RNG, recipes, snapshot, and command routing. Hooks and components are **not** yet tested (React Testing Library is not installed; add it when component/hook tests are needed).
+- **Relay tests** (`server/src/relay.test.ts`) cover the socket.io lifecycle via real connections plus a deterministic rate-limiter unit test. The relay is built by `createRelay()` (instance-scoped state, injectable CORS/grace, no auto-listen) so it's drivable from tests; `server/src/index.ts` is just the listen entry.
+- **CI** (`ci.yml`) runs lint + client tests + build + relay tests on every push/PR; `deploy-server.yml` re-runs them before each Fly.io deploy.
 
 ---
 
-## No Backend / No Environment Variables
+## Backend: the Local Play relay server
 
-This is a purely client-side application. There are no:
-- Server-side routes or APIs
-- Environment variables / `.env` files
-- Database schemas or migrations
-- Docker or CI/CD configuration
+The game is **client-first** — the simulation always runs in the host's browser and nothing about a live game is persisted. But Local Play adds a small backend:
 
-The Twitch channel name is entered by the user in the UI at runtime.
+- **`server/`** is a standalone socket.io **relay** (own `package.json`, deployed to Fly.io, `Dockerfile` + `fly.toml`). It is **stateless game-wise**: it holds only in-memory rooms (4-letter code → host socket + players), enforces join/lock and a per-player rate limit, and fans host snapshots out to phones. It contains **no game logic**.
+- **Wire protocol** types live in `src/shared/protocol.ts` and are imported by **both** the client and the server — a single source of truth for the host↔relay↔phone messages. (See the "Connection model" and `useRoomHost` sections above for the client side.)
+- **Env vars:** the server reads `PORT` (defaults to 8080); the deploy uses a `FLY_API_TOKEN` secret. The client resolves the relay endpoint from `VITE_RELAY_URL` (Vite build-time env, defaulting to `http://localhost:8080` — see `src/shared/config.ts`); the Twitch channel is entered in-app at runtime. There are still no databases or migrations.
 
 ---
 

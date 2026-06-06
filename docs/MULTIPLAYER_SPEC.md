@@ -2,6 +2,8 @@
 
 > **Status (implemented, model evolved):** Local Play room hosting shipped. The final design is **co-play**: a room is always live (`chatMode` stays `'room'` — it is no longer toggled between `local`/`twitch`/`room`), and a connected Twitch channel plays *alongside* the room rather than as a separate mode. The room is surfaced via the always-on Local Play card on the main menu and a `RoomQRModal` popup (there is no standalone local-play screen / `RoomHostCard`). See `CLAUDE.md` → "Connection model (Jackbox-style co-play)" for current behaviour; sections below are the original spec and may differ in detail.
 
+> **Relay server (as-built):** The relay lives in `server/` (socket.io, deployed to Fly.io) and stays a dumb router exactly as specified below — no game logic. It is built by `createRelay(opts)` in `server/src/relay.ts` (instance-scoped `rooms`/`buckets`, injectable CORS + grace timers, no auto-listen); `server/src/index.ts` is just the listen entry. It's ~197 LOC across those two files (the "~110 lines" estimate below predates room reconnect/grace handling). The wire protocol is `src/shared/protocol.ts`, imported by both the client and the server. The relay is covered by `server/src/relay.test.ts` (Vitest integration + a rate-limiter unit test), gated in CI (`ci.yml`) and before each deploy (`deploy-server.yml`).
+
 ## Context
 
 ChatsKitchen is a real-time browser cooking game where chat commands drive gameplay. Today it works in two ways:

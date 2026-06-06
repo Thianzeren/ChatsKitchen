@@ -35,9 +35,13 @@ As of this writing the suite is **16 files / 104 tests**, all pure-logic + reduc
 ## 2. Tooling
 
 ### Current
-- **Vitest 1.6** (`npm test` → `vitest run`), node environment, no config file.
+- **Vitest 1.6** (`npm test` → `vitest run`), node environment. Root run is scoped to
+  the client via `test.include: ['src/**/*.test.{ts,tsx}']` in `vite.config.ts`.
 - Tests colocate next to source as `*.test.ts`, grouped by concern when a module is
   large (`gameReducer.economy.test.ts`, `adventureGarnishes.shop.test.ts`).
+- **Relay server** has its own Vitest suite in `server/` (run `npm test` there):
+  `server/src/relay.test.ts` drives a real socket.io server via `createRelay()` plus a
+  deterministic `createRateLimiter()` unit test.
 
 ### To add (gated per tier below — don't add until the tier needs it)
 | Need | Dependency | Unlocks |
@@ -258,9 +262,10 @@ server. Keep these few and high-level:
 
 - **Targets (lines):** `state/` + `data/` ≥ 90 %, hooks ≥ 70 %, components best-effort.
   These two folders are the engine; hold them high.
-- **CI gate:** add `npm test` (and later `vitest run --coverage` with thresholds) to the
-  build pipeline. Today there is no CI config — a single GitHub Action running
-  `npm ci && npm run lint && npm run build && npm test` would cover lint + types + tests.
+- **CI gate:** in place — `.github/workflows/ci.yml` runs `npm ci && npm run lint &&
+  npm test && npm run build` plus the relay suite (`npm ci && npm test` in `server/`)
+  on every push/PR; `deploy-server.yml` re-runs them before each Fly.io deploy. Still to
+  add: `vitest run --coverage` with thresholds.
 - **Pre-merge:** the suite must be green; new reducer actions or data helpers ship with
   tests in the same PR.
 

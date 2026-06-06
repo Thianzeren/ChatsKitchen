@@ -35,3 +35,11 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Install relay server dependencies
+        run: npm ci
+        working-directory: server
+
+      - name: Test relay server
+        run: npm test
+        working-directory: server
