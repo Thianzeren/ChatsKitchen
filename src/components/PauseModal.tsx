@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { AudioSettings } from '../state/types'
 import { RECIPES } from '../data/recipes'
+import { orderStepsForDisplay } from '../data/recipeSteps'
 import FoodIcon from './FoodIcon'
 import styles from './PauseModal.module.css'
 
@@ -96,11 +97,11 @@ export default function PauseModal({
               <div key={key} className={styles.recipeCard}>
                 <div className={styles.recipeName}><FoodIcon icon={recipe.emoji} size={18} /> {recipe.name}</div>
                 <div className={styles.recipeSteps}>
-                  {recipe.steps.map((step, i) => (
+                  {orderStepsForDisplay(recipe.steps).map((step, i, ordered) => (
                     <span key={i}>
                       {step.action} {step.target}
-                      {i < recipe.steps.length - 1
-                        ? (recipe.steps[i + 1].requires ? ' → ' : ' + ')
+                      {i < ordered.length - 1
+                        ? (ordered[i + 1].requires ? ' → ' : ' + ')
                         : ''}
                     </span>
                   ))}

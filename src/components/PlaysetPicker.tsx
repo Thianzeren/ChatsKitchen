@@ -1,6 +1,7 @@
 import { useState, Fragment } from 'react'
 import { PLAYSETS, type Playset, type Difficulty } from '../data/playsets.ts'
 import { RECIPES } from '../data/recipes.ts'
+import { orderStepsForDisplay } from '../data/recipeSteps.ts'
 import { EVENT_DEFS } from '../data/kitchenEventDefs.ts'
 import styles from './PlaysetPicker.module.css'
 
@@ -202,9 +203,13 @@ function DetailBreakdown({ playset }: { playset: Playset }) {
                   <span className={styles.bdReward}>${recipe.reward}</span>
                 </div>
                 <div className={styles.bdSteps}>
-                  {recipe.steps.map((step, i) => (
+                  {orderStepsForDisplay(recipe.steps).map((step, i) => (
                     <Fragment key={i}>
-                      {i > 0 && <span className={styles.stepArrow}>→</span>}
+                      {i > 0 && (
+                        step.requires
+                          ? <span className={styles.stepArrow}>→</span>
+                          : <span className={styles.stepSep}>·</span>
+                      )}
                       <span className={styles.stepChip}>{step.action} {step.target.replace(/_/g, ' ')}</span>
                     </Fragment>
                   ))}
