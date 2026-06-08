@@ -78,79 +78,15 @@ Each player can only work one station at a time and has a 1.5-second command coo
 
 ### Recipes
 
-Steps marked `→` require the prior ingredient in the pool first. Steps joined by `+` can be done in any order.
+The menu spans 30 dishes across 6 cuisine sets — Western Classics, Chinese, Korean, Japanese, Japanese Bakery, and SG Hawker Breakfast — plus ungrouped extras. Steps marked `→` require the prior ingredient in the pool first; steps joined by `+` can be done in any order. Rewards are cafe scale ($5–$24), and serving fresh adds a time bonus that scales with the dish's value and the patience remaining.
 
-**Western Classics 🇺🇸**
-
-| Dish | Steps | Reward |
-|------|-------|--------|
-| 🍔 Burger | `chop lettuce` + `grill patty` + `toast bun` | $65 |
-| 🐟 Fish & Chips | `chop potato` → `fry potato` + `fry fish` | $60 |
-| 🥪 Grilled Cheese | `grill cheese` + `toast bread` | $40 |
-| 🫑 Roasted Veggies | `chop tomato` + `chop pepper` → `roast pepper` | $55 |
-
-**Chinese Kitchen 🇨🇳**
-
-| Dish | Steps | Reward |
-|------|-------|--------|
-| 🍳 Fried Rice | `cook rice` → `stirfry rice` + `stirfry egg` | $55 |
-| 🍛 Stir-Fried Pork | `chop pork` → `stirfry pork` + `chop spring_onion` | $65 |
-| 🧈 Steamed Tofu | `chop tofu` → `steam tofu` + `chop spring_onion` | $45 |
-| 🥟 Steamed Buns | `chop cabbage` + `steam bun` | $55 |
-
-**Korean Kitchen 🇰🇷**
-
-| Dish | Steps | Reward |
-|------|-------|--------|
-| 🥩 Bulgogi | `chop beef` → `grill beef` + `chop spring_onion` | $70 |
-| 🥘 Kimchi Jjigae | `chop kimchi` → `simmer kimchi` + `chop tofu` | $65 |
-| 🍗 Korean Fried Chicken | `chop chicken` → `fry chicken` + `mix gochujang` | $75 |
-| 🌶️ Tteokbokki | `chop tteok` + `mix gochujang` → `boil tteok` | $65 |
-
-**Japanese Kitchen 🇯🇵**
-
-| Dish | Steps | Reward |
-|------|-------|--------|
-| 🍣 Sushi Roll | `cook rice` + `chop tuna` + `toast nori` | $70 |
-| 🍤 Tempura | `chop shrimp` → `fry shrimp` | $65 |
-| 🥚 Chawanmushi | `chop egg` → `steam egg` + `chop shrimp` | $55 |
-| 🍱 Salmon Donburi | `cook rice` + `chop salmon` + `chop nori` | $75 |
-
-**Japanese Bakery 🇯🇵**
-
-| Dish | Steps | Reward |
-|------|-------|--------|
-| 🥐 Shio Pan | `knead dough` → `toast dough` | $50 |
-| 🍪 Melon Pan | `knead dough` → `toast dough` + `mix topping` | $65 |
-| ☕ Pour-Over Coffee | `grind beans` + `boil water` | $45 |
-| 🍵 Matcha Latte | `mix matcha` + `steam milk` | $55 |
-
-**SG Hawker Breakfast 🇸🇬**
-
-| Dish | Steps | Reward |
-|------|-------|--------|
-| 🍞 Kaya Toast | `toast bread` + `mix kaya` | $40 |
-| 🍜 Economic Bee Hoon | `fry chicken_wing` + `stirfry bee_hoon` + `stirfry cabbage` + `fry egg` | $65 |
-| 🫓 Roti Prata | `knead prata` → `grill prata` + `boil curry` | $55 |
-| 🍱 Nasi Lemak | `cook rice` + `mix sambal` + `fry anchovies` + `fry egg` | $75 |
-
-**Others**
-
-| Dish | Steps | Reward |
-|------|-------|--------|
-| 🍟 Fries | `chop potato` → `fry potato` | $40 |
-| 🌭 Hot Dog | `grill sausage` + `chop onion` + `toast bun` | $45 |
-| 🥗 Caesar Salad | `chop lettuce` + `chop tomato` + `toast crouton` | $35 |
-
-Each dish also earns a time bonus of up to +$30 based on how much patience the order had remaining when served.
+**Full dish list, steps, and rewards → [`docs/GAME-DESIGN-AND-MECHANICS.md`](docs/GAME-DESIGN-AND-MECHANICS.md#recipe-reference)** (the source of truth is `src/data/recipes.ts`).
 
 ### Heat & Overheat
 
-Stations heat up **gradually during cooking** — heat is applied incrementally as each cook progresses, contributing a random 10–20% per full cook (rolled when cooking starts). The station border colour shows the current level: green (safe) → yellow → orange → red (critical). Type `cool <station>` to reduce heat by a random 40–60% (requires not currently cooking).
+Cooking stations heat up gradually as each cook progresses; the station border shifts green (safe) → yellow → orange → red (critical). Type `cool <station>` to shed heat (you can't cool while actively cooking). At 100% the station overheats — active cooks are cancelled and it locks until enough players `extinguish <station>`. The chopping board, mixing bowl, grinder, and knead board never overheat.
 
-At 100% the station overheats: all active cooks are cancelled and the station locks. At least 50% of that round's players must type `extinguish <station>` to vote it back online. Heat resets to 0 once extinguished.
-
-The chopping board, mixing bowl, grinder, and knead board are exempt from heat and never overheat.
+Exact heat numbers and the cooperative/PvP extinguish thresholds are in [`docs/GAME-DESIGN-AND-MECHANICS.md`](docs/GAME-DESIGN-AND-MECHANICS.md#heat-and-failure-pressure).
 
 ### Order Spawning
 
@@ -162,7 +98,7 @@ If the queue is cleared, a new order spawns immediately and the spawn rate doubl
 
 ### Free Play
 
-Sandbox mode. Configure duration (1–9 min, default 3 min), cooking speed, order urgency, order frequency (all 0.25×–3.0×), station slot capacity, kitchen events, and which recipes can appear. The recipe select screen includes a **Selected** panel with Remove All, Select All, and Random 3 shortcuts. Good for practice and casual streaming.
+Sandbox mode. Configure duration (1–9 min, default 3 min), cooking speed, order urgency, order frequency (all 0.25×–3.0×), kitchen events, and which recipes can appear. The recipe select screen includes a **Selected** panel with Remove All, Select All, and Random 3 shortcuts. Good for practice and casual streaming.
 
 Order capacity and spawn rate scale dynamically during the game based on the number of active players, so the kitchen stays challenging as more viewers join.
 
@@ -172,7 +108,9 @@ Split chat into Red and Blue teams. Each team has its own prep tray and earns mo
 
 ### Adventure Mode
 
-A roguelike multi-shift run. Each shift must meet a money goal to unlock the next. Fail a shift and the run ends. Recipes and difficulty scale as you progress through shifts.
+A Balatro-inspired 8-shift roguelike run. Chat drafts its menu one dish at a time and shops the Pantry for permanent garnish upgrades between shifts. Each shift must meet a per-player money goal to unlock the next; bosses on shifts 4 & 8 apply debuffs. Fail any shift and the run ends — clear shift 8 to win. A run auto-saves at shift boundaries so it can be resumed.
+
+> Full rules for every mode — PvP scoring, the Adventure draft/Pantry/boss systems, leaderboard formula, and kitchen events — are in [`docs/GAME-DESIGN-AND-MECHANICS.md`](docs/GAME-DESIGN-AND-MECHANICS.md).
 
 ---
 
@@ -190,23 +128,25 @@ The game can also be played locally without Twitch using the built-in chat input
 
 ## Options
 
+Settings live in two places:
+
+**Free Play setup** (shown when you start a Free Play round):
+
 | Setting | Effect |
 |---------|--------|
-| Cooking Speed | Multiplier for how fast items cook (higher = faster) |
-| Order Speed | Multiplier for how fast order patience drains (higher = faster) |
-| Order Spawn Rate | How frequently new orders arrive |
-| Round Duration | Length of a free play shift |
-| Chopping Slots | Max concurrent items on the chopping board and mixing bowl |
-| Cooking Slots | Max concurrent items per cooking station |
-| Restrict Slots | Enforce slot limits (off = unlimited) |
+| Duration | Shift length, 1–9 min (default 3) |
+| Cooking Speed | How fast items cook, 0.25×–3.0× (higher = faster) |
+| Order Urgency | How fast order patience drains, 0.25×–3.0× |
+| Order Frequency | How often new orders arrive, 0.25×–3.0× |
+| Kitchen Events | Toggle on/off; pick event types, frequency, and duration |
+| Auto-Restart | Automatically start a new round after game over |
 | Enabled Recipes | Which dishes can appear as orders |
-| Kitchen Events | Toggle events on/off; configure which event types and frequency |
-| Auto-Restart | Automatically start a new round after game over (Free Play only) |
-| Shortform Commands | Allow single-letter command aliases |
-| Theme | Dark or Light mode |
-| Mobile Friendly | Increases base text size for easier reading on phones and tablets |
 
-Audio settings, display preferences, and high scores persist in the browser. A full reset is available at the bottom of Options.
+**Options screen** (from the Main Menu): the audio mix, **Dark Mode**, and **Shortform Commands** (single-letter aliases). A full reset — audio, free play settings, high scores, and tutorial flags — lives at the bottom.
+
+Audio settings, display preferences, and high scores persist in the browser.
+
+> Stations have **no slot limit** — any number of cooks can run concurrently at one station; throughput is bounded only by heat and the 1.5s per-user cooldown.
 
 ---
 
