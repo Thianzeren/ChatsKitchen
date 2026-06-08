@@ -253,7 +253,9 @@ server/                        # Standalone socket.io relay (Fly.io); no game lo
 └── src/relay.test.ts          # Vitest integration + rate-limiter tests
 public/icons/                  # SVG icons for dishes/ and ingredients/
 docs/
-├── game-design-and-mechanics.md  # Full design reference
+├── GAME-DESIGN-AND-MECHANICS.md  # Full design reference
+├── DESIGN.md                     # Design overview
+├── PRODUCT.md                    # Product overview
 ├── MULTIPLAYER_SPEC.md           # Local Play / relay design spec
 ├── TESTING.md                    # Testing guide & plan
 └── Kitchen Events.md             # Kitchen events system reference
@@ -273,4 +275,4 @@ npm run build    # catches TypeScript errors
 - All game logic lives in `src/state/gameReducer.ts`. Never mutate `GameState` directly — the reducer must return a new object.
 - Food icons use `FoodIcon.tsx` which renders `<img>` for `/`-prefixed paths and `<span>` for emoji strings — drop SVGs into `public/icons/` and update the `emoji` field in `recipes.ts` to use the path.
 
-For a deeper look at design decisions, see [`docs/game-design-and-mechanics.md`](docs/game-design-and-mechanics.md).
+For a deeper look at design decisions, see [`docs/GAME-DESIGN-AND-MECHANICS.md`](docs/GAME-DESIGN-AND-MECHANICS.md).

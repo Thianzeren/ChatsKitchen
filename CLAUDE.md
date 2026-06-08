@@ -309,100 +309,16 @@ interface GameOptions {
 
 ## Game Content
 
-### Recipes (30 dishes — 6 cuisine sets + 3 ungrouped + 3 gap-filler)
+> **Recipe & station data** (the full 30-dish menu and 12-station list with rewards,
+> steps, and heat exemptions) lives in **`docs/GAME-DESIGN-AND-MECHANICS.md`** →
+> "Recipe Reference" / "Station Reference". The source of truth is `src/data/recipes.ts`
+> (`RECIPES`, `STATION_DEFS`, `HEAT_EXEMPT_STATIONS`); read it for exact values rather than
+> duplicating the tables here. The mechanics those tables feed into — heat, shift
+> progression, and leaderboard scoring — are documented below.
 
-Rewards are **cafe scale** ($5–$24). The `reward` field in `recipes.ts` is the authored base value; serving fresh adds a proportional time bonus (`SERVE_TIME_BONUS_FRACTION = 0.4` × `reward`, scaled by patience remaining), so the bonus tracks dish value rather than flattening it. Keep this table in sync with `RECIPES` whenever rewards change.
+Rewards are **cafe scale** ($5–$24). The `reward` field in `recipes.ts` is the authored base value; serving fresh adds a proportional time bonus (`SERVE_TIME_BONUS_FRACTION = 0.4` × `reward`, scaled by patience remaining), so the bonus tracks dish value rather than flattening it.
 
-**Western Classics 🇺🇸** (`burger`, `fish_burger`, `salad`, `roasted_veggies`)
-
-| Dish | Key steps | Value |
-|------|-----------|-------|
-| Burger 🍔 | `chop lettuce` + `grill patty` + `toast bun` | $14 |
-| Fish & Chips 🐟 | `fry fish` + `chop potato` → `fry potato` | $15 |
-| Caesar Salad 🥗 | `chop lettuce` + `chop tomato` + `toast crouton` | $7 |
-| Roasted Veggies 🫑 | `chop tomato` + `chop pepper` → `roast pepper` | $13 |
-
-**Chinese Kitchen 🇨🇳** (`fried_rice`, `stir_fried_pork`, `steamed_tofu`, `steamed_buns`)
-
-| Dish | Key steps | Value |
-|------|-----------|-------|
-| Fried Rice 🍳 | `cook rice` → `stirfry rice` + `stirfry egg` | $14 |
-| Stir-Fried Pork 🍛 | `chop pork` → `stirfry pork` + `chop spring_onion` | $15 |
-| Steamed Tofu 🧈 | `chop tofu` → `steam tofu` + `chop spring_onion` | $12 |
-| Steamed Buns 🥟 | `chop cabbage` + `steam bun` | $8 |
-
-**Korean Kitchen 🇰🇷** (`bulgogi`, `kimchi_jjigae`, `korean_fried_chicken`, `tteokbokki`)
-
-| Dish | Key steps | Value |
-|------|-----------|-------|
-| Bulgogi 🥩 | `chop beef` → `grill beef` + `chop spring_onion` | $17 |
-| Kimchi Jjigae 🥘 | `chop kimchi` → `simmer kimchi` + `chop tofu` | $15 |
-| Korean Fried Chicken 🍗 | `chop chicken` → `fry chicken` + `mix gochujang` | $20 |
-| Tteokbokki 🌶️ | `chop tteok` + `mix gochujang` → `boil tteok` | $19 |
-
-**Japanese Kitchen 🇯🇵** (`sushi_roll`, `tempura`, `chawanmushi`, `salmon_donburi`)
-
-| Dish | Key steps | Value |
-|------|-----------|-------|
-| Sushi Roll 🍣 | `cook rice` + `chop tuna` + `toast nori` | $16 |
-| Tempura 🍤 | `chop shrimp` → `fry shrimp` | $13 |
-| Chawanmushi 🥚 | `chop egg` → `steam egg` + `chop shrimp` | $12 |
-| Salmon Donburi 🍱 | `cook rice` + `chop salmon` + `chop nori` | $9 |
-
-**Japanese Bakery 🇯🇵** (`shio_pan`, `melon_pan`, `pour_over_coffee`, `matcha_latte`)
-
-| Dish | Key steps | Value |
-|------|-----------|-------|
-| Shio Pan 🫓 | `knead dough` → `toast dough` | $11 |
-| Melon Pan 🍨 | `knead dough` → `toast dough` + `mix topping` | $19 |
-| Pour-Over Coffee ☕ | `grind beans` + `boil water` | $5 |
-| Matcha Latte 🍵 | `mix matcha` + `steam milk` | $6 |
-
-**SG Hawker Breakfast 🇸🇬** (`kaya_toast`, `economic_bee_hoon`, `roti_prata`, `nasi_lemak`)
-
-| Dish | Key steps | Value |
-|------|-----------|-------|
-| Kaya Toast 🍞 | `toast bread` + `mix kaya` | $5 |
-| Economic Bee Hoon 🍜 | `fry chicken_wing` + `stirfry bee_hoon` + `stirfry cabbage` + `fry egg` | $22 |
-| Roti Prata 🫓 | `knead prata` → `grill prata` + `boil curry` | $21 |
-| Nasi Lemak 🍱 | `cook rice` + `mix sambal` + `fry anchovies` + `fry egg` | $23 |
-
-**Ungrouped** (`fries`, `pasta` = Hot Dog, `mushroom_soup` = Grilled Cheese — not in any cuisine set)
-
-| Dish | Key steps | Value |
-|------|-----------|-------|
-| Fries 🍟 | `chop potato` → `fry potato` | $11 |
-| Hot Dog 🌭 | `grill sausage` + `chop onion` + `toast bun` | $12 |
-| Grilled Cheese 🥪 | `grill cheese` + `toast bread` | $8 |
-
-**Gap-filler** (`iced_lemon_tea`, `ramen_bowl`, `veggie_dumplings` — ungrouped, Adventure-eligible)
-
-| Dish | Key steps | Value |
-|------|-----------|-------|
-| Iced Lemon Tea 🥤 | `mix lemon_tea` | $5 |
-| Ramen Bowl 🍜 | `boil broth` + `chop chashu` → `grill chashu` + `boil noodles` | $24 |
-| Veggie Dumplings 🥟 | `chop cabbage` + `chop carrot` + `knead wrapper` → `steam dumplings` | $21 |
-
-Steps marked `→` require the prior ingredient in `preparedItems` before starting.
-
-### Stations (12 types)
-
-| Station | Command | Heat |
-|---------|---------|------|
-| Chopping Board 🔪 | `!chop <ingredient>` | Exempt |
-| Grill 🔥 | `!grill <ingredient>` | Yes |
-| Fryer 🫕 | `!fry <ingredient>` | Yes |
-| Stove ♨️ | `!boil <ingredient>` | Yes |
-| Oven 🧱 | `!toast` / `!roast <ingredient>` | Yes |
-| Wok 🍳 | `!stirfry <ingredient>` | Yes |
-| Steamer 🫕 | `!steam <ingredient>` | Yes |
-| Stone Pot 🍲 | `!simmer <ingredient>` | Yes |
-| Rice Pot 🍚 | `!cook <ingredient>` | Yes |
-| Mixing Bowl 🥣 | `!mix <ingredient>` | Exempt |
-| Grinder ☕ | `!grind <ingredient>` | Exempt |
-| Knead Board 🫓 | `!knead <ingredient>` | Exempt |
-
-Only stations needed by the currently enabled recipes are rendered. Stations have no slot limit — any number of cooking actions can run concurrently at one station; throughput is bounded only by heat and the per-user cooldown.
+Recipe steps marked `→` require the prior ingredient in `preparedItems` before starting; steps joined by `+` can be done in any order. Only stations needed by the currently enabled recipes are rendered; stations have no slot limit (any number of concurrent cooking slots), bounded only by heat and the per-user cooldown.
 
 ### Heat Mechanic
 

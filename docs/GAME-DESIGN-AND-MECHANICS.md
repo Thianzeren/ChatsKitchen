@@ -273,7 +273,7 @@ Some steps require a previously prepared ingredient. For example, fries require 
 
 ## Stations
 
-The kitchen is divided into nine station types, each tied to specific commands:
+The kitchen is divided into twelve station types, each tied to specific commands:
 
 - `Chopping Board` for `chop`
 - `Grill` for `grill`
@@ -287,10 +287,6 @@ The kitchen is divided into nine station types, each tied to specific commands:
 - `Mixing Bowl` for `mix`
 - `Grinder` for `grind`
 - `Knead Board` for `knead`
-- `Wok` for `stir`
-- `Steamer` for `steam`
-- `Stone Pot` for `simmer`
-- `Rice Pot` for `cook`
 
 Only stations required by the currently enabled recipes are rendered — unused stations do not appear in the kitchen.
 
@@ -503,67 +499,107 @@ There is also a full reset flow in Options that restores the game to a clean def
 
 ## Recipe Reference
 
-Steps marked `→` require the prior ingredient in the prepared-items pool before they can start. Steps joined by `+` can be done in any order.
+The 30-dish menu, mirrored from `src/data/recipes.ts` (the source of truth) — keep this
+section in sync with `RECIPES` whenever dishes or rewards change. Rewards are **cafe scale**
+($5–$24); serving fresh adds a proportional time bonus (`SERVE_TIME_BONUS_FRACTION = 0.4` ×
+`reward`, scaled by patience remaining). Steps marked `→` require the prior ingredient in
+the prepared-items pool before they can start; steps joined by `+` can be done in any order.
 
 ### Western Classics 🇺🇸
 
 | Dish | Steps | Reward | Patience |
 |------|-------|--------|---------|
-| 🍔 Burger | `chop lettuce` + `grill patty` + `toast bun` | $65 | 80s |
-| 🐟 Fish & Chips | `chop potato` → `fry potato` + `fry fish` | $60 | 75s |
-| 🧀 Grilled Cheese | `grill cheese` + `toast bread` | $40 | 55s |
-| 🫑 Roasted Veggies | `chop tomato` + `chop pepper` → `roast pepper` | $55 | 75s |
+| 🍔 Burger | `chop lettuce` + `grill patty` + `toast bun` | $14 | 80s |
+| 🐟 Fish & Chips | `fry fish` + `chop potato` → `fry potato` | $15 | 75s |
+| 🥗 Caesar Salad | `chop lettuce` + `chop tomato` + `toast crouton` | $7 | 50s |
+| 🫑 Roasted Veggies | `chop tomato` + `chop pepper` → `roast pepper` | $13 | 75s |
 
 ### Chinese Kitchen 🇨🇳
 
 | Dish | Steps | Reward | Patience |
 |------|-------|--------|---------|
-| 🍳 Fried Rice | `cook rice` → `stirfry rice` + `stirfry egg` | $55 | 75s |
-| 🥢 Stir-Fried Pork | `chop pork` → `stirfry pork` + `chop spring_onion` | $65 | 80s |
-| 🧈 Steamed Tofu | `chop tofu` → `steam tofu` + `chop spring_onion` | $45 | 65s |
-| 🥟 Steamed Buns | `chop cabbage` + `steam bun` | $55 | 70s |
+| 🍳 Fried Rice | `cook rice` → `stirfry rice` + `stirfry egg` | $14 | 75s |
+| 🍛 Stir-Fried Pork | `chop pork` → `stirfry pork` + `chop spring_onion` | $15 | 80s |
+| 🧈 Steamed Tofu | `chop tofu` → `steam tofu` + `chop spring_onion` | $12 | 65s |
+| 🥟 Steamed Buns | `chop cabbage` + `steam bun` | $8 | 70s |
 
 ### Korean Kitchen 🇰🇷
 
 | Dish | Steps | Reward | Patience |
 |------|-------|--------|---------|
-| 🥩 Bulgogi | `chop beef` → `grill beef` + `chop spring_onion` | $70 | 85s |
-| Kimchi Jjigae | `chop kimchi` → `simmer kimchi` + `chop tofu` | $65 | 80s |
-| Doenjang Jjigae | `chop zucchini` → `simmer zucchini` + `chop tofu` | $60 | 75s |
-| 🍱 Bibimbap | `cook rice` + `chop beef` → `simmer beef` | $75 | 90s |
+| 🥩 Bulgogi | `chop beef` → `grill beef` + `chop spring_onion` | $17 | 85s |
+| 🥘 Kimchi Jjigae | `chop kimchi` → `simmer kimchi` + `chop tofu` | $15 | 80s |
+| 🍗 Korean Fried Chicken | `chop chicken` → `fry chicken` + `mix gochujang` | $20 | 85s |
+| 🌶️ Tteokbokki | `chop tteok` + `mix gochujang` → `boil tteok` | $19 | 80s |
 
 ### Japanese Kitchen 🇯🇵
 
 | Dish | Steps | Reward | Patience |
 |------|-------|--------|---------|
-| 🍣 Sushi Roll | `cook rice` + `chop tuna` + `chop nori` | $70 | 85s |
-| 🍤 Tempura | `chop shrimp` → `fry shrimp` + `chop zucchini` | $65 | 80s |
-| 🥚 Chawanmushi | `chop egg` → `steam egg` + `chop shrimp` | $55 | 70s |
-| 🍱 Salmon Donburi | `cook rice` + `chop salmon` + `chop nori` | $75 | 90s |
+| 🍣 Sushi Roll | `cook rice` + `chop tuna` + `toast nori` | $16 | 85s |
+| 🍤 Tempura | `chop shrimp` → `fry shrimp` | $13 | 80s |
+| 🥚 Chawanmushi | `chop egg` → `steam egg` + `chop shrimp` | $12 | 70s |
+| 🍱 Salmon Donburi | `cook rice` + `chop salmon` + `chop nori` | $9 | 90s |
 
-### Others (ungrouped)
+### Japanese Bakery 🇯🇵
 
 | Dish | Steps | Reward | Patience |
 |------|-------|--------|---------|
-| 🍟 Fries | `chop potato` → `fry potato` | $40 | 55s |
-| 🌭 Hot Dog | `grill sausage` + `chop onion` + `toast bun` | $45 | 55s |
-| 🥗 Caesar Salad | `chop lettuce` + `chop tomato` + `toast crouton` | $35 | 50s |
+| 🫓 Shio Pan | `knead dough` → `toast dough` | $11 | 65s |
+| 🍨 Melon Pan | `knead dough` → `toast dough` + `mix topping` | $19 | 75s |
+| ☕ Pour-Over Coffee | `grind beans` + `boil water` | $5 | 55s |
+| 🍵 Matcha Latte | `mix matcha` + `steam milk` | $6 | 60s |
+
+### SG Hawker Breakfast 🇸🇬
+
+| Dish | Steps | Reward | Patience |
+|------|-------|--------|---------|
+| 🍞 Kaya Toast | `toast bread` + `mix kaya` | $5 | 55s |
+| 🍜 Economic Bee Hoon | `fry chicken_wing` + `stirfry bee_hoon` + `stirfry cabbage` + `fry egg` | $22 | 80s |
+| 🫓 Roti Prata | `knead prata` → `grill prata` + `boil curry` | $21 | 70s |
+| 🍱 Nasi Lemak | `cook rice` + `mix sambal` + `fry anchovies` + `fry egg` | $23 | 85s |
+
+### Ungrouped
+
+`fries`, `pasta` = Hot Dog, `mushroom_soup` = Grilled Cheese — not in any cuisine set.
+
+| Dish | Steps | Reward | Patience |
+|------|-------|--------|---------|
+| 🍟 Fries | `chop potato` → `fry potato` | $11 | 55s |
+| 🌭 Hot Dog | `grill sausage` + `chop onion` + `toast bun` | $12 | 55s |
+| 🥪 Grilled Cheese | `grill cheese` + `toast bread` | $8 | 55s |
+
+### Gap-filler
+
+Ungrouped, Adventure-eligible.
+
+| Dish | Steps | Reward | Patience |
+|------|-------|--------|---------|
+| 🥤 Iced Lemon Tea | `mix lemon_tea` | $5 | 45s |
+| 🍜 Ramen Bowl | `boil broth` + `chop chashu` → `grill chashu` + `boil noodles` | $24 | 90s |
+| 🥟 Veggie Dumplings | `chop cabbage` + `chop carrot` + `knead wrapper` → `steam dumplings` | $21 | 70s |
 
 ## Station Reference
+
+The 12 station types, mirrored from `STATION_DEFS` in `src/data/recipes.ts`. The canonical
+heat-exempt set is `HEAT_EXEMPT_STATIONS` (cutting board, mixing bowl, grinder, knead board).
 
 | Station | Command(s) | Heat |
 |---------|-----------|------|
 | 🔪 Chopping Board | `chop` | exempt — never overheats |
-| 🔥 Grill | `grill` | +20% per cook |
-| 🫕 Fryer | `fry` | +20% per cook |
-| ♨️ Stove | `boil` | +20% per cook |
-| 🧱 Oven | `toast` / `roast` | +20% per cook |
-| 🥘 Wok | `stirfry` | +10–20% per cook |
-| 🫕 Steamer | `steam` | +20% per cook |
-| 🍲 Stone Pot | `simmer` | +20% per cook |
-| 🍚 Rice Pot | `cook` | +20% per cook |
+| 🔥 Grill | `grill` | yes |
+| 🫕 Fryer | `fry` | yes |
+| ♨️ Stove | `boil` | yes |
+| 🧱 Oven | `toast` / `roast` | yes |
+| 🍳 Wok | `stirfry` | yes |
+| 🫕 Steamer | `steam` | yes |
+| 🍲 Stone Pot | `simmer` | yes |
+| 🍚 Rice Pot | `cook` | yes |
+| 🥣 Mixing Bowl | `mix` | exempt — never overheats |
+| ☕ Grinder | `grind` | exempt — never overheats |
+| 🫓 Knead Board | `knead` | exempt — never overheats |
 
-All cooking stations reach overheat after 5–10 completed cooks without cooling (heat per cook is random 10–20%). The border colour of each station reflects current heat level. Use `cool <station>` (-40–60% heat, random) to prevent lockouts.
+Heat accumulates incrementally during cooking — each slot rolls a random `heatPerCook` (10–20) at cook start, contributing that total heat when fully cooked, so a station reaches overheat (100) after roughly 5–10 cooks without cooling. The border colour of each station reflects current heat level. Use `cool <station>` (−40–60 heat, random) to prevent lockouts; once overheated, players `extinguish <station>` to restore it.
 
 Stations have no slot limit — any number of cooking actions can run concurrently at a single station. Throughput is bounded only by heat (overheating locks a station until extinguished) and the per-user cooldown / busy state.
 
