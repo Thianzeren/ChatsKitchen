@@ -17,7 +17,7 @@ import type { VoteSnapshot } from './shared/protocol'
 import { classifyRoomCommand } from './state/roomCommandRouting'
 import { countActivePlayers } from './state/participants'
 import { storage } from './state/storage'
-import { connectedNicknames, unassignedPool } from './state/roomRoster'
+import { unassignedPool, mergeAdventureRoster } from './state/roomRoster'
 import { useGameAudio } from './audio/useGameAudio'
 import { useViewportScale } from './hooks/useViewportScale'
 import MainMenu from './components/MainMenu'
@@ -538,14 +538,15 @@ export default function App() {
     if (chatMode !== 'room') setRoomPlayers([])
   }, [chatMode])
 
-  // In Local Play, the connected room roster IS the Adventure roster.
-  // Mirror room players into the adventure lobby whenever it is active. The
-  // local host ("You") is an uncounted admin and is deliberately NOT seeded
-  // here — they participate via the in-game chatbox without counting as a chef.
+  // In Local Play, connected phones are mirrored into the Adventure roster — but
+  // Twitch is co-play, so viewers who joined via !join must NOT be clobbered by
+  // the phone mirror. mergeAdventureRoster keeps Twitch members + connected phones
+  // and drops disconnected phones. The local host ("You") is an uncounted admin and
+  // is never part of the roster (they play via the in-game chatbox).
   useEffect(() => {
     if (chatMode !== 'room') return
     if (adventureLobby == null) return // adventure not active
-    const next = connectedNicknames(roomPlayers).filter(n => n !== 'You')
+    const next = mergeAdventureRoster(adventureLobby, roomPlayers)
     const sameLength = adventureLobby.length === next.length
     const same = sameLength && adventureLobby.every((u, i) => u === next[i])
     if (!same) setAdventureLobby(next)
