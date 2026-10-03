@@ -39,6 +39,8 @@ ChatsKitchen/
 │   │   ├── gameReducer.ts  # All game logic (Redux-style reducer)
 │   │   ├── commandProcessor.ts  # Parses !command input → GameAction
 │   │   ├── snapshot.ts     # Serialises GameState → SharedSnapshot for phones
+│   │   ├── tick.ts         # TICK as named steps (roulette, stations, orders, modifiers)
+│   │   ├── preparedPools.ts # Pure prepared-ingredient pool ops ({item, source} records)
 │   │   └── types.ts        # TypeScript interfaces (GameState, Station, Order, etc.)
 │   ├── hooks/
 │   │   ├── useGameLoop.ts  # 100ms game tick loop
@@ -208,7 +210,7 @@ Mod detection uses `tags.mod` and `tags.badges.broadcaster` from tmi.js. The loc
 ### Game Loop (100ms ticks)
 
 `useGameLoop` dispatches `TICK` actions every 100ms while playing:
-- Increments each slot's `elapsedMs` by the tick `delta`; completes cooking when `elapsedMs >= cookDuration`; auto-collects output into `preparedItems` (and `preparedItemSources`) for all stations
+- Increments each slot's `elapsedMs` by the tick `delta`; completes cooking when `elapsedMs >= cookDuration`; auto-collects output into the cook's prepared pool (`preparedPools`) for all stations
 - Applies heat **incrementally during cooking** (proportional to slot progress); each slot rolls a random `heatPerCook` value (10–20) on creation — the total heat it contributes when fully cooked. Chopping board, mixing bowl, grinder, and knead board are exempt.
 - Decrements order patience; expires orders that run out. An expired order forfeits a base opportunity cost (`LOST_ORDER_PENALTY_FRACTION = 0.2` × the dish's reward) from the bank, plus the Bad Reviews boss's flat penalty if active; money is clamped at $0.
 - Spawns new orders at regular intervals. If the order queue empties mid-game, a new order spawns immediately and the spawn rate doubles for 10 seconds.
@@ -239,8 +241,8 @@ interface GameState {
   enabledRecipes: string[]
   stations: Record<string, Station>          // id → Station
   orders: Order[]
-  preparedItems: string[]                    // e.g. ["chopped_lettuce", "grilled_patty"]
-  preparedItemSources: string[]              // parallel to preparedItems: username who cooked each item
+  preparedPools: { shared: PreparedItem[]; red: PreparedItem[]; blue: PreparedItem[] }
+                                             // PreparedItem = { item: 'grilled_patty', source: 'bob' }; co-op uses shared
   nextOrderId: number
   userCooldowns: Record<string, number>      // last action timestamp per user
   activeUsers: Record<string, string>        // username → stationId, currently busy
@@ -254,10 +256,6 @@ interface GameState {
   disabledStations?: string[]                // station ids offline during Power Trip
   // PvP fields — only present when pvpMode is active
   teams?: Record<string, 'red' | 'blue'>    // username → team assignment
-  redPreparedItems?: string[]               // Red team's ingredient pool
-  bluePreparedItems?: string[]              // Blue team's ingredient pool
-  redPreparedItemSources?: string[]         // parallel to redPreparedItems
-  bluePreparedItemSources?: string[]        // parallel to bluePreparedItems
   redMoney?: number
   blueMoney?: number
   redServed?: number
@@ -318,7 +316,7 @@ interface GameOptions {
 
 Rewards are **cafe scale** ($5–$24). The `reward` field in `recipes.ts` is the authored base value; serving fresh adds a proportional time bonus (`SERVE_TIME_BONUS_FRACTION = 0.4` × `reward`, scaled by patience remaining), so the bonus tracks dish value rather than flattening it.
 
-Recipe steps marked `→` require the prior ingredient in `preparedItems` before starting; steps joined by `+` can be done in any order. Only stations needed by the currently enabled recipes are rendered; stations have no slot limit (any number of concurrent cooking slots), bounded only by heat and the per-user cooldown.
+Recipe steps marked `→` require the prior ingredient in the prepared pool before starting; steps joined by `+` can be done in any order. Only stations needed by the currently enabled recipes are rendered; stations have no slot limit (any number of concurrent cooking slots), bounded only by heat and the per-user cooldown.
 
 ### Heat Mechanic
 
@@ -371,9 +369,7 @@ Extinguish and event participation are weighted ×2 to reward safety and communi
 | Cool | Station heat was ≥ 60% when cooled | +1 |
 | Extinguish | ~~+2 to all voters on restore~~ **removed** — ×2 base weight covers it | — |
 
-**Provenance tracking** — to know which player cooked each ingredient, `GameState` maintains `preparedItemSources: string[]` as a parallel array to `preparedItems`. Each slot in `preparedItemSources[i]` is the username who cooked `preparedItems[i]`. When `SERVE` consumes ingredients, it splices both arrays at the same indices and awards cooker bonuses. Items added by kitchen events (e.g. `ADD_PREPARED_ITEMS`) push `''` as their source (no cooker, no bonus). `REMOVE_PREPARED_ITEMS` splices sources at the same random indices.
-
-In PvP mode, `redPreparedItemSources` and `bluePreparedItemSources` mirror the per-team prep pools.
+**Provenance tracking** — each prepared ingredient is a `PreparedItem { item, source }` record, where `source` is the username who cooked it (`''` for items added by kitchen events or Mise en Place — no cooker, no bonus). Co-op uses `preparedPools.shared`; PvP uses `preparedPools.red` / `.blue`. All pool changes go through `src/state/preparedPools.ts` (`addItems`, `takeItems`, `removeRandom`, `getUserPool` / `setUserPool`), so an item and its cook always move together. `SERVE` takes the oldest matching copy of each plate ingredient and awards each taken item's `source` the cook bonus.
 
 ---
 
@@ -406,6 +402,8 @@ In PvP mode, `redPreparedItemSources` and `bluePreparedItemSources` mirror the p
 | `src/state/gameReducer.ts` | **All game logic** — the single source of truth |
 | `src/state/types.ts` | All TypeScript interfaces and types |
 | `src/state/commandProcessor.ts` | `parseCommand()` — maps chat text to `GameAction` |
+| `src/state/preparedPools.ts` | Prepared-ingredient pool operations and user→pool routing |
+| `src/state/tick.ts` | `tickReducer` — the 100ms TICK as named steps; `LOST_ORDER_PENALTY_FRACTION` |
 | `src/state/defaultOptions.ts` | `DEFAULT_GAME_OPTIONS` constant |
 | `src/data/recipes.ts` | `RECIPES`, `STATION_DEFS`, `HEAT_EXEMPT_STATIONS`, `BOT_NAMES`, color palette |
 | `src/data/kitchenEventDefs.ts` | Event definitions, tunable constants, generator functions (`makePowerTripEquation`, `makeTypingFrenzyPhrase`, `makeDanceSequence`, `makeAnagram`, `seededScramble`) |
@@ -492,7 +490,7 @@ When implementing a new feature of similar scope, create a spec + plan document 
 11. **`pvpLobbyRef` for stale closure safety** — Lobby mod commands (`!move`) check `pvpLobbyRef.current` synchronously before calling `setPvpLobby`. Reading `pvpLobby` state directly inside a `useCallback` would see a stale snapshot.
 12. **Stale-ref update pattern** — When mirroring React state into a ref for use inside intervals/callbacks, update it inline (`ref.current = value`) not inside a `useEffect`. The `useEffect` runs after render, leaving a one-tick-old snapshot available to any interval that fires between render and effect execution.
 13. **Tutorial command asymmetry** — All three input sources share `routeChatCommand`; the local chatbox passes `forceDuringTutorial = true` so the host always reaches `handleCommand`, while Twitch/phone pass `false` and skip it during the tutorial (`forceDuringTutorial || !isTutorialRef.current`). This is intentional — local users can practice commands during the tutorial. The asymmetry is now a single explicit flag; do not "fix" it by removing the flag.
-14. **`preparedItemSources` must stay in sync with `preparedItems`** — every operation that adds or removes from `preparedItems` must do the same to `preparedItemSources` at the same index. COOK instant → push `user` to sources. TICK completion → push `slot.user` to sources. SERVE → splice both arrays at the same index. `ADD_PREPARED_ITEMS` → push `''` per item (no cooker). `REMOVE_PREPARED_ITEMS` → splice sources at the same random indices. PvP equivalents (`redPreparedItemSources`, `bluePreparedItemSources`) follow the same rule. A length mismatch silently breaks bonus point attribution.
+14. **Change prepared pools only through `preparedPools.ts`** — don't hand-roll array splices on `state.preparedPools`. Use `takeItems` (all-or-nothing, oldest copy first) to consume, `addItems(pool, items, source)` to add (`NO_SOURCE` for uncredited items), and `getUserPool` / `setUserPool` for team-aware routing (a PvP player with no team gets an empty pool and their items are dropped). The old parallel `preparedItems` / `preparedItemSources` arrays were removed because a missed splice silently misattributed cook bonuses.
 15. **Twitch is co-play, not a `chatMode` switch** — `chatMode` is initialised to `'room'` and stays there for the whole session (there is no connection chooser). Twitch connects purely off `twitchChannel` (`useTwitchChat(twitchChannel, …)` — *not* gated by `chatMode`), so `onTwitchConnect` only calls `setTwitchChannel(ch)` and `onTwitchDisconnect` only `setTwitchChannel(null)`. `handleTwitchMessage` has **no** "view-only" early return — when a channel is connected, chat drives the game alongside the always-live room. Do not reintroduce a `chatMode === 'twitch'` gate or a view-only guard.
 16. **Auto-restart Cancel persists the off state** — the Cancel button in `GameOver` calls both `setCountdown(null)` (local) and `onDisableAutoRestart()` (persists `autoRestart: false` to `gameOptions`/localStorage). Only clearing local state would cause the countdown to restart on the next game over screen because a new `GameOver` mount triggers the `useEffect([autoRestart, ...])` with the still-true value. The `!offAutoRestart` chat command does the same thing as Cancel.
 
