@@ -220,6 +220,16 @@ export interface KitchenEvent {
   }
 }
 
+/** One prepared ingredient and the player who cooked it ('' = nobody: events, Mise en Place). */
+export interface PreparedItem {
+  item: string
+  source: string
+}
+
+/** 'shared' is the co-op pool; PvP uses 'red' and 'blue'. */
+export type PoolId = 'shared' | 'red' | 'blue'
+export type PreparedPools = Record<PoolId, PreparedItem[]>
+
 export interface GameState {
   money: number
   served: number
