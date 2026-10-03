@@ -51,7 +51,7 @@ ChatsKitchen/
 │   │   └── kitchenEventDefs.ts # Event definitions, constants, generator functions
 │   ├── audio/              # Howler-based AudioManager + game audio hook
 │   ├── shared/             # protocol.ts — wire types shared with the relay server
-│   └── main.tsx            # React entry: renders App, or Controller on /play
+│   └── main.tsx            # React entry: lazy-loads App, or Controller on /play (separate bundles)
 ├── server/                 # Standalone socket.io relay (Fly.io); no game logic
 │   ├── src/relay.ts        # createRelay() — rooms, join/lock, rate limit
 │   └── src/relay.test.ts   # Vitest integration + rate-limiter tests
