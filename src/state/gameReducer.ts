@@ -415,7 +415,11 @@ let matchedStep = null
         }
         const newItems = [...teamItems]
         newItems.splice(idx, 1)
-        afterRequire = setTeamPrepItems(afterRequire, user, newItems)
+        // Splice the source at the same index — otherwise every later item is
+        // credited to the wrong cook (pitfall #14).
+        const newSources = [...teamPrepSources(afterRequire, user)]
+        newSources.splice(idx, 1)
+        afterRequire = setTeamPrepSources(setTeamPrepItems(afterRequire, user, newItems), user, newSources)
       }
 
       const speed = state.cookingSpeed
