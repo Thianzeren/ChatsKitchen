@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { gameReducer, createInitialState, SERVE_TIME_BONUS_FRACTION, LOST_ORDER_PENALTY_FRACTION } from './gameReducer'
 import { RECIPES } from '../data/recipes'
 import { GameState, Order } from './types'
+import { withPool } from './testPools'
 
 // iced_lemon_tea is the simplest dish (1 step, single plate item) — ideal for
 // isolating the serve/expiry economy without juggling multiple ingredients.
@@ -16,13 +17,8 @@ function stateWithOrder(patienceFraction: number, money = 0): GameState {
     patienceMax, patienceLeft: Math.round(patienceMax * patienceFraction),
     spawnTime: 0,
   }
-  return {
-    ...base,
-    money,
-    orders: [order],
-    preparedItems: [...RECIPES[DISH].plate],
-    preparedItemSources: RECIPES[DISH].plate.map(() => 'cook1'),
-  }
+  return withPool({ ...base, money, orders: [order] }, 'shared',
+    [...RECIPES[DISH].plate], RECIPES[DISH].plate.map(() => 'cook1'))
 }
 
 describe('serve-time bonus is proportional to reward', () => {

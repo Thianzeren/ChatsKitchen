@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { gameReducer, createInitialState } from './gameReducer'
 import { RECIPES } from '../data/recipes'
 import { GameState, StationSlot, Order } from './types'
+import { poolItems, poolSources, withPool } from './testPools'
 
 // ── builders ──────────────────────────────────────────────────────────────────
 
@@ -78,10 +79,10 @@ describe('COOK', () => {
     const missing = gameReducer(base(), { type: 'COOK', user: 'alice', action: 'fry', target: 'potato', now: NOW })
     expect(missing.stations.fryer.slots).toHaveLength(0)
 
-    const ready = base({ preparedItems: ['chopped_potato'], preparedItemSources: ['bob'] })
+    const ready = withPool(base(), 'shared', ['chopped_potato'], ['bob'])
     const ok = gameReducer(ready, { type: 'COOK', user: 'alice', action: 'fry', target: 'potato', now: NOW })
     expect(ok.stations.fryer.slots).toHaveLength(1)
-    expect(ok.preparedItems).not.toContain('chopped_potato') // prereq consumed
+    expect(poolItems(ok)).not.toContain('chopped_potato') // prereq consumed
   })
 
   it('refuses to cook on an overheated station', () => {
@@ -96,8 +97,8 @@ describe('COOK', () => {
     const s = base({ choppingCookTimeMultiplier: 0 }) // Sharp Knives
     const out = gameReducer(s, { type: 'COOK', user: 'alice', action: 'chop', target: 'lettuce', now: NOW })
     expect(out.stations.cutting_board.slots).toHaveLength(0)
-    expect(out.preparedItems).toEqual(['chopped_lettuce'])
-    expect(out.preparedItemSources).toEqual(['alice'])
+    expect(poolItems(out)).toEqual(['chopped_lettuce'])
+    expect(poolSources(out)).toEqual(['alice'])
   })
 })
 
@@ -107,62 +108,46 @@ describe('SERVE', () => {
   const plate = RECIPES.burger.plate // ['chopped_lettuce','grilled_patty','toasted_bun']
 
   it('consumes the plate, pays out, and credits the cook (pitfall #14)', () => {
-    const s = base({
-      orders: [order({ patienceLeft: 80_000, patienceMax: 80_000 })],
-      preparedItems: [...plate],
-      preparedItemSources: ['alice', 'alice', 'alice'],
-    })
+    const s = withPool(base({ orders: [order({ patienceLeft: 80_000, patienceMax: 80_000 })] }),
+      'shared', [...plate], ['alice', 'alice', 'alice'])
     const out = gameReducer(s, { type: 'SERVE', user: 'bob', orderId: 1 })
     // burger reward 14 + round(14*0.4*1)=6 = 20
     expect(out.money).toBe(20)
     expect(out.served).toBe(1)
-    expect(out.preparedItems).toHaveLength(0)
-    expect(out.preparedItemSources).toHaveLength(0) // stays in sync
+    expect(poolItems(out)).toHaveLength(0)
+    expect(poolSources(out)).toHaveLength(0) // stays in sync
     expect(out.playerStats.bob.served).toBe(1)
     expect(out.playerStats.alice.bonusPoints).toBe(6) // +2 per consumed ingredient
   })
 
   it('rejects when an ingredient is missing', () => {
-    const s = base({
-      orders: [order()],
-      preparedItems: ['chopped_lettuce', 'grilled_patty'], // no bun
-      preparedItemSources: ['alice', 'alice'],
-    })
+    const s = withPool(base({ orders: [order()] }), 'shared', ['chopped_lettuce', 'grilled_patty'], ['alice', 'alice']) // no bun
     const out = gameReducer(s, { type: 'SERVE', user: 'bob', orderId: 1 })
     expect(out.money).toBe(0)
     expect(out.served).toBe(0)
   })
 
   it('rejects when the serving user is busy cooking', () => {
-    let s = base({
-      orders: [order()],
-      preparedItems: [...plate],
-      preparedItemSources: ['alice', 'alice', 'alice'],
-    })
+    let s = withPool(base({ orders: [order()] }), 'shared', [...plate], ['alice', 'alice', 'alice'])
     s = withSlot(s, 'grill', slot({ user: 'bob', target: 'patty', produces: 'grilled_patty' }))
     const out = gameReducer(s, { type: 'SERVE', user: 'bob', orderId: 1 })
     expect(out.served).toBe(0)
   })
 
   it('uses the team pool and tracks team money in PvP', () => {
-    const s = base({
-      teams: { alice: 'red' },
-      redPreparedItems: [...plate],
-      redPreparedItemSources: ['alice', 'alice', 'alice'],
-      redMoney: 0, redServed: 0,
-      orders: [order()],
-    })
+    const s = withPool(base({ teams: { alice: 'red' }, redMoney: 0, redServed: 0, orders: [order()] }),
+      'red', [...plate], ['alice', 'alice', 'alice'])
     const out = gameReducer(s, { type: 'SERVE', user: 'alice', orderId: 1 })
     expect(out.redServed).toBe(1)
     expect(out.redMoney).toBeGreaterThan(0)
-    expect(out.redPreparedItems).toHaveLength(0)
+    expect(poolItems(out, 'red')).toHaveLength(0)
   })
 
   it('rejects a user with no team in PvP', () => {
-    const s = base({ teams: { alice: 'red' }, redPreparedItems: [...plate], redServed: 0, orders: [order()] })
+    const s = withPool(base({ teams: { alice: 'red' }, redServed: 0, orders: [order()] }), 'red', [...plate])
     const out = gameReducer(s, { type: 'SERVE', user: 'carol', orderId: 1 })
     expect(out.redServed).toBe(0)            // no payout
-    expect(out.redPreparedItems).toHaveLength(plate.length) // pool untouched
+    expect(poolItems(out, 'red')).toHaveLength(plate.length) // pool untouched
   })
 })
 
@@ -173,8 +158,8 @@ describe('TICK', () => {
     const s = withSlot(base(), 'cutting_board', slot({ elapsedMs: 6950, cookDuration: 7000 }))
     const out = gameReducer(s, { type: 'TICK', delta: 100, now: NOW })
     expect(out.stations.cutting_board.slots).toHaveLength(0)
-    expect(out.preparedItems).toEqual(['chopped_lettuce'])
-    expect(out.preparedItemSources).toEqual(['alice'])
+    expect(poolItems(out)).toEqual(['chopped_lettuce'])
+    expect(poolSources(out)).toEqual(['alice'])
     expect(out.activeUsers.alice).toBeUndefined()
   })
 
