@@ -275,7 +275,6 @@
   min-width: 0;
   /* Show the full name — wrap (and break long single-token usernames) instead of truncating. */
   overflow-wrap: anywhere;
-  word-break: break-word;
 }
 
 .kickBtn {
