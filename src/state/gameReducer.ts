@@ -1,8 +1,9 @@
-import { GameState, Station, Order, ChatMessage, StationSlot, PlayerStats } from './types'
+import { GameState, Station, Order, ChatMessage, StationSlot } from './types'
 import { RECIPES, STATION_DEFS, HEAT_EXEMPT_STATIONS, getEnabledStations } from '../data/recipes'
 import { getRecipeProfile } from '../data/recipeProfile'
 import { pickMiseEnPlaceIngredients, applyServeTriggers } from '../data/adventureGarnishes'
 import { countActivePlayers } from './participants'
+import { addMsg, addStat } from './stateHelpers'
 import { NO_SOURCE, addItems, emptyPools, getUserPool, poolIdFor, removeRandom, setUserPool, takeItems } from './preparedPools'
 
 export const HEAT_PER_COOK = 20   // kept for reference; actual value is random 10–20 per slot
@@ -102,19 +103,6 @@ export function createInitialState(
     redServed: pvp ? 0 : undefined,
     blueServed: pvp ? 0 : undefined,
   }
-}
-
-function addMsg(state: GameState, username: string, text: string, msgType: ChatMessage['type'] = 'normal'): GameState {
-  const msg: ChatMessage = { id: state.nextMessageId, username, text, type: msgType }
-  const messages = [...state.chatMessages, msg].slice(-200)
-  return { ...state, chatMessages: messages, nextMessageId: state.nextMessageId + 1 }
-}
-
-const EMPTY_STATS: PlayerStats = { cooked: 0, served: 0, moneyEarned: 0, extinguished: 0, firesCaused: 0, cooled: 0, eventParticipations: 0, bonusPoints: 0 }
-
-function addStat(state: GameState, user: string, stat: keyof PlayerStats, amount: number): GameState {
-  const prev = state.playerStats[user] || { ...EMPTY_STATS }
-  return { ...state, playerStats: { ...state.playerStats, [user]: { ...prev, [stat]: prev[stat] + amount } } }
 }
 
 const PAST_TENSE: Record<string, string> = {
