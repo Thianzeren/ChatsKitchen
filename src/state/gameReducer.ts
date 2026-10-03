@@ -1,10 +1,11 @@
 import { GameState, Station, Order, ChatMessage, StationSlot } from './types'
-import { RECIPES, STATION_DEFS, HEAT_EXEMPT_STATIONS, getEnabledStations } from '../data/recipes'
+import { RECIPES, STATION_DEFS, HEAT_EXEMPT_STATIONS } from '../data/recipes'
 import { getRecipeProfile } from '../data/recipeProfile'
 import { pickMiseEnPlaceIngredients, applyServeTriggers } from '../data/adventureGarnishes'
 import { countActivePlayers } from './participants'
 import { addMsg, addStat } from './stateHelpers'
-import { NO_SOURCE, addItems, emptyPools, getUserPool, poolIdFor, removeRandom, setUserPool, takeItems } from './preparedPools'
+import { tickReducer } from './tick'
+import { NO_SOURCE, addItems, emptyPools, getUserPool, removeRandom, setUserPool, takeItems } from './preparedPools'
 
 export const HEAT_PER_COOK = 20   // kept for reference; actual value is random 10–20 per slot
 export const COOL_AMOUNT   = 50   // midpoint reference only — actual value rolled randomly 40–60 on each use
@@ -12,9 +13,7 @@ export const COOL_AMOUNT   = 50   // midpoint reference only — actual value ro
 // remaining. Proportional (not flat) so expensive dishes keep their edge — a flat
 // bonus used to make cheap 1-step dishes the optimal money source.
 export const SERVE_TIME_BONUS_FRACTION = 0.4
-// Letting an order expire forfeits this fraction of its reward from the bank — a small
-// opportunity cost so ignoring pricey orders to cherry-pick cheap ones actually costs money.
-export const LOST_ORDER_PENALTY_FRACTION = 0.2
+export { LOST_ORDER_PENALTY_FRACTION } from './tick'
 
 export type GameAction =
   | { type: 'TICK'; delta: number; now: number }
@@ -424,208 +423,8 @@ let matchedStep = null
       )
     }
 
-    case 'TICK': {
-      const { delta, now } = action
-      const newStations = { ...state.stations }
-      const newActiveUsers = { ...state.activeUsers }
-      const messages = [...state.chatMessages]
-      let nextMsgId = state.nextMessageId
-      const pools = { ...state.preparedPools }
-      let newPlayerStats = { ...state.playerStats }
-      let bloodhoundMoney = 0
-      let lostPenaltyTotal = 0
-
-      // ── Periodic shift-timer effects (Recipe Roulette) ──
-      let rouletteNextAt = state.rouletteNextAt
-
-      // Lazy-init on the first TICK that sees an active effect.
-      if (state.activeBossDebuff === 'recipe_roulette' && !rouletteNextAt) rouletteNextAt = now + 45_000
-
-      // Fire Recipe Roulette — swap one active recipe with a random dish from the catalog.
-      let newEnabledRecipes = state.enabledRecipes
-      if (rouletteNextAt && now >= rouletteNextAt) {
-        const candidates = Object.keys(RECIPES).filter(r => !state.enabledRecipes.includes(r))
-        if (candidates.length > 0 && state.enabledRecipes.length > 0) {
-          const removedIdx = Math.floor(Math.random() * state.enabledRecipes.length)
-          const removed = state.enabledRecipes[removedIdx]
-          const added = candidates[Math.floor(Math.random() * candidates.length)]
-          newEnabledRecipes = state.enabledRecipes.map((r, i) => i === removedIdx ? added : r)
-          messages.push({
-            id: nextMsgId++,
-            username: 'KITCHEN',
-            text: `🎲 Recipe Roulette! ${RECIPES[removed]?.name ?? removed} → ${RECIPES[added]?.name ?? added}`,
-            type: 'system',
-          })
-          // The swapped-out dish may leave a station no active recipe needs anymore.
-          // Clear its in-flight slots (they'd otherwise cook invisibly into unusable
-          // items) and free the chefs working there.
-          const stillNeeded = new Set(getEnabledStations(newEnabledRecipes))
-          for (const [sid, st] of Object.entries(newStations)) {
-            if (st.slots.length > 0 && !stillNeeded.has(sid)) {
-              for (const sl of st.slots) delete newActiveUsers[sl.user]
-              newStations[sid] = { ...st, slots: [] }
-            }
-          }
-        }
-        rouletteNextAt = now + 45_000
-      }
-
-      // Update all station slots
-      for (const [id, station] of Object.entries(newStations)) {
-        if (station.overheated || station.slots.length === 0) continue
-
-        const updatedSlots: StationSlot[] = []
-        let currentHeat = newStations[id].heat
-
-        for (const slot of station.slots) {
-          const elapsed = slot.elapsedMs + delta
-
-          // Step A: Apply incremental heat delta (chopping board is exempt)
-          let newHeatApplied = slot.heatApplied
-          if (!HEAT_EXEMPT_STATIONS.has(id) && slot.state === 'cooking') {
-            const progress = Math.min(1, elapsed / slot.cookDuration)
-            const expectedHeat = progress * slot.heatPerCook
-            const heatDelta = expectedHeat - slot.heatApplied
-            if (heatDelta > 0) {
-              currentHeat += heatDelta
-              newHeatApplied = expectedHeat
-            }
-          }
-          const updatedSlot: StationSlot = { ...slot, elapsedMs: elapsed, heatApplied: newHeatApplied }
-
-          // Step B: Check overheat (threshold may be raised by Insulation or lowered by Glass Kitchen)
-          const overheatLimit = state.overheatThreshold ?? 100
-          if (currentHeat >= overheatLimit) {
-            // Penalise every player cooking at this station, not just the one whose slot
-            // tipped it over — overheating is a shared, team-level failure.
-            for (const s of station.slots) {
-              const statSnap = addStat({ ...state, playerStats: newPlayerStats }, s.user, 'firesCaused', 1)
-              newPlayerStats = statSnap.playerStats
-            }
-            // Free all users assigned to all slots on this station
-            for (const s of newStations[id].slots) delete newActiveUsers[s.user]
-            newStations[id] = { ...newStations[id], slots: [], heat: overheatLimit, overheated: true, extinguishVotes: [] }
-            messages.push({
-              id: nextMsgId++,
-              username: 'KITCHEN',
-              text: `🔥 ${STATION_DEFS[id].name} OVERHEATED! Type extinguish ${id} to restore it!`,
-              type: 'system',
-            })
-            // Bloodhound garnish: +$12 per overheat
-            if ((state.activeGarnishes ?? []).includes('bloodhound')) {
-              bloodhoundMoney += 12
-              messages.push({
-                id: nextMsgId++,
-                username: 'KITCHEN',
-                text: `🩸 Bloodhound earned $12 from the overheat!`,
-                type: 'success',
-              })
-            }
-            break // station is locked, skip remaining slots
-          }
-
-          // Step C: Check completion (no heat addition — already applied incrementally)
-          if (slot.state === 'cooking' && elapsed >= slot.cookDuration) {
-            // Doppelgänger garnish: 20% chance to produce a second copy of the ingredient
-            const doppelgangerActive = (state.activeGarnishes ?? []).includes('doppelganger')
-            const extraCopy = doppelgangerActive && Math.random() < 0.2
-            const poolId = poolIdFor(state, slot.user)
-            if (poolId) {
-              const produced = extraCopy ? [slot.produces, slot.produces] : [slot.produces]
-              pools[poolId] = addItems(pools[poolId], produced, slot.user)
-            }
-            // else: PvP cook with no team — item dropped
-            if (extraCopy) {
-              messages.push({
-                id: nextMsgId++,
-                username: 'KITCHEN',
-                text: `✨ Doppelgänger! Bonus ${slot.produces.replace(/_/g, ' ')}!`,
-                type: 'success',
-              })
-            }
-            delete newActiveUsers[slot.user]
-            messages.push({
-              id: nextMsgId++,
-              username: 'KITCHEN',
-              text: `${slot.user} finished ${slot.target.replace(/_/g, ' ')}!`,
-              type: 'success',
-            })
-            newStations[id] = { ...newStations[id], lastCompletion: { ingredient: slot.produces, at: now, by: slot.user } }
-            // slot NOT pushed — removed (auto-collected)
-          } else {
-            updatedSlots.push(updatedSlot)
-          }
-        }
-
-        if (!newStations[id].overheated) {
-          newStations[id] = { ...newStations[id], heat: currentHeat, slots: updatedSlots }
-        }
-      }
-
-      // Update order patience + expire
-      let orders = [...state.orders]
-      let lost = state.lost
-      orders = orders.map(order => {
-        if (order.served) return order
-        const newPatience = order.patienceLeft - delta
-        if (newPatience <= 0) {
-          lost++
-          messages.push({ id: nextMsgId++, username: 'CUSTOMER', text: `Order #${order.id} expired! Lost a ${RECIPES[order.dish].emoji}!`, type: 'error' })
-          // Base opportunity cost — forfeit a fraction of the ignored dish's value, so
-          // letting a pricey order lapse costs more than a cheap one.
-          lostPenaltyTotal += Math.floor((RECIPES[order.dish]?.reward ?? 0) * LOST_ORDER_PENALTY_FRACTION)
-          // Bad Reviews boss — flat $ deducted per expired order, stacked on top.
-          // Lost orders aren't team-tagged, so PvP charges BOTH teams equally.
-          if (state.lostOrderPenalty !== undefined) {
-            lostPenaltyTotal += state.lostOrderPenalty
-            messages.push({
-              id: nextMsgId++,
-              username: 'KITCHEN',
-              text: `⭐ Bad Reviews · −$${state.lostOrderPenalty}`,
-              type: 'error',
-            })
-          }
-          return { ...order, served: true, patienceLeft: 0, outcome: 'lost' as const, completedAt: now }
-        }
-        return { ...order, patienceLeft: newPatience }
-      })
-
-      // Clean up old served orders
-      orders = orders.filter(o => !o.served || (o.completedAt !== undefined && now - o.completedAt < 1500))
-
-      // Timer countdown
-      const timeLeft = Math.max(0, state.timeLeft - delta)
-
-      // Expire timed modifiers
-      const cookingSpeedModifier = state.cookingSpeedModifier && now < state.cookingSpeedModifier.expiresAt
-        ? state.cookingSpeedModifier : undefined
-      const moneyMultiplier = state.moneyMultiplier && now < state.moneyMultiplier.expiresAt
-        ? state.moneyMultiplier : undefined
-
-      return {
-        ...state,
-        stations: newStations,
-        activeUsers: newActiveUsers,
-        preparedPools: pools,
-        playerStats: newPlayerStats,
-        orders,
-        lost,
-        timeLeft,
-        chatMessages: messages.slice(-200),
-        nextMessageId: nextMsgId,
-        cookingSpeedModifier,
-        moneyMultiplier,
-        money: Math.max(0, state.money + bloodhoundMoney - lostPenaltyTotal),
-        redMoney: state.teams && state.redMoney !== undefined
-          ? Math.max(0, state.redMoney - lostPenaltyTotal)
-          : state.redMoney,
-        blueMoney: state.teams && state.blueMoney !== undefined
-          ? Math.max(0, state.blueMoney - lostPenaltyTotal)
-          : state.blueMoney,
-        enabledRecipes: newEnabledRecipes,
-        rouletteNextAt,
-      }
-    }
+    case 'TICK':
+      return tickReducer(state, action.delta, action.now)
 
     case 'SET_STATION_HEAT': {
       const { stationId, heat } = action
