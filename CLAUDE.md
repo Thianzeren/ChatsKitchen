@@ -450,7 +450,8 @@ Run `npm run lint` before committing. The build (`npm run build`) also runs `tsc
 
 Tests run on **Vitest**. Run the client suite with `npm test` (scoped to `src/**` via the `test.include` in `vite.config.ts`); run the relay server's suite with `npm test` inside `server/`.
 
-- **Client tests** live next to their subject in `src/data/` and `src/state/` and cover the pure layers — the reducer (mechanics + economy), kitchen-event generators, Adventure (garnishes/bosses/draft/mode), seeded RNG, recipes, snapshot, and command routing. Hooks and components are **not** yet tested (React Testing Library is not installed; add it when component/hook tests are needed).
+- **Client tests** live next to their subject in `src/data/` and `src/state/` and cover the pure layers — the reducer (mechanics + economy), kitchen-event generators, Adventure (garnishes/bosses/draft/mode), seeded RNG, recipes, snapshot, and command routing.
+- **Hook / component tests** use React Testing Library (`@testing-library/react`) on **jsdom**. The default environment stays `node`, so a DOM test opts in per file with a `// @vitest-environment jsdom` first line (see `src/hooks/useChoiceVote.test.tsx`). Use `vi.useFakeTimers()` for interval-driven hooks.
 - **Relay tests** (`server/src/relay.test.ts`) cover the socket.io lifecycle via real connections plus a deterministic rate-limiter unit test. The relay is built by `createRelay()` (instance-scoped state, injectable CORS/grace, no auto-listen) so it's drivable from tests; `server/src/index.ts` is just the listen entry.
 - **CI** (`ci.yml`) runs lint + client tests + build + relay tests on every push/PR; `deploy-server.yml` re-runs them before each Fly.io deploy.
 
@@ -468,23 +469,9 @@ The game is **client-first** — the simulation always runs in the host's browse
 
 ## Development Planning Docs
 
-`docs/superpowers/plans/` contains Markdown planning documents for significant features:
+`docs/superpowers/plans/` contains Markdown planning documents for significant features, and `docs/superpowers/specs/` holds the design specs that precede them. Files are named `YYYY-MM-DD-<topic>.md` (`-design.md` suffix for most specs), so `ls` gives the chronological history — browse the directories rather than relying on a hand-maintained list here. Plans describe intent at the time of writing; later work may have superseded them, so treat the code as the source of truth.
 
-- `2026-03-24-react-conversion.md` — Notes on the initial React migration
-- `2026-03-24-station-capacity-and-plating-rework.md` — Configurable station capacity limits and timed plating mechanics
-- `2026-04-05-level-system-with-stars.md` — 10-level system with star thresholds
-- `2026-04-06-persist-user-preferences.md` — Browser storage for audio, level progress, and options
-- `2026-04-09-readability-overhaul.md` — Gameplay UI visual polish pass
-- `2026-04-09-shift-end-transition.md` — Shift end / game-over transition screen
-- `2026-04-09-station-readability.md` — Station component readability improvements
-- `2026-04-10-main-menu-redesign.md` — 2-column Hero Split MainMenu with cheatsheet
-- `2026-04-11-auto-restart-and-mod-commands.md` — Auto-restart toggle for Free Play and mod/broadcaster chat commands
-- `2026-04-13-heat-rush-remove-take.md` — Station heat meter, collective extinguish, rush orders, removal of !take
-- `2026-04-18-kitchen-events.md` — Kitchen events system (9 event types, `useKitchenEvents` hook, overlays)
-- `2026-04-22-event-card-redesign.md` — EventCardOverlay receipt-ticket redesign with per-event colours and animations
-- `2026-04-24-pvp-mode.md` — PvP Mode: team lobby, per-team prep pools, team scoring, winner banner on game over
-
-`docs/superpowers/specs/` holds design specs that precede the plans above.
+`docs/architecture-review.md` (June 2026) is a whole-codebase technical review with prioritised recommendations.
 
 When implementing a new feature of similar scope, create a spec + plan document in these directories first.
 
