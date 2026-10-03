@@ -3,6 +3,7 @@ import { RECIPES, STATION_DEFS, HEAT_EXEMPT_STATIONS, getEnabledStations } from 
 import { getRecipeProfile } from '../data/recipeProfile'
 import { pickMiseEnPlaceIngredients, applyServeTriggers } from '../data/adventureGarnishes'
 import { countActivePlayers } from './participants'
+import { NO_SOURCE, addItems, emptyPools, getUserPool, poolIdFor, removeRandom, setUserPool, takeItems } from './preparedPools'
 
 export const HEAT_PER_COOK = 20   // kept for reference; actual value is random 10–20 per slot
 export const COOL_AMOUNT   = 50   // midpoint reference only — actual value rolled randomly 40–60 on each use
@@ -83,8 +84,7 @@ export function createInitialState(
     enabledRecipes,
     stations,
     orders: [],
-    preparedItems: [],
-    preparedItemSources: [],
+    preparedPools: emptyPools(),
     nextOrderId: 1,
     userCooldowns: {},
     activeUsers: {},
@@ -97,10 +97,6 @@ export function createInitialState(
     cookingSpeedModifier: undefined,
     moneyMultiplier: undefined,
     teams: pvp ? teams : undefined,
-    redPreparedItems: pvp ? [] : undefined,
-    bluePreparedItems: pvp ? [] : undefined,
-    redPreparedItemSources: pvp ? [] : undefined,
-    bluePreparedItemSources: pvp ? [] : undefined,
     redMoney: pvp ? 0 : undefined,
     blueMoney: pvp ? 0 : undefined,
     redServed: pvp ? 0 : undefined,
@@ -138,38 +134,6 @@ function isUserBusy(state: GameState, user: string): boolean {
   )
 }
 
-function teamPrepItems(state: GameState, user: string): string[] {
-  if (!state.teams) return state.preparedItems
-  const team = state.teams[user]
-  if (team === 'red') return state.redPreparedItems ?? []
-  if (team === 'blue') return state.bluePreparedItems ?? []
-  return []
-}
-
-function setTeamPrepItems(state: GameState, user: string, items: string[]): GameState {
-  if (!state.teams) return { ...state, preparedItems: items }
-  const team = state.teams[user]
-  if (team === 'red') return { ...state, redPreparedItems: items }
-  if (team === 'blue') return { ...state, bluePreparedItems: items }
-  return state
-}
-
-function teamPrepSources(state: GameState, user: string): string[] {
-  if (!state.teams) return state.preparedItemSources
-  const team = state.teams[user]
-  if (team === 'red') return state.redPreparedItemSources ?? []
-  if (team === 'blue') return state.bluePreparedItemSources ?? []
-  return []
-}
-
-function setTeamPrepSources(state: GameState, user: string, sources: string[]): GameState {
-  if (!state.teams) return { ...state, preparedItemSources: sources }
-  const team = state.teams[user]
-  if (team === 'red') return { ...state, redPreparedItemSources: sources }
-  if (team === 'blue') return { ...state, bluePreparedItemSources: sources }
-  return state
-}
-
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'RESET': {
@@ -177,18 +141,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const active = action.activeGarnishes ?? []
 
       // Mise en Place: seed 5 random prepped ingredients from the enabled recipes.
-      let preparedItems = base.preparedItems
-      let preparedItemSources = base.preparedItemSources
-      if (active.includes('mise_en_place')) {
-        const seeded = pickMiseEnPlaceIngredients(action.enabledRecipes, RECIPES, 5)
-        preparedItems = [...preparedItems, ...seeded]
-        preparedItemSources = [...preparedItemSources, ...seeded.map(() => '')]
-      }
+      const preparedPools = active.includes('mise_en_place')
+        ? { ...base.preparedPools, shared: addItems(base.preparedPools.shared, pickMiseEnPlaceIngredients(action.enabledRecipes, RECIPES, 5), NO_SOURCE) }
+        : base.preparedPools
 
       return {
         ...base,
-        preparedItems,
-        preparedItemSources,
+        preparedPools,
         heatPerCookMultiplier: action.heatPerCookMultiplier,
         coolAmountBonus: action.coolAmountBonus,
         flatTipPerOrder: action.flatTipPerOrder,
@@ -291,18 +250,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return addMsg(state, 'KITCHEN', `${user} is not on a team!`, 'error')
       }
 
-      // Check preparedItems has all required ingredients (team-aware)
-      const needed = [...recipe.plate]
-      const available = [...teamPrepItems(state, user)]
-      const sourcesPool = [...teamPrepSources(state, user)]
+      // Take every plate ingredient from the server's pool (team-aware); each one's
+      // cook earns a bonus for an ingredient that ended up in a real served order.
+      const take = takeItems(getUserPool(state, user), recipe.plate)
+      if (!take.ok) return addMsg(state, 'KITCHEN', `Missing ${take.missing.replace(/_/g, ' ')} for ${recipe.name}!`, 'error')
       const cookerBonuses: Record<string, number> = {}
-      for (const item of needed) {
-        const idx = available.indexOf(item)
-        if (idx === -1) return addMsg(state, 'KITCHEN', `Missing ${item.replace(/_/g, ' ')} for ${recipe.name}!`, 'error')
-        available.splice(idx, 1)
-        const cooker = sourcesPool.splice(idx, 1)[0] ?? ''
-        // Bonus for cooking an ingredient that ends up in a real served order
-        if (cooker) cookerBonuses[cooker] = (cookerBonuses[cooker] ?? 0) + 2
+      for (const { source } of take.taken) {
+        if (source) cookerBonuses[source] = (cookerBonuses[source] ?? 0) + 2
       }
 
       const newOrders = state.orders.map((o, i) =>
@@ -336,8 +290,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         withStats = addStat(withStats, cooker, 'bonusPoints', bonus)
       }
 
-      let afterPool = setTeamPrepItems(withStats, user, available)
-      afterPool = setTeamPrepSources(afterPool, user, sourcesPool)
+      let afterPool = setUserPool(withStats, user, take.remaining)
 
       if (state.teams) {
         const isRed = state.teams[user] === 'red'
@@ -408,18 +361,11 @@ let matchedStep = null
       // Check ingredient prerequisite
       let afterRequire = withCooldown
       if (matchedStep.requires) {
-        const teamItems = teamPrepItems(afterRequire, user)
-        const idx = teamItems.indexOf(matchedStep.requires)
-        if (idx === -1) {
+        const take = takeItems(getUserPool(afterRequire, user), [matchedStep.requires])
+        if (!take.ok) {
           return addMsg(afterRequire, 'KITCHEN', `Need ${matchedStep.requires.replace(/_/g, ' ')} first!`, 'error')
         }
-        const newItems = [...teamItems]
-        newItems.splice(idx, 1)
-        // Splice the source at the same index — otherwise every later item is
-        // credited to the wrong cook (pitfall #14).
-        const newSources = [...teamPrepSources(afterRequire, user)]
-        newSources.splice(idx, 1)
-        afterRequire = setTeamPrepSources(setTeamPrepItems(afterRequire, user, newItems), user, newSources)
+        afterRequire = setUserPool(afterRequire, user, take.remaining)
       }
 
       const speed = state.cookingSpeed
@@ -437,11 +383,9 @@ let matchedStep = null
 
       if (effectiveDuration === 0) {
         const withStat = addStat(afterRequire, user, 'cooked', 1)
-        const instantItems = [...teamPrepItems(withStat, user), matchedStep.produces]
-        const instantSources = [...teamPrepSources(withStat, user), user]
-        const withItems = setTeamPrepItems(withStat, user, instantItems)
+        const withItem = setUserPool(withStat, user, addItems(getUserPool(withStat, user), [matchedStep.produces], user))
         return addMsg(
-          setTeamPrepSources(withItems, user, instantSources),
+          withItem,
           'KITCHEN', `${user} ${PAST_TENSE[cookAction] || cookAction + 'ed'} ${target.replace(/_/g, ' ')}!`, 'success'
         )
       }
@@ -498,12 +442,7 @@ let matchedStep = null
       const newActiveUsers = { ...state.activeUsers }
       const messages = [...state.chatMessages]
       let nextMsgId = state.nextMessageId
-      const newPreparedItems = [...state.preparedItems]
-      const newPreparedItemSources = [...state.preparedItemSources]
-      const newRedPreparedItems = [...(state.redPreparedItems ?? [])]
-      const newBluePreparedItems = [...(state.bluePreparedItems ?? [])]
-      const newRedPreparedItemSources = state.teams ? [...(state.redPreparedItemSources ?? [])] : []
-      const newBluePreparedItemSources = state.teams ? [...(state.bluePreparedItemSources ?? [])] : []
+      const pools = { ...state.preparedPools }
       let newPlayerStats = { ...state.playerStats }
       let bloodhoundMoney = 0
       let lostPenaltyTotal = 0
@@ -602,24 +541,12 @@ let matchedStep = null
             // Doppelgänger garnish: 20% chance to produce a second copy of the ingredient
             const doppelgangerActive = (state.activeGarnishes ?? []).includes('doppelganger')
             const extraCopy = doppelgangerActive && Math.random() < 0.2
-            if (state.teams) {
-              const team = state.teams[slot.user]
-              if (team === 'red') {
-                newRedPreparedItems.push(slot.produces); newRedPreparedItemSources.push(slot.user)
-                if (extraCopy) { newRedPreparedItems.push(slot.produces); newRedPreparedItemSources.push(slot.user) }
-              } else if (team === 'blue') {
-                newBluePreparedItems.push(slot.produces); newBluePreparedItemSources.push(slot.user)
-                if (extraCopy) { newBluePreparedItems.push(slot.produces); newBluePreparedItemSources.push(slot.user) }
-              }
-              // else: unregistered player in PvP — item dropped
-            } else {
-              newPreparedItems.push(slot.produces)
-              newPreparedItemSources.push(slot.user)
-              if (extraCopy) {
-                newPreparedItems.push(slot.produces)
-                newPreparedItemSources.push(slot.user)
-              }
+            const poolId = poolIdFor(state, slot.user)
+            if (poolId) {
+              const produced = extraCopy ? [slot.produces, slot.produces] : [slot.produces]
+              pools[poolId] = addItems(pools[poolId], produced, slot.user)
             }
+            // else: PvP cook with no team — item dropped
             if (extraCopy) {
               messages.push({
                 id: nextMsgId++,
@@ -691,12 +618,7 @@ let matchedStep = null
         ...state,
         stations: newStations,
         activeUsers: newActiveUsers,
-        preparedItems: newPreparedItems,
-        preparedItemSources: newPreparedItemSources,
-        redPreparedItems: state.teams ? newRedPreparedItems : state.redPreparedItems,
-        bluePreparedItems: state.teams ? newBluePreparedItems : state.bluePreparedItems,
-        redPreparedItemSources: state.teams ? newRedPreparedItemSources : state.redPreparedItemSources,
-        bluePreparedItemSources: state.teams ? newBluePreparedItemSources : state.bluePreparedItemSources,
+        preparedPools: pools,
         playerStats: newPlayerStats,
         orders,
         lost,
@@ -731,17 +653,11 @@ let matchedStep = null
     }
 
     case 'REMOVE_PREPARED_ITEMS': {
-      const count = Math.min(action.count, state.preparedItems.length)
+      const count = Math.min(action.count, state.preparedPools.shared.length)
       if (count === 0) return state
-      const items = [...state.preparedItems]
-      const sources = [...state.preparedItemSources]
-      for (let i = 0; i < count; i++) {
-        const idx = Math.floor(Math.random() * items.length)
-        items.splice(idx, 1)
-        sources.splice(idx, 1)
-      }
+      const shared = removeRandom(state.preparedPools.shared, count)
       const msg = action.message ?? `🐀 Rats stole ${count} prepared ingredient(s)!`
-      return addMsg({ ...state, preparedItems: items, preparedItemSources: sources }, 'KITCHEN', msg, 'error')
+      return addMsg({ ...state, preparedPools: { ...state.preparedPools, shared } }, 'KITCHEN', msg, 'error')
     }
 
     case 'SET_COOKING_SPEED_MODIFIER':
@@ -764,14 +680,8 @@ let matchedStep = null
 
     case 'ADD_PREPARED_ITEMS': {
       const msg = action.message ?? `🧩 Mystery solved! ${action.items.length} ingredients added to the tray!`
-      return addMsg(
-        {
-          ...state,
-          preparedItems: [...state.preparedItems, ...action.items],
-          preparedItemSources: [...state.preparedItemSources, ...action.items.map(() => '')],
-        },
-        'KITCHEN', msg, 'success'
-      )
+      const shared = addItems(state.preparedPools.shared, action.items, NO_SOURCE)
+      return addMsg({ ...state, preparedPools: { ...state.preparedPools, shared } }, 'KITCHEN', msg, 'success')
     }
 
     case 'EXTEND_ORDER_PATIENCE': {

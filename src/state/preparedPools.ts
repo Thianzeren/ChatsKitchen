@@ -16,6 +16,16 @@ export function poolIdFor(state: Pick<GameState, 'teams'>, user: string): PoolId
   return state.teams[user] ?? null
 }
 
+export function getUserPool(state: GameState, user: string): PreparedItem[] {
+  const id = poolIdFor(state, user)
+  return id ? state.preparedPools[id] : []
+}
+
+export function setUserPool(state: GameState, user: string, pool: PreparedItem[]): GameState {
+  const id = poolIdFor(state, user)
+  return id ? { ...state, preparedPools: { ...state.preparedPools, [id]: pool } } : state
+}
+
 export function addItems(pool: PreparedItem[], items: string[], source: string): PreparedItem[] {
   return [...pool, ...items.map(item => ({ item, source }))]
 }

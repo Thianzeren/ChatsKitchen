@@ -6,18 +6,14 @@ import type { GameState } from './types'
 export type TestPool = 'shared' | 'red' | 'blue'
 
 export function poolItems(s: GameState, pool: TestPool = 'shared'): string[] {
-  if (pool === 'shared') return s.preparedItems
-  return (pool === 'red' ? s.redPreparedItems : s.bluePreparedItems) ?? []
+  return s.preparedPools[pool].map(p => p.item)
 }
 
 export function poolSources(s: GameState, pool: TestPool = 'shared'): string[] {
-  if (pool === 'shared') return s.preparedItemSources
-  return (pool === 'red' ? s.redPreparedItemSources : s.bluePreparedItemSources) ?? []
+  return s.preparedPools[pool].map(p => p.source)
 }
 
 /** Replace one pool. `sources` defaults to '' (no cook) for every item. */
 export function withPool(s: GameState, pool: TestPool, items: string[], sources: string[] = items.map(() => '')): GameState {
-  if (pool === 'shared') return { ...s, preparedItems: items, preparedItemSources: sources }
-  if (pool === 'red') return { ...s, redPreparedItems: items, redPreparedItemSources: sources }
-  return { ...s, bluePreparedItems: items, bluePreparedItemSources: sources }
+  return { ...s, preparedPools: { ...s.preparedPools, [pool]: items.map((item, i) => ({ item, source: sources[i] })) } }
 }

@@ -3,6 +3,7 @@ import { GameState } from '../state/types'
 import { getEnabledStations } from '../data/recipes'
 import Station from './Station'
 import PreparedItems from './PreparedItems'
+import { itemNames } from '../state/preparedPools'
 import CommandsStrip from './CommandsStrip'
 import { storage } from '../state/storage'
 import styles from './Kitchen.module.css'
@@ -34,12 +35,12 @@ export default function Kitchen({ state, tutorialHighlight }: Props) {
   return (
     <div className={`${styles.kitchen} ${tutorialHighlight === 'kitchen' ? styles.highlighted : ''}`}>
       <PreparedItems
-        items={state.preparedItems}
+        items={itemNames(state.preparedPools.shared)}
         enabledRecipes={state.enabledRecipes}
         isHighlighted={tutorialHighlight === 'prepared'}
         pvpMode={!!state.teams}
-        redItems={state.redPreparedItems}
-        blueItems={state.bluePreparedItems}
+        redItems={state.teams ? itemNames(state.preparedPools.red) : undefined}
+        blueItems={state.teams ? itemNames(state.preparedPools.blue) : undefined}
         redMoney={state.redMoney}
         blueMoney={state.blueMoney}
       />

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { addItems, emptyPools, itemNames, poolIdFor, removeRandom, takeItems } from './preparedPools'
+import { addItems, emptyPools, getUserPool, itemNames, poolIdFor, removeRandom, setUserPool, takeItems } from './preparedPools'
+import { createInitialState } from './gameReducer'
 import type { PreparedItem } from './types'
 
 const pool: PreparedItem[] = [
@@ -53,5 +54,15 @@ describe('preparedPools', () => {
 
   it('itemNames lists the item ids', () => {
     expect(itemNames(pool)).toEqual(['chopped_lettuce', 'grilled_patty', 'chopped_lettuce'])
+  })
+
+  it('getUserPool / setUserPool read and write the user’s pool; teamless PvP is a no-op', () => {
+    const coop = createInitialState(1000)
+    expect(getUserPool(setUserPool(coop, 'x', pool), 'x')).toBe(pool)
+
+    const pvp = { ...createInitialState(1000), teams: { x: 'red' as const } }
+    expect(getUserPool(setUserPool(pvp, 'x', pool), 'x')).toBe(pool)
+    expect(setUserPool(pvp, 'nobody', pool)).toBe(pvp)
+    expect(getUserPool(pvp, 'nobody')).toEqual([])
   })
 })
