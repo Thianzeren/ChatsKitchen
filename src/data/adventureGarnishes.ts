@@ -311,7 +311,7 @@ export function addOwnedGarnish(owned: OwnedGarnish[], garnishId: string, shift:
 // ── Mise en Place ingredient seeding ─────────────────────────────────────────
 
 // Pick `count` random `produces` values from the enabled recipes' steps.
-// Used to seed `state.preparedItems` when Mise en Place is owned, at shift RESET.
+// Used to seed the shared prepared pool when Mise en Place is owned, at shift RESET.
 export function pickMiseEnPlaceIngredients(
   enabledRecipes: string[],
   recipes: Record<string, { steps: { produces: string }[] }>,

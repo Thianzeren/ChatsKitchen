@@ -42,7 +42,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     commandHint: 'chop potato',
     advanceCondition: (state) =>
       (state.stations['cutting_board']?.slots.some(s => s.target === 'potato') ?? false) ||
-      state.preparedItems.includes('chopped_potato'),
+      state.preparedPools.shared.some(p => p.item === 'chopped_potato'),
   },
   {
     title: "Chopping in progress…",
@@ -64,7 +64,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     commandHint: 'fry potato',
     advanceCondition: (state) =>
       (state.stations['fryer']?.slots.some(s => s.target === 'potato') ?? false) ||
-      state.preparedItems.includes('fried_potato'),
+      state.preparedPools.shared.some(p => p.item === 'fried_potato'),
   },
   {
     title: "Frying in progress…",

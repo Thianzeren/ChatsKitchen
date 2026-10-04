@@ -10,7 +10,7 @@ export function useGameAudio(screen: Screen, state: GameState, audioSettings: Au
   const prevLost = useRef(state.lost)
   const prevFireCount = useRef(0)
   const prevCookingCount = useRef(0)
-  const prevPreparedCount = useRef(state.preparedItems.length)
+  const prevPreparedCount = useRef(state.preparedPools.shared.length)
   const prevLastCooledAt = useRef(0)
   const intenseFired = useRef(false)
   const frenziedFired = useRef(false)
@@ -44,7 +44,7 @@ export function useGameAudio(screen: Screen, state: GameState, audioSettings: Au
         prevLost.current = state.lost
         prevFireCount.current = 0
         prevCookingCount.current = 0
-        prevPreparedCount.current = state.preparedItems.length
+        prevPreparedCount.current = state.preparedPools.shared.length
         prevOrderCount.current = state.orders.filter(o => !o.served).length
         prevMsgCount.current = state.chatMessages.length
         break
@@ -100,7 +100,7 @@ export function useGameAudio(screen: Screen, state: GameState, audioSettings: Au
     if (state.served > prevServed.current)                            audio.playSfx('serve-success')
     if (state.lost > prevLost.current)                                audio.playSfx('order-expired')
     if (cookingCount > prevCookingCount.current)                      audio.playSfx('cook-start')
-    if (state.preparedItems.length > prevPreparedCount.current)       audio.playSfx('take-item')
+    if (state.preparedPools.shared.length > prevPreparedCount.current)       audio.playSfx('take-item')
     if (fireCount > prevFireCount.current)                            audio.playSfx('fire-alarm')
     if (fireCount === 0 && prevFireCount.current > 0)                 audio.stopSfx('fire-alarm')
     if (latestCooledAt > prevLastCooledAt.current)                    audio.playSfx('cool')
@@ -110,7 +110,7 @@ export function useGameAudio(screen: Screen, state: GameState, audioSettings: Au
     prevLost.current          = state.lost
     prevFireCount.current     = fireCount
     prevCookingCount.current  = cookingCount
-    prevPreparedCount.current = state.preparedItems.length
+    prevPreparedCount.current = state.preparedPools.shared.length
     prevLastCooledAt.current  = latestCooledAt
   })
 

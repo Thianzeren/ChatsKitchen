@@ -220,6 +220,16 @@ export interface KitchenEvent {
   }
 }
 
+/** One prepared ingredient and the player who cooked it ('' = nobody: events, Mise en Place). */
+export interface PreparedItem {
+  item: string
+  source: string
+}
+
+/** 'shared' is the co-op pool; PvP uses 'red' and 'blue'. */
+export type PoolId = 'shared' | 'red' | 'blue'
+export type PreparedPools = Record<PoolId, PreparedItem[]>
+
 export interface GameState {
   money: number
   served: number
@@ -231,8 +241,7 @@ export interface GameState {
   enabledRecipes: string[]
   stations: Record<string, Station>
   orders: Order[]
-  preparedItems: string[]
-  preparedItemSources: string[]    // parallel to preparedItems: username who cooked each item
+  preparedPools: PreparedPools     // co-op uses 'shared'; PvP uses 'red' / 'blue'
   nextOrderId: number
   userCooldowns: Record<string, number>
   activeUsers: Record<string, string>
@@ -263,10 +272,6 @@ export interface GameState {
   // ── Adventure content variety (Sub-project C) — new optional fields ──
   lostOrderPenalty?: number            // Bad Reviews boss — $ deducted per ORDER_EXPIRED
   teams?: Record<string, 'red' | 'blue'>
-  redPreparedItems?: string[]
-  bluePreparedItems?: string[]
-  redPreparedItemSources?: string[]
-  bluePreparedItemSources?: string[]
   redMoney?: number
   blueMoney?: number
   redServed?: number

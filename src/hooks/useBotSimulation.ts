@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { GameAction } from '../state/gameReducer'
 import { GameState } from '../state/types'
 import { RECIPES, BOT_NAMES, HEAT_EXEMPT_STATIONS } from '../data/recipes'
+import { itemNames } from '../state/preparedPools'
 
 const CHATTER = ["let's go!", 'waiting for orders...', 'COOK COOK COOK', 'we got this chat!', 'any orders?']
 
@@ -9,6 +10,7 @@ function pickBotAction(state: GameState): { name: string; command: string } | nu
   const name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)]
 
   if (state.activeUsers[name]) return null
+  const prepared = itemNames(state.preparedPools.shared)
 
   // Extinguish overheated stations
   for (const [id, station] of Object.entries(state.stations)) {
@@ -20,11 +22,11 @@ function pickBotAction(state: GameState): { name: string; command: string } | nu
     if (!HEAT_EXEMPT_STATIONS.has(id) && !station.overheated && station.heat >= 60) return { name, command: `cool ${id}` }
   }
 
-  // Serve — check if preparedItems has all ingredients for an active order
+  // Serve — check if the prepared pool has all ingredients for an active order
   for (const order of state.orders) {
     if (order.served) continue
     const recipe = RECIPES[order.dish]
-    const available = [...state.preparedItems]
+    const available = [...prepared]
     let canServe = true
     for (const item of recipe.plate) {
       const idx = available.indexOf(item)
@@ -42,10 +44,10 @@ function pickBotAction(state: GameState): { name: string; command: string } | nu
       const station = state.stations[step.station]
       if (!station || station.overheated) continue
 
-      if (state.preparedItems.includes(step.produces)) continue
+      if (prepared.includes(step.produces)) continue
       const alreadyCooking = station.slots.some(s => s.produces === step.produces)
       if (alreadyCooking) continue
-      if (step.requires && !state.preparedItems.includes(step.requires)) continue
+      if (step.requires && !prepared.includes(step.requires)) continue
       return { name, command: `${step.action} ${step.target}` }
     }
   }
